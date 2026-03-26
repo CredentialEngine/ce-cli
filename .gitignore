@@ -1,0 +1,29 @@
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+
+# VS Code
+.vscode/
+!.vscode/settings.json
+
+# PyInstaller
+*.spec
+dist/
+build/
+
+# CLI config (user-specific)
+.ce/
+
+# Misc
+.env
+*.log
