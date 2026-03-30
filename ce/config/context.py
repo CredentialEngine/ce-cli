@@ -32,16 +32,25 @@ class CLIConfig(BaseModel):
 DEFAULT_ENVIRONMENTS: dict[str, Environment] = {
     "dev": Environment(
         label="Development",
-        client_id="IIR-TokenGenerator-CLI",
+        client_id="CE-CLI",
         device_auth_url="http://localhost:8080/realms/CE_Accounts/protocol/openid-connect/auth/device",
         token_url="http://localhost:8080/realms/CE_Accounts/protocol/openid-connect/token",
         scopes="openid profile",
         publisher_base="https://localhost:44330",
         ssl_verify=False,
     ),
+    "test": Environment(
+        label="Test",
+        client_id="CE-CLI",
+        device_auth_url="https://login.test.credentialengine.org/realms/CE-Test/protocol/openid-connect/auth/device",
+        token_url="https://login.test.credentialengine.org/realms/CE-Test/protocol/openid-connect/token",
+        scopes="openid profile",
+        publisher_base="https://sandbox.credentialengine.org/publisher",
+        ssl_verify=True,
+    ),
     "sandbox": Environment(
         label="Sandbox",
-        client_id="IIR-TokenGenerator-CLI",
+        client_id="CE-CLI",
         device_auth_url="https://login.sandbox.credentialengine.org/realms/CE-Sandbox/protocol/openid-connect/auth/device",
         token_url="https://login.sandbox.credentialengine.org/realms/CE-Sandbox/protocol/openid-connect/token",
         scopes="openid profile",
@@ -50,7 +59,7 @@ DEFAULT_ENVIRONMENTS: dict[str, Environment] = {
     ),
     "prod": Environment(
         label="Production",
-        client_id="IIR-TokenGenerator-CLI",
+        client_id="CE-CLI",
         device_auth_url="https://login.credentialengine.org/realms/CE-Prod/protocol/openid-connect/auth/device",
         token_url="https://login.credentialengine.org/realms/CE-Prod/protocol/openid-connect/token",
         scopes="openid profile",
