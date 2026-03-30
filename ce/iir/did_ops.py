@@ -5,6 +5,8 @@ from __future__ import annotations
 import base64
 import json
 import re
+from functools import lru_cache
+from pathlib import Path
 from typing import Any
 
 import base58
@@ -29,6 +31,62 @@ DID_KEY_PREFIX_MAP = {
     "zDn":  "P-256",
     "z6LS": "X25519",
 }
+
+
+_SWAGGER_FILE = Path(__file__).parent / "swagger.json"
+
+_OPERATION_MAP = {
+    "is_user_member":       "IIRApi_IsUserAMember",
+    "get_registry_resource":"IIRApi_GetRegistryResource",
+    "validate_did_web":     "IIRApi_ValidateWeb",
+    "validate_did_key":     "IIRApi_ValidateKey",
+    "create_challenges":    "IIRApi_CreateChallenges",
+    "validate_jwt":         "IIRApi_ValidateJwtSignature",
+    "save_challenge_token": "IIRApi_SaveChallengeToken",
+    "submit_to_iir":        "IIRApi_SubmitToIIR",
+}
+
+
+@lru_cache(maxsize=1)
+def _load_swagger() -> dict:
+    if not _SWAGGER_FILE.exists():
+        raise FileNotFoundError(
+            f"Swagger spec not found at {_SWAGGER_FILE}. "
+            "Place swagger.json next to did_ops.py."
+        )
+    return json.loads(_SWAGGER_FILE.read_text())
+
+
+def _build_path_index(swagger: dict) -> dict[str, tuple[str, str]]:
+    """Return {operationId: (http_method, path)} from the swagger spec."""
+    index: dict[str, tuple[str, str]] = {}
+    for path, methods in swagger.get("paths", {}).items():
+        for method, spec in methods.items():
+            op_id = spec.get("operationId")
+            if op_id:
+                index[op_id] = (method.upper(), path)
+    return index
+
+
+@lru_cache(maxsize=1)
+def _path_index() -> dict[str, tuple[str, str]]:
+    return _build_path_index(_load_swagger())
+
+
+def _url(operation: str, publisher_base: str) -> str:
+    """Resolve a logical operation name to a full URL using the swagger spec."""
+    op_id = _OPERATION_MAP.get(operation)
+    if not op_id:
+        raise KeyError(f"Unknown operation '{operation}'")
+    index = _path_index()
+    if op_id not in index:
+        raise KeyError(
+            f"operationId '{op_id}' not found in swagger spec. "
+            f"Available: {', '.join(index)}"
+        )
+    _, path = index[op_id]
+    return f"{publisher_base.rstrip('/')}{path}"
+
 
 def validate_ctid(ctid: str) -> tuple[bool, str]:
     if not ctid:
@@ -92,6 +150,10 @@ def validate_verification_method(vm: str, did: str, api_vm_ids: list[str]) -> tu
     return True, ""
 
 
+# ---------------------------------------------------------------------------
+# HTTP helpers
+# ---------------------------------------------------------------------------
+
 def _headers(token: str) -> dict:
     return {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
 
@@ -114,12 +176,9 @@ def _error_detail(r: requests.Response) -> str:
 def call_is_user_member(
     user_id: str, ctid: str, token: str, publisher_base: str, ssl_verify: bool
 ) -> tuple[bool, str]:
-    """GET /api/iir/isUserAMember?userId=...&ctid=...
-    Returns { valid: bool }.
-    """
     try:
         r = requests.get(
-            f"{publisher_base.rstrip('/')}/api/iir/isUserAMember",
+            _url("is_user_member", publisher_base),
             params={"userId": user_id, "ctid": ctid},
             headers=_headers(token),
             timeout=60,
@@ -140,7 +199,7 @@ def call_get_registry_resource(
 ) -> tuple[bool, dict, str]:
     try:
         r = requests.get(
-            f"{publisher_base.rstrip('/')}/api/iir/getRegistryResource",
+            _url("get_registry_resource", publisher_base),
             params={"ctid": ctid},
             headers=_headers(token),
             timeout=60,
@@ -163,7 +222,7 @@ def call_validate_did_key(
 ) -> tuple[bool, dict, str]:
     try:
         r = requests.get(
-            f"{publisher_base.rstrip('/')}/api/iir/validateDidKey",
+            _url("validate_did_key", publisher_base),
             params={"did": did, "alg": alg},
             headers=_headers(token),
             timeout=60,
@@ -183,7 +242,7 @@ def call_validate_did_web(
 ) -> tuple[bool, dict, str]:
     try:
         r = requests.get(
-            f"{publisher_base.rstrip('/')}/api/iir/validateDidWeb",
+            _url("validate_did_web", publisher_base),
             params={"did": did},
             headers=_headers(token),
             timeout=60,
@@ -205,7 +264,7 @@ def call_create_challenge(
 ) -> tuple[bool, dict, str]:
     try:
         r = requests.post(
-            f"{publisher_base.rstrip('/')}/api/iir/createChallenges",
+            _url("create_challenges", publisher_base),
             headers=_headers(token),
             json={"Ctid": ctid, "VerificationMethodIds": [vm_id]},
             timeout=60,
@@ -223,13 +282,12 @@ def call_create_challenge(
         return False, {}, f"createChallenges request failed: {e}"
 
 
-
 def call_verify_jwt_signature(
     proof_jwt: str, challenge_uuid: str, token: str, publisher_base: str, ssl_verify: bool
 ) -> tuple[bool, str]:
     try:
         r = requests.post(
-            f"{publisher_base.rstrip('/')}/api/iir/validateJwt",
+            _url("validate_jwt", publisher_base),
             headers=_headers(token),
             json={"Jwt": proof_jwt, "ChallengeId": challenge_uuid},
             timeout=60,
@@ -246,15 +304,13 @@ def call_verify_jwt_signature(
         return False, f"validateJwt request failed: {e}"
 
 
-
-
 def call_save_challenge_token(
     ctid: str, challenge_uuid: str, token_jwt: str,
     token: str, publisher_base: str, ssl_verify: bool
 ) -> tuple[bool, str]:
     try:
         r = requests.post(
-            f"{publisher_base.rstrip('/')}/api/iir/saveChallengeToken",
+            _url("save_challenge_token", publisher_base),
             headers=_headers(token),
             json={"Ctid": ctid, "ChallengeId": challenge_uuid, "Token": token_jwt},
             timeout=60,
@@ -267,8 +323,6 @@ def call_save_challenge_token(
         return True, ""
     except requests.RequestException as e:
         return False, f"saveChallengeToken request failed: {e}"
-
-
 
 
 def call_submit_to_iir(
@@ -303,7 +357,7 @@ def call_submit_to_iir(
             payload["ValidUntil"] = valid_until
 
         r = requests.post(
-            f"{publisher_base.rstrip('/')}/api/iir/submitToIIR",
+            _url("submit_to_iir", publisher_base),
             headers=_headers(token),
             json=payload,
             timeout=60,
@@ -452,8 +506,6 @@ def verify_proof_jwt(token: str, kid: str) -> tuple[bool, str]:
         return False, f"JWT error: {e}"
     except Exception as e:
         return False, f"verification error: {e}"
-
-
 
 
 def extract_user_id_from_token(access_token: str) -> str:

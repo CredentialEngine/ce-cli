@@ -25,6 +25,29 @@ dependencies = [
 [project.scripts]
 ce = "ce.main:cli"
 
+[project.optional-dependencies]
+dev = ["pytest>=8", "pytest-mock>=3", "tox>=4"]
+
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["ce*"]
+
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+envlist = unit, integration
+skipsdist = true
+
+[testenv]
+deps =
+    pytest>=8
+    pytest-mock>=3
+commands_pre =
+    pip install -e .
+
+[testenv:unit]
+commands = pytest -m "not integration" -s {posargs}
+
+[testenv:integration]
+commands = pytest -m integration -s {posargs}
+"""
