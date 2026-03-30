@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ce-cli"
+version = "0.1.0"
+description = "Credential Engine CLI - Internal platform management tool"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "click>=8.1",
+    "httpx>=0.27",
+    "keyring>=25",
+    "rich>=13",
+    "pydantic>=2",
+    "pydantic-settings>=2",
+    "requests>=2.31",
+    "truststore>=0.9",
+    "base58>=2.1",
+    "PyJWT>=2.8",
+    "cryptography>=41",
+]
+
+[project.scripts]
+ce = "ce.main:cli"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["ce*"]
