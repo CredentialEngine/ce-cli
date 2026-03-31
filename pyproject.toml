@@ -26,11 +26,29 @@ dependencies = [
 ce = "ce.main:cli"
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "pytest-mock>=3", "tox>=4"]
+dev = [
+    "pytest>=8",
+    "pytest-mock>=3",
+    "pytest-recording>=0.13",
+    "vcrpy>=6",
+    "tox>=4",
+]
 
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["ce*"]
+
+[tool.pytest.ini_options]
+addopts = "--record-mode=none"
+markers = ["integration: tests that target a live API"]
+
+[tool.vcrpy]
+cassette_library_dir   = "tests/cassettes"
+record_mode            = "none"
+serializer             = "yaml"
+match_on               = ["method", "scheme", "host", "port", "path", "query", "body"]
+filter_headers         = ["authorization", "Authorization"]
+ssl_verify_certificate = false
 
 [tool.tox]
 legacy_tox_ini = """
@@ -42,12 +60,17 @@ skipsdist = true
 deps =
     pytest>=8
     pytest-mock>=3
+    pytest-recording>=0.13
+    vcrpy>=6
 commands_pre =
     pip install -e .
 
 [testenv:unit]
-commands = pytest -m "not integration" -s {posargs}
+commands = pytest tests/ -m "not integration" --record-mode=none -s {posargs}
 
 [testenv:integration]
-commands = pytest -m integration -s {posargs}
+commands = pytest tests/ -m integration --record-mode=none -s {posargs}
+
+[testenv:record]
+commands = pytest tests/ -m integration --record-mode=once -s {posargs}
 """
