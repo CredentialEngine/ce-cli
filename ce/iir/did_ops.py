@@ -17,6 +17,21 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import (
     Ed25519PublicKey,
 )
 
+from ce.iir.api.iir_client import AuthenticatedClient
+from ce.iir.api.iir_client.models.create_challenges_request import CreateChallengesRequest
+from ce.iir.api.iir_client.models.save_challenge_token_request import SaveChallengeTokenRequest
+from ce.iir.api.iir_client.models.validate_jwt_request import ValidateJwtRequest
+from ce.iir.api.iir_client.models.issuer_dto import IssuerDTO
+
+from ce.iir.api.iir_client.api.iir_api.iir_api_is_user_a_member import sync_detailed as is_user_member_sync
+from ce.iir.api.iir_client.api.iir_api.iir_api_get_registry_resource import sync_detailed as get_registry_resource_sync
+from ce.iir.api.iir_client.api.iir_api.iir_api_validate_key import sync_detailed as validate_did_key_sync
+from ce.iir.api.iir_client.api.iir_api.iir_api_validate_web import sync_detailed as validate_did_web_sync
+from ce.iir.api.iir_client.api.iir_api.iir_api_create_challenges import sync_detailed as create_challenges_sync
+from ce.iir.api.iir_client.api.iir_api.iir_api_validate_jwt_signature import sync_detailed as validate_jwt_sync
+from ce.iir.api.iir_client.api.iir_api.iir_api_save_challenge_token import sync_detailed as save_challenge_token_sync
+from ce.iir.api.iir_client.api.iir_api.iir_api_submit_to_iir import sync_detailed as submit_to_iir_sync
+
 
 CE_GUID_RE = re.compile(
     r"^ce-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
@@ -32,61 +47,13 @@ DID_KEY_PREFIX_MAP = {
     "z6LS": "X25519",
 }
 
-
-_SWAGGER_FILE = Path(__file__).parent / "swagger.json"
-
-_OPERATION_MAP = {
-    "is_user_member":       "IIRApi_IsUserAMember",
-    "get_registry_resource":"IIRApi_GetRegistryResource",
-    "validate_did_web":     "IIRApi_ValidateWeb",
-    "validate_did_key":     "IIRApi_ValidateKey",
-    "create_challenges":    "IIRApi_CreateChallenges",
-    "validate_jwt":         "IIRApi_ValidateJwtSignature",
-    "save_challenge_token": "IIRApi_SaveChallengeToken",
-    "submit_to_iir":        "IIRApi_SubmitToIIR",
-}
-
-
-@lru_cache(maxsize=1)
-def _load_swagger() -> dict:
-    if not _SWAGGER_FILE.exists():
-        raise FileNotFoundError(
-            f"Swagger spec not found at {_SWAGGER_FILE}. "
-            "Place swagger.json next to did_ops.py."
-        )
-    return json.loads(_SWAGGER_FILE.read_text())
-
-
-def _build_path_index(swagger: dict) -> dict[str, tuple[str, str]]:
-    """Return {operationId: (http_method, path)} from the swagger spec."""
-    index: dict[str, tuple[str, str]] = {}
-    for path, methods in swagger.get("paths", {}).items():
-        for method, spec in methods.items():
-            op_id = spec.get("operationId")
-            if op_id:
-                index[op_id] = (method.upper(), path)
-    return index
-
-
-@lru_cache(maxsize=1)
-def _path_index() -> dict[str, tuple[str, str]]:
-    return _build_path_index(_load_swagger())
-
-
-def _url(operation: str, publisher_base: str) -> str:
-    """Resolve a logical operation name to a full URL using the swagger spec."""
-    op_id = _OPERATION_MAP.get(operation)
-    if not op_id:
-        raise KeyError(f"Unknown operation '{operation}'")
-    index = _path_index()
-    if op_id not in index:
-        raise KeyError(
-            f"operationId '{op_id}' not found in swagger spec. "
-            f"Available: {', '.join(index)}"
-        )
-    _, path = index[op_id]
-    return f"{publisher_base.rstrip('/')}{path}"
-
+def _client(token: str, base_url: str, ssl_verify: bool) -> AuthenticatedClient:
+    return AuthenticatedClient(
+        base_url=base_url.rstrip("/"),
+        token=token,
+        verify_ssl=ssl_verify,
+        timeout=60.0,
+    )
 
 def validate_ctid(ctid: str) -> tuple[bool, str]:
     if not ctid:
@@ -149,91 +116,76 @@ def validate_verification_method(vm: str, did: str, api_vm_ids: list[str]) -> tu
         )
     return True, ""
 
-
-# ---------------------------------------------------------------------------
-# HTTP helpers
-# ---------------------------------------------------------------------------
-
-def _headers(token: str) -> dict:
-    return {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
-
-
-def _error_detail(r: requests.Response) -> str:
-    try:
-        body = r.json()
-        return (
-            body.get("message")
-            or body.get("detail")
-            or body.get("title")
-            or body.get("Error")
-            or r.text
-        )
-    except Exception:
-        return r.text
-
-
-
 def call_is_user_member(
     user_id: str, ctid: str, token: str, publisher_base: str, ssl_verify: bool
 ) -> tuple[bool, str]:
     try:
-        r = requests.get(
-            _url("is_user_member", publisher_base),
-            params={"userId": user_id, "ctid": ctid},
-            headers=_headers(token),
-            timeout=60,
-            verify=ssl_verify,
-        )
-        if not r.ok:
-            return False, f"isUserMember error {r.status_code}: {_error_detail(r)}"
-        data = r.json()
-        if not data.get("valid", False):
-            return False, "User is not a member of this organization"
-        return True, ""
-    except requests.RequestException as e:
-        return False, f"isUserMember request failed: {e}"
+        client = _client(token, publisher_base, ssl_verify)
 
+        response = is_user_member_sync(
+            client=client,
+            user_id=user_id,
+            ctid=ctid,
+        )
+
+        if response.status_code >= 400:
+            return False, f"isUserMember error {response.status_code}"
+
+        data = response.parsed or {}
+        if isinstance(data, dict) and not data.get("valid", False):
+            return False, "User is not a member of this organization"
+
+        return True, ""
+
+    except Exception as e:
+        return False, f"isUserMember request failed: {e}"
 
 def call_get_registry_resource(
     ctid: str, token: str, publisher_base: str, ssl_verify: bool
 ) -> tuple[bool, dict, str]:
     try:
-        r = requests.get(
-            _url("get_registry_resource", publisher_base),
-            params={"ctid": ctid},
-            headers=_headers(token),
-            timeout=60,
-            verify=ssl_verify,
-        )
-        if r.status_code == 400:
-            return False, {}, f"Registry lookup failed: {_error_detail(r)}"
-        if not r.ok:
-            return False, {}, f"Registry API error {r.status_code}: {_error_detail(r)}"
-        data = r.json()
-        if not data.get("ExistsInRegistry", False):
-            return False, {}, f"CTID '{ctid}' not found in registry"
-        return True, data, ""
-    except requests.RequestException as e:
-        return False, {}, f"Registry API request failed: {e}"
+        client = _client(token, publisher_base, ssl_verify)
 
+        response = get_registry_resource_sync(
+            client=client,
+            ctid=ctid,
+        )
+
+        if response.status_code == 400:
+            return False, {}, "Registry lookup failed"
+        if response.status_code >= 400:
+            return False, {}, f"Registry API error {response.status_code}"
+
+        data = response.parsed or {}
+        if isinstance(data, dict) and not data.get("ExistsInRegistry", False):
+            return False, {}, f"CTID '{ctid}' not found in registry"
+
+        return True, data.to_dict() if hasattr(data, "to_dict") else data, ""
+
+
+    except Exception as e:
+        return False, {}, f"Registry API request failed: {e}"
 
 def call_validate_did_key(
     did: str, alg: str, token: str, publisher_base: str, ssl_verify: bool
 ) -> tuple[bool, dict, str]:
     try:
-        r = requests.get(
-            _url("validate_did_key", publisher_base),
-            params={"did": did, "alg": alg},
-            headers=_headers(token),
-            timeout=60,
-            verify=ssl_verify,
+        client = _client(token, publisher_base, ssl_verify)
+
+        response = validate_did_key_sync(
+            client=client,
+            did=did,
+            alg=alg,
         )
-        if r.status_code == 400:
-            return False, {}, f"DID validation failed: {_error_detail(r)}"
-        if not r.ok:
-            return False, {}, f"validateDidKey error {r.status_code}: {_error_detail(r)}"
-        return True, r.json(), ""
-    except requests.RequestException as e:
+
+        if response.status_code == 400:
+            return False, {}, "DID validation failed"
+        if response.status_code >= 400:
+            return False, {}, f"validateDidKey error {response.status_code}"
+
+        return True, (response.parsed.to_dict() if response.parsed is not None else {}), ""
+
+    except Exception as e:
         return False, {}, f"validateDidKey request failed: {e}"
 
 
@@ -241,21 +193,27 @@ def call_validate_did_web(
     did: str, token: str, publisher_base: str, ssl_verify: bool
 ) -> tuple[bool, dict, str]:
     try:
-        r = requests.get(
-            _url("validate_did_web", publisher_base),
-            params={"did": did},
-            headers=_headers(token),
-            timeout=60,
-            verify=ssl_verify,
+        client = _client(token, publisher_base, ssl_verify)
+
+        response = validate_did_web_sync(
+            client=client,
+            did=did,
         )
-        if r.status_code == 400:
-            return False, {}, f"DID validation failed: {_error_detail(r)}"
-        if r.status_code == 502:
+
+        if response.status_code == 400:
+            return False, {}, "DID validation failed"
+        if response.status_code == 502:
             return False, {}, "could not fetch remote DID document (502)"
-        if not r.ok:
-            return False, {}, f"validateDidWeb error {r.status_code}: {_error_detail(r)}"
-        return True, r.json(), ""
-    except requests.RequestException as e:
+        if response.status_code >= 400:
+            return False, {}, f"validateDidWeb error {response.status_code}"
+
+        data = response.parsed or {}
+        if hasattr(data, "to_dict"):
+            data = data.to_dict()
+
+        return True, data if isinstance(data, dict) else {}, ""
+
+    except Exception as e:
         return False, {}, f"validateDidWeb request failed: {e}"
 
 
@@ -263,22 +221,34 @@ def call_create_challenge(
     ctid: str, vm_id: str, token: str, publisher_base: str, ssl_verify: bool
 ) -> tuple[bool, dict, str]:
     try:
-        r = requests.post(
-            _url("create_challenges", publisher_base),
-            headers=_headers(token),
-            json={"Ctid": ctid, "VerificationMethodIds": [vm_id]},
-            timeout=60,
-            verify=ssl_verify,
+        client = _client(token, publisher_base, ssl_verify)
+
+        body = CreateChallengesRequest(
+            ctid=ctid,
+            verification_method_ids=[vm_id],
         )
-        if r.status_code == 400:
-            return False, {}, f"createChallenges failed: {_error_detail(r)}"
-        if not r.ok:
-            return False, {}, f"createChallenges error {r.status_code}: {_error_detail(r)}"
-        challenges = r.json()
-        if not challenges:
-            return False, {}, "createChallenges returned empty array"
-        return True, challenges[0], ""
-    except requests.RequestException as e:
+
+        response = create_challenges_sync(
+            client=client,
+            body=body,
+        )
+
+        if response.status_code == 400:
+            return False, {}, "createChallenges failed"
+        if response.status_code >= 400:
+            return False, {}, f"createChallenges error {response.status_code}"
+
+        data = response.parsed
+        if not data:
+            return False, {}, "createChallenges returned empty"
+
+        if isinstance(data, list):
+            first = data[0]
+            return True, first.to_dict() if hasattr(first, "to_dict") else first, ""
+
+        return True, {}, ""
+
+    except Exception as e:
         return False, {}, f"createChallenges request failed: {e}"
 
 
@@ -286,21 +256,28 @@ def call_verify_jwt_signature(
     proof_jwt: str, challenge_uuid: str, token: str, publisher_base: str, ssl_verify: bool
 ) -> tuple[bool, str]:
     try:
-        r = requests.post(
-            _url("validate_jwt", publisher_base),
-            headers=_headers(token),
-            json={"Jwt": proof_jwt, "ChallengeId": challenge_uuid},
-            timeout=60,
-            verify=ssl_verify,
+        client = _client(token, publisher_base, ssl_verify)
+
+        body = ValidateJwtRequest(
+            jwt=proof_jwt,
+            challenge_id=challenge_uuid,
         )
-        if r.status_code == 400:
-            return False, f"JWT validation failed: {_error_detail(r)}"
-        if r.status_code == 404:
-            return False, "Challenge not found (404)"
-        if not r.ok:
-            return False, f"validateJwt error {r.status_code}: {_error_detail(r)}"
+
+        response = validate_jwt_sync(
+            client=client,
+            body=body,
+        )
+
+        if response.status_code == 400:
+            return False, "JWT validation failed"
+        if response.status_code == 404:
+            return False, "Challenge not found"
+        if response.status_code >= 400:
+            return False, f"validateJwt error {response.status_code}"
+
         return True, ""
-    except requests.RequestException as e:
+
+    except Exception as e:
         return False, f"validateJwt request failed: {e}"
 
 
@@ -309,19 +286,27 @@ def call_save_challenge_token(
     token: str, publisher_base: str, ssl_verify: bool
 ) -> tuple[bool, str]:
     try:
-        r = requests.post(
-            _url("save_challenge_token", publisher_base),
-            headers=_headers(token),
-            json={"Ctid": ctid, "ChallengeId": challenge_uuid, "Token": token_jwt},
-            timeout=60,
-            verify=ssl_verify,
+        client = _client(token, publisher_base, ssl_verify)
+
+        body = SaveChallengeTokenRequest(
+            ctid=ctid,
+            challenge_id=challenge_uuid,
+            token=token_jwt,
         )
-        if r.status_code == 400:
-            return False, f"saveChallengeToken failed: {_error_detail(r)}"
-        if not r.ok:
-            return False, f"saveChallengeToken error {r.status_code}: {_error_detail(r)}"
+
+        response = save_challenge_token_sync(
+            client=client,
+            body=body,
+        )
+
+        if response.status_code == 400:
+            return False, "saveChallengeToken failed"
+        if response.status_code >= 400:
+            return False, f"saveChallengeToken error {response.status_code}"
+
         return True, ""
-    except requests.RequestException as e:
+
+    except Exception as e:
         return False, f"saveChallengeToken request failed: {e}"
 
 
@@ -341,39 +326,37 @@ def call_submit_to_iir(
     valid_until: str = "",
 ) -> tuple[bool, str]:
     try:
-        payload = {
-            "CTID":                  ctid,
-            "DID":                   did,
-            "Name":                  name,
-            "LegalName":             legal_name,
-            "CredentialRegistryUri": registry_uri,
-            "SubjectWebPage":        subject_web_page,
-            "LogoBase64":            logo_base64 or None,
-            "LogoUri":               logo_uri or None,
-        }
-        if valid_from:
-            payload["ValidFrom"] = valid_from
-        if valid_until:
-            payload["ValidUntil"] = valid_until
+        client = _client(token, publisher_base, ssl_verify)
 
-        r = requests.post(
-            _url("submit_to_iir", publisher_base),
-            headers=_headers(token),
-            json=payload,
-            timeout=60,
-            verify=ssl_verify,
+        body = IssuerDTO(
+            ctid=ctid,
+            did=did,
+            name=name,
+            legal_name=legal_name,
+            credential_registry_uri=registry_uri,
+            subject_web_page=subject_web_page,
+            logo_base_64=logo_base64 or None,
+            logo_uri=logo_uri or None,
+            valid_from=valid_from or None,
+            valid_until=valid_until or None,
         )
-        if r.status_code == 409:
-            return False, "Did already exists (409)"
-        if r.status_code == 400:
-            return False, f"submitToIIR failed: {_error_detail(r)}"
-        if not r.ok:
-            return False, f"submitToIIR error {r.status_code}: {_error_detail(r)}"
+
+        response = submit_to_iir_sync(
+            client=client,
+            body=body,
+        )
+
+        if response.status_code == 409:
+            return False, "Did already exists"
+        if response.status_code == 400:
+            return False, "submitToIIR failed"
+        if response.status_code >= 400:
+            return False, f"submitToIIR error {response.status_code}"
+
         return True, ""
-    except requests.RequestException as e:
+
+    except Exception as e:
         return False, f"submitToIIR request failed: {e}"
-
-
 
 
 def _parse_uvarint(data: bytes) -> tuple[int, int]:
