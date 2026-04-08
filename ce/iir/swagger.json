@@ -1,0 +1,511 @@
+{
+    "swagger": "2.0",
+    "info": { "version": "v1", "title": "CTI Directory API" },
+    "host": "localhost:44330",
+    "schemes": ["https"],
+    "paths": {
+        "/api/iir/IsUserAMemberOfOrg": {
+            "get": {
+                "tags": ["IIRApi"],
+                "operationId": "IIRApi_IsUserAMemberOfOrg",
+                "consumes": [],
+                "produces": [
+                    "application/json",
+                    "text/json",
+                    "application/xml",
+                    "text/xml"
+                ],
+                "parameters": [
+                    {
+                        "name": "ctid",
+                        "in": "query",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": { "type": "object" }
+                    }
+                }
+            }
+        },
+        "/api/iir/isUserAMember/{userId}": {
+            "get": {
+                "tags": ["IIRApi"],
+                "operationId": "IIRApi_IsUserAMember",
+                "consumes": [],
+                "produces": [
+                    "application/json",
+                    "text/json",
+                    "application/xml",
+                    "text/xml"
+                ],
+                "parameters": [
+                    {
+                        "name": "userId",
+                        "in": "path",
+                        "required": true,
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    {
+                        "name": "ctid",
+                        "in": "query",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": { "type": "object" }
+                    }
+                }
+            }
+        },
+        "/api/iir/getRegistryResource": {
+            "get": {
+                "tags": ["IIRApi"],
+                "operationId": "IIRApi_GetRegistryResource",
+                "consumes": [],
+                "produces": [
+                    "application/json",
+                    "text/json",
+                    "application/xml",
+                    "text/xml"
+                ],
+                "parameters": [
+                    {
+                        "name": "ctid",
+                        "in": "query",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": { "type": "object" }
+                    }
+                }
+            }
+        },
+        "/api/iir/validateDidWeb": {
+            "get": {
+                "tags": ["IIRApi"],
+                "operationId": "IIRApi_ValidateWeb",
+                "consumes": [],
+                "produces": [
+                    "application/json",
+                    "text/json",
+                    "application/xml",
+                    "text/xml"
+                ],
+                "parameters": [
+                    {
+                        "name": "did",
+                        "in": "query",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": { "type": "object" }
+                    }
+                }
+            }
+        },
+        "/api/iir/validateDidKey": {
+            "get": {
+                "tags": ["IIRApi"],
+                "operationId": "IIRApi_ValidateKey",
+                "consumes": [],
+                "produces": [
+                    "application/json",
+                    "text/json",
+                    "application/xml",
+                    "text/xml"
+                ],
+                "parameters": [
+                    {
+                        "name": "did",
+                        "in": "query",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "alg",
+                        "in": "query",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": { "type": "object" }
+                    }
+                }
+            }
+        },
+        "/api/iir/createChallenges": {
+            "post": {
+                "tags": ["IIRApi"],
+                "operationId": "IIRApi_CreateChallenges",
+                "consumes": [
+                    "application/json",
+                    "text/json",
+                    "application/xml",
+                    "text/xml",
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "application/json",
+                    "text/json",
+                    "application/xml",
+                    "text/xml"
+                ],
+                "parameters": [
+                    {
+                        "name": "model",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/CreateChallengesRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": { "type": "object" }
+                    }
+                }
+            }
+        },
+        "/api/iir/validateJwt": {
+            "post": {
+                "tags": ["IIRApi"],
+                "operationId": "IIRApi_ValidateJwtSignature",
+                "consumes": [
+                    "application/json",
+                    "text/json",
+                    "application/xml",
+                    "text/xml",
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "application/json",
+                    "text/json",
+                    "application/xml",
+                    "text/xml"
+                ],
+                "parameters": [
+                    {
+                        "name": "model",
+                        "in": "body",
+                        "required": true,
+                        "schema": { "$ref": "#/definitions/ValidateJwtRequest" }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": { "type": "object" }
+                    }
+                }
+            }
+        },
+        "/api/iir/saveChallengeToken": {
+            "post": {
+                "tags": ["IIRApi"],
+                "operationId": "IIRApi_SaveChallengeToken",
+                "consumes": [
+                    "application/json",
+                    "text/json",
+                    "application/xml",
+                    "text/xml",
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "application/json",
+                    "text/json",
+                    "application/xml",
+                    "text/xml"
+                ],
+                "parameters": [
+                    {
+                        "name": "model",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/SaveChallengeTokenRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": { "type": "object" }
+                    }
+                }
+            }
+        },
+        "/api/iir/submitToIIR": {
+            "post": {
+                "tags": ["IIRApi"],
+                "operationId": "IIRApi_SubmitToIIR",
+                "consumes": [
+                    "application/json",
+                    "text/json",
+                    "application/xml",
+                    "text/xml",
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "application/json",
+                    "text/json",
+                    "application/xml",
+                    "text/xml"
+                ],
+                "parameters": [
+                    {
+                        "name": "dto",
+                        "in": "body",
+                        "required": true,
+                        "schema": { "$ref": "#/definitions/IssuerDTO" }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": { "type": "object" }
+                    }
+                }
+            }
+        },
+        "/api/iir/issuers": {
+            "get": {
+                "tags": ["IIRApi"],
+                "operationId": "IIRApi_GetIssuers",
+                "consumes": [],
+                "produces": [
+                    "application/json",
+                    "text/json",
+                    "application/xml",
+                    "text/xml"
+                ],
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": { "type": "object" }
+                    }
+                }
+            }
+        },
+        "/api/iir/users/{userId}/issuers": {
+            "get": {
+                "tags": ["IIRApi"],
+                "operationId": "IIRApi_GetIssuersByUser",
+                "consumes": [],
+                "produces": [
+                    "application/json",
+                    "text/json",
+                    "application/xml",
+                    "text/xml"
+                ],
+                "parameters": [
+                    {
+                        "name": "userId",
+                        "in": "path",
+                        "required": true,
+                        "type": "string",
+                        "format": "uuid"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": { "type": "object" }
+                    }
+                }
+            }
+        },
+        "/api/iir/federationFetch": {
+            "get": {
+                "tags": ["IIRApi"],
+                "operationId": "IIRApi_FederationFetch",
+                "consumes": [],
+                "produces": [
+                    "application/json",
+                    "text/json",
+                    "application/xml",
+                    "text/xml"
+                ],
+                "parameters": [
+                    {
+                        "name": "ctid",
+                        "in": "query",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "sub",
+                        "in": "query",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": { "type": "object" }
+                    }
+                }
+            }
+        },
+        "/api/iir/issuerByDid": {
+            "get": {
+                "tags": ["IIRApi"],
+                "operationId": "IIRApi_GetIssuerByDid",
+                "consumes": [],
+                "produces": [
+                    "application/json",
+                    "text/json",
+                    "application/xml",
+                    "text/xml"
+                ],
+                "parameters": [
+                    {
+                        "name": "did",
+                        "in": "query",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": { "type": "object" }
+                    }
+                }
+            }
+        },
+        "/api/iir/updateIssuer": {
+            "put": {
+                "tags": ["IIRApi"],
+                "operationId": "IIRApi_UpdateIssuer",
+                "consumes": [
+                    "application/json",
+                    "text/json",
+                    "application/xml",
+                    "text/xml",
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "application/json",
+                    "text/json",
+                    "application/xml",
+                    "text/xml"
+                ],
+                "parameters": [
+                    {
+                        "name": "dto",
+                        "in": "body",
+                        "required": true,
+                        "schema": { "$ref": "#/definitions/IssuerDTO" }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": { "type": "object" }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "CancellationToken": {
+            "type": "object",
+            "properties": {
+                "IsCancellationRequested": {
+                    "type": "boolean",
+                    "readOnly": true
+                },
+                "CanBeCanceled": { "type": "boolean", "readOnly": true },
+                "WaitHandle": {
+                    "$ref": "#/definitions/WaitHandle",
+                    "readOnly": true
+                }
+            }
+        },
+        "WaitHandle": {
+            "type": "object",
+            "properties": {
+                "Handle": { "type": "object" },
+                "SafeWaitHandle": { "$ref": "#/definitions/SafeWaitHandle" }
+            }
+        },
+        "SafeWaitHandle": {
+            "type": "object",
+            "properties": {
+                "IsInvalid": { "type": "boolean", "readOnly": true },
+                "IsClosed": { "type": "boolean", "readOnly": true }
+            }
+        },
+        "CreateChallengesRequest": {
+            "type": "object",
+            "properties": {
+                "Ctid": { "type": "string" },
+                "VerificationMethodIds": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                }
+            }
+        },
+        "ValidateJwtRequest": {
+            "type": "object",
+            "properties": {
+                "Jwt": { "type": "string" },
+                "ChallengeId": {
+                    "format": "uuid",
+                    "type": "string",
+                    "example": "00000000-0000-0000-0000-000000000000"
+                }
+            }
+        },
+        "SaveChallengeTokenRequest": {
+            "type": "object",
+            "properties": {
+                "Ctid": { "type": "string" },
+                "ChallengeId": {
+                    "format": "uuid",
+                    "type": "string",
+                    "example": "00000000-0000-0000-0000-000000000000"
+                },
+                "Token": { "type": "string" }
+            }
+        },
+        "IssuerDTO": {
+            "type": "object",
+            "properties": {
+                "CTID": { "type": "string" },
+                "DID": { "type": "string" },
+                "Name": { "type": "string" },
+                "LegalName": { "type": "string" },
+                "CredentialRegistryUri": { "type": "string" },
+                "SubjectWebPage": { "type": "string" },
+                "LogoBase64": { "type": "string" },
+                "LogoUri": { "type": "string" },
+                "ValidFrom": { "format": "date-time", "type": "string" },
+                "ValidUntil": { "format": "date-time", "type": "string" }
+            }
+        }
+    }
+}

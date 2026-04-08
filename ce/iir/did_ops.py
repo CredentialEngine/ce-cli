@@ -5,6 +5,8 @@ from __future__ import annotations
 import base64
 import json
 import re
+from functools import lru_cache
+from pathlib import Path
 from typing import Any
 
 import base58
@@ -14,6 +16,21 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import (
     Ed25519PrivateKey,
     Ed25519PublicKey,
 )
+
+from ce.iir.api.iir_client import AuthenticatedClient
+from ce.iir.api.iir_client.models.create_challenges_request import CreateChallengesRequest
+from ce.iir.api.iir_client.models.save_challenge_token_request import SaveChallengeTokenRequest
+from ce.iir.api.iir_client.models.validate_jwt_request import ValidateJwtRequest
+from ce.iir.api.iir_client.models.issuer_dto import IssuerDTO
+
+from ce.iir.api.iir_client.api.iir_api.iir_api_is_user_a_member import sync_detailed as is_user_member_sync
+from ce.iir.api.iir_client.api.iir_api.iir_api_get_registry_resource import sync_detailed as get_registry_resource_sync
+from ce.iir.api.iir_client.api.iir_api.iir_api_validate_key import sync_detailed as validate_did_key_sync
+from ce.iir.api.iir_client.api.iir_api.iir_api_validate_web import sync_detailed as validate_did_web_sync
+from ce.iir.api.iir_client.api.iir_api.iir_api_create_challenges import sync_detailed as create_challenges_sync
+from ce.iir.api.iir_client.api.iir_api.iir_api_validate_jwt_signature import sync_detailed as validate_jwt_sync
+from ce.iir.api.iir_client.api.iir_api.iir_api_save_challenge_token import sync_detailed as save_challenge_token_sync
+from ce.iir.api.iir_client.api.iir_api.iir_api_submit_to_iir import sync_detailed as submit_to_iir_sync
 
 
 CE_GUID_RE = re.compile(
@@ -29,6 +46,14 @@ DID_KEY_PREFIX_MAP = {
     "zDn":  "P-256",
     "z6LS": "X25519",
 }
+
+def _client(token: str, base_url: str, ssl_verify: bool) -> AuthenticatedClient:
+    return AuthenticatedClient(
+        base_url=base_url.rstrip("/"),
+        token=token,
+        verify_ssl=ssl_verify,
+        timeout=60.0,
+    )
 
 def validate_ctid(ctid: str) -> tuple[bool, str]:
     if not ctid:
@@ -91,90 +116,71 @@ def validate_verification_method(vm: str, did: str, api_vm_ids: list[str]) -> tu
         )
     return True, ""
 
-
-def _headers(token: str) -> dict:
-    return {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
-
-
-def _error_detail(r: requests.Response) -> str:
+def call_is_user_member(user_id, ctid, token, publisher_base, ssl_verify) -> tuple[bool, str]:
     try:
-        body = r.json()
-        return (
-            body.get("message")
-            or body.get("detail")
-            or body.get("title")
-            or body.get("Error")
-            or r.text
-        )
-    except Exception:
-        return r.text
+        client = _client(token, publisher_base, ssl_verify)
+        response = is_user_member_sync(client=client, user_id=user_id, ctid=ctid)
 
+        # Extract data
+        data = {}
+        parsed = response.parsed
+        if parsed:
+            if isinstance(parsed, dict):
+                data = parsed
+            else:
+                data = getattr(parsed, "additional_properties", {})
 
-
-def call_is_user_member(
-    user_id: str, ctid: str, token: str, publisher_base: str, ssl_verify: bool
-) -> tuple[bool, str]:
-    """GET /api/iir/isUserAMember?userId=...&ctid=...
-    Returns { valid: bool }.
-    """
-    try:
-        r = requests.get(
-            f"{publisher_base.rstrip('/')}/api/iir/isUserAMember",
-            params={"userId": user_id, "ctid": ctid},
-            headers=_headers(token),
-            timeout=60,
-            verify=ssl_verify,
-        )
-        if not r.ok:
-            return False, f"isUserMember error {r.status_code}: {_error_detail(r)}"
-        data = r.json()
-        if not data.get("valid", False):
+        valid = data.get("valid", False)
+        if not valid:
             return False, "User is not a member of this organization"
+
         return True, ""
-    except requests.RequestException as e:
+
+    except Exception as e:
         return False, f"isUserMember request failed: {e}"
 
-
-def call_get_registry_resource(
-    ctid: str, token: str, publisher_base: str, ssl_verify: bool
-) -> tuple[bool, dict, str]:
+def call_get_registry_resource(ctid, token, publisher_base, ssl_verify) -> tuple[bool, dict, str]:
     try:
-        r = requests.get(
-            f"{publisher_base.rstrip('/')}/api/iir/getRegistryResource",
-            params={"ctid": ctid},
-            headers=_headers(token),
-            timeout=60,
-            verify=ssl_verify,
-        )
-        if r.status_code == 400:
-            return False, {}, f"Registry lookup failed: {_error_detail(r)}"
-        if not r.ok:
-            return False, {}, f"Registry API error {r.status_code}: {_error_detail(r)}"
-        data = r.json()
-        if not data.get("ExistsInRegistry", False):
-            return False, {}, f"CTID '{ctid}' not found in registry"
-        return True, data, ""
-    except requests.RequestException as e:
-        return False, {}, f"Registry API request failed: {e}"
+        client = _client(token, publisher_base, ssl_verify)
+        response = get_registry_resource_sync(client=client, ctid=ctid)
 
+        data = {}
+        parsed = response.parsed
+        if parsed:
+            if isinstance(parsed, dict):
+                data = parsed
+            else:
+                data = getattr(parsed, "additional_properties", {})
+
+        exists = data.get("ExistsInRegistry", False)
+        if not exists:
+            return False, data, f"CTID '{ctid}' not found in registry"
+
+        return True, data, ""
+
+    except Exception as e:
+        return False, {}, f"Registry API request failed: {e}"
 
 def call_validate_did_key(
     did: str, alg: str, token: str, publisher_base: str, ssl_verify: bool
 ) -> tuple[bool, dict, str]:
     try:
-        r = requests.get(
-            f"{publisher_base.rstrip('/')}/api/iir/validateDidKey",
-            params={"did": did, "alg": alg},
-            headers=_headers(token),
-            timeout=60,
-            verify=ssl_verify,
+        client = _client(token, publisher_base, ssl_verify)
+
+        response = validate_did_key_sync(
+            client=client,
+            did=did,
+            alg=alg,
         )
-        if r.status_code == 400:
-            return False, {}, f"DID validation failed: {_error_detail(r)}"
-        if not r.ok:
-            return False, {}, f"validateDidKey error {r.status_code}: {_error_detail(r)}"
-        return True, r.json(), ""
-    except requests.RequestException as e:
+
+        if response.status_code == 400:
+            return False, {}, "DID validation failed"
+        if response.status_code >= 400:
+            return False, {}, f"validateDidKey error {response.status_code}"
+
+        return True, (response.parsed.to_dict() if response.parsed is not None else {}), ""
+
+    except Exception as e:
         return False, {}, f"validateDidKey request failed: {e}"
 
 
@@ -182,21 +188,27 @@ def call_validate_did_web(
     did: str, token: str, publisher_base: str, ssl_verify: bool
 ) -> tuple[bool, dict, str]:
     try:
-        r = requests.get(
-            f"{publisher_base.rstrip('/')}/api/iir/validateDidWeb",
-            params={"did": did},
-            headers=_headers(token),
-            timeout=60,
-            verify=ssl_verify,
+        client = _client(token, publisher_base, ssl_verify)
+
+        response = validate_did_web_sync(
+            client=client,
+            did=did,
         )
-        if r.status_code == 400:
-            return False, {}, f"DID validation failed: {_error_detail(r)}"
-        if r.status_code == 502:
+
+        if response.status_code == 400:
+            return False, {}, "DID validation failed"
+        if response.status_code == 502:
             return False, {}, "could not fetch remote DID document (502)"
-        if not r.ok:
-            return False, {}, f"validateDidWeb error {r.status_code}: {_error_detail(r)}"
-        return True, r.json(), ""
-    except requests.RequestException as e:
+        if response.status_code >= 400:
+            return False, {}, f"validateDidWeb error {response.status_code}"
+
+        data = response.parsed or {}
+        if hasattr(data, "to_dict"):
+            data = data.to_dict()
+
+        return True, data if isinstance(data, dict) else {}, ""
+
+    except Exception as e:
         return False, {}, f"validateDidWeb request failed: {e}"
 
 
@@ -204,48 +216,64 @@ def call_create_challenge(
     ctid: str, vm_id: str, token: str, publisher_base: str, ssl_verify: bool
 ) -> tuple[bool, dict, str]:
     try:
-        r = requests.post(
-            f"{publisher_base.rstrip('/')}/api/iir/createChallenges",
-            headers=_headers(token),
-            json={"Ctid": ctid, "VerificationMethodIds": [vm_id]},
-            timeout=60,
-            verify=ssl_verify,
-        )
-        if r.status_code == 400:
-            return False, {}, f"createChallenges failed: {_error_detail(r)}"
-        if not r.ok:
-            return False, {}, f"createChallenges error {r.status_code}: {_error_detail(r)}"
-        challenges = r.json()
-        if not challenges:
-            return False, {}, "createChallenges returned empty array"
-        return True, challenges[0], ""
-    except requests.RequestException as e:
-        return False, {}, f"createChallenges request failed: {e}"
+        client = _client(token, publisher_base, ssl_verify)
 
+        body = CreateChallengesRequest(
+            ctid=ctid,
+            verification_method_ids=[vm_id],
+        )
+
+        response = create_challenges_sync(
+            client=client,
+            body=body,
+        )
+
+        if response.status_code == 400:
+            return False, {}, "createChallenges failed"
+        if response.status_code >= 400:
+            return False, {}, f"createChallenges error {response.status_code}"
+
+        data = response.parsed
+        if not data:
+            return False, {}, "createChallenges returned empty"
+
+        if isinstance(data, list):
+            first = data[0]
+            return True, first.to_dict() if hasattr(first, "to_dict") else first, ""
+
+        return True, {}, ""
+
+    except Exception as e:
+        return False, {}, f"createChallenges request failed: {e}"
 
 
 def call_verify_jwt_signature(
     proof_jwt: str, challenge_uuid: str, token: str, publisher_base: str, ssl_verify: bool
 ) -> tuple[bool, str]:
     try:
-        r = requests.post(
-            f"{publisher_base.rstrip('/')}/api/iir/validateJwt",
-            headers=_headers(token),
-            json={"Jwt": proof_jwt, "ChallengeId": challenge_uuid},
-            timeout=60,
-            verify=ssl_verify,
+        client = _client(token, publisher_base, ssl_verify)
+
+        body = ValidateJwtRequest(
+            jwt=proof_jwt,
+            challenge_id=challenge_uuid,
         )
-        if r.status_code == 400:
-            return False, f"JWT validation failed: {_error_detail(r)}"
-        if r.status_code == 404:
-            return False, "Challenge not found (404)"
-        if not r.ok:
-            return False, f"validateJwt error {r.status_code}: {_error_detail(r)}"
+
+        response = validate_jwt_sync(
+            client=client,
+            body=body,
+        )
+
+        if response.status_code == 400:
+            return False, "JWT validation failed"
+        if response.status_code == 404:
+            return False, "Challenge not found"
+        if response.status_code >= 400:
+            return False, f"validateJwt error {response.status_code}"
+
         return True, ""
-    except requests.RequestException as e:
+
+    except Exception as e:
         return False, f"validateJwt request failed: {e}"
-
-
 
 
 def call_save_challenge_token(
@@ -253,22 +281,28 @@ def call_save_challenge_token(
     token: str, publisher_base: str, ssl_verify: bool
 ) -> tuple[bool, str]:
     try:
-        r = requests.post(
-            f"{publisher_base.rstrip('/')}/api/iir/saveChallengeToken",
-            headers=_headers(token),
-            json={"Ctid": ctid, "ChallengeId": challenge_uuid, "Token": token_jwt},
-            timeout=60,
-            verify=ssl_verify,
+        client = _client(token, publisher_base, ssl_verify)
+
+        body = SaveChallengeTokenRequest(
+            ctid=ctid,
+            challenge_id=challenge_uuid,
+            token=token_jwt,
         )
-        if r.status_code == 400:
-            return False, f"saveChallengeToken failed: {_error_detail(r)}"
-        if not r.ok:
-            return False, f"saveChallengeToken error {r.status_code}: {_error_detail(r)}"
+
+        response = save_challenge_token_sync(
+            client=client,
+            body=body,
+        )
+
+        if response.status_code == 400:
+            return False, "saveChallengeToken failed"
+        if response.status_code >= 400:
+            return False, f"saveChallengeToken error {response.status_code}"
+
         return True, ""
-    except requests.RequestException as e:
+
+    except Exception as e:
         return False, f"saveChallengeToken request failed: {e}"
-
-
 
 
 def call_submit_to_iir(
@@ -287,39 +321,37 @@ def call_submit_to_iir(
     valid_until: str = "",
 ) -> tuple[bool, str]:
     try:
-        payload = {
-            "CTID":                  ctid,
-            "DID":                   did,
-            "Name":                  name,
-            "LegalName":             legal_name,
-            "CredentialRegistryUri": registry_uri,
-            "SubjectWebPage":        subject_web_page,
-            "LogoBase64":            logo_base64 or None,
-            "LogoUri":               logo_uri or None,
-        }
-        if valid_from:
-            payload["ValidFrom"] = valid_from
-        if valid_until:
-            payload["ValidUntil"] = valid_until
+        client = _client(token, publisher_base, ssl_verify)
 
-        r = requests.post(
-            f"{publisher_base.rstrip('/')}/api/iir/submitToIIR",
-            headers=_headers(token),
-            json=payload,
-            timeout=60,
-            verify=ssl_verify,
+        body = IssuerDTO(
+            ctid=ctid,
+            did=did,
+            name=name,
+            legal_name=legal_name,
+            credential_registry_uri=registry_uri,
+            subject_web_page=subject_web_page,
+            logo_base_64=logo_base64 or None,
+            logo_uri=logo_uri or None,
+            valid_from=valid_from or None,
+            valid_until=valid_until or None,
         )
-        if r.status_code == 409:
-            return False, "Did already exists (409)"
-        if r.status_code == 400:
-            return False, f"submitToIIR failed: {_error_detail(r)}"
-        if not r.ok:
-            return False, f"submitToIIR error {r.status_code}: {_error_detail(r)}"
+
+        response = submit_to_iir_sync(
+            client=client,
+            body=body,
+        )
+
+        if response.status_code == 409:
+            return False, "Did already exists"
+        if response.status_code == 400:
+            return False, "submitToIIR failed"
+        if response.status_code >= 400:
+            return False, f"submitToIIR error {response.status_code}"
+
         return True, ""
-    except requests.RequestException as e:
+
+    except Exception as e:
         return False, f"submitToIIR request failed: {e}"
-
-
 
 
 def _parse_uvarint(data: bytes) -> tuple[int, int]:
@@ -452,8 +484,6 @@ def verify_proof_jwt(token: str, kid: str) -> tuple[bool, str]:
         return False, f"JWT error: {e}"
     except Exception as e:
         return False, f"verification error: {e}"
-
-
 
 
 def extract_user_id_from_token(access_token: str) -> str:
