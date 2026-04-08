@@ -80,7 +80,7 @@ def run_generate(
     with input_file.open(newline="", encoding="utf-8-sig") as f:
         reader   = csv.DictReader(f)
         norm_map = {field: field.strip().lower() for field in (reader.fieldnames or [])}
-        rows     = [{norm_map[k]: v.strip() for k, v in row.items()} for row in reader]
+        rows = [{norm_map[k]: (v.strip() if v is not None else "") for k, v in row.items()} for row in reader ]
 
     missing = [c for c in ("ctid", "did", "verificationmethod") if c not in norm_map.values()]
     if missing:

@@ -71,7 +71,7 @@ commands_pre =
 commands = pytest tests/ -m "not integration" --record-mode=none -s {posargs}
 
 [testenv:integration]
-commands = pytest tests/ -m integration --record-mode=none -s {posargs}
+commands = pytest tests/ -m integration --record-mode=none -s
 
 [testenv:record]
 commands = pytest tests/ -m integration --record-mode=once -s {posargs}

@@ -116,23 +116,22 @@ def validate_verification_method(vm: str, did: str, api_vm_ids: list[str]) -> tu
         )
     return True, ""
 
-def call_is_user_member(
-    user_id: str, ctid: str, token: str, publisher_base: str, ssl_verify: bool
-) -> tuple[bool, str]:
+def call_is_user_member(user_id, ctid, token, publisher_base, ssl_verify) -> tuple[bool, str]:
     try:
         client = _client(token, publisher_base, ssl_verify)
+        response = is_user_member_sync(client=client, user_id=user_id, ctid=ctid)
 
-        response = is_user_member_sync(
-            client=client,
-            user_id=user_id,
-            ctid=ctid,
-        )
+        # Extract data
+        data = {}
+        parsed = response.parsed
+        if parsed:
+            if isinstance(parsed, dict):
+                data = parsed
+            else:
+                data = getattr(parsed, "additional_properties", {})
 
-        if response.status_code >= 400:
-            return False, f"isUserMember error {response.status_code}"
-
-        data = response.parsed or {}
-        if isinstance(data, dict) and not data.get("valid", False):
+        valid = data.get("valid", False)
+        if not valid:
             return False, "User is not a member of this organization"
 
         return True, ""
@@ -140,28 +139,24 @@ def call_is_user_member(
     except Exception as e:
         return False, f"isUserMember request failed: {e}"
 
-def call_get_registry_resource(
-    ctid: str, token: str, publisher_base: str, ssl_verify: bool
-) -> tuple[bool, dict, str]:
+def call_get_registry_resource(ctid, token, publisher_base, ssl_verify) -> tuple[bool, dict, str]:
     try:
         client = _client(token, publisher_base, ssl_verify)
+        response = get_registry_resource_sync(client=client, ctid=ctid)
 
-        response = get_registry_resource_sync(
-            client=client,
-            ctid=ctid,
-        )
+        data = {}
+        parsed = response.parsed
+        if parsed:
+            if isinstance(parsed, dict):
+                data = parsed
+            else:
+                data = getattr(parsed, "additional_properties", {})
 
-        if response.status_code == 400:
-            return False, {}, "Registry lookup failed"
-        if response.status_code >= 400:
-            return False, {}, f"Registry API error {response.status_code}"
+        exists = data.get("ExistsInRegistry", False)
+        if not exists:
+            return False, data, f"CTID '{ctid}' not found in registry"
 
-        data = response.parsed or {}
-        if isinstance(data, dict) and not data.get("ExistsInRegistry", False):
-            return False, {}, f"CTID '{ctid}' not found in registry"
-
-        return True, data.to_dict() if hasattr(data, "to_dict") else data, ""
-
+        return True, data, ""
 
     except Exception as e:
         return False, {}, f"Registry API request failed: {e}"

@@ -1,14 +1,20 @@
 """
 Integration tests for ce.iir.did_ops.
 
-Run with:
+Configuration is loaded from .env.test (never hard-coded here).
+Load the file before running, e.g.:
+
+    export $(grep -v '^#' .env.test | xargs) && pytest -m integration -s
+
+Or with pytest-dotenv / python-dotenv auto-loading if configured in pytest.ini:
+
     pytest -m integration -s
+
 """
 
 from __future__ import annotations
 
 import os
-import sys
 
 import pytest
 import requests as req
@@ -28,84 +34,45 @@ from ce.iir.did_ops import (
 
 pytestmark = pytest.mark.integration
 
-PUBLISHER_BASE = "https://localhost:44330"
+# ---------------------------------------------------------------------------
+# Config — read once from the environment (populated from .env.test)
+# ---------------------------------------------------------------------------
 
-TEST_CTID    = "ce-a4041983-b1ae-4ad4-a43d-284a5b4b2d73"
-TEST_USER_ID = ""  
-TEST_DID_KEY = "did:key:z6MkgEaGfhgrDL3th8pZG8KZ1DPCX2YLa45GxUNbC2bBLkej"
-TEST_DID_WEB = "did:web:sandbox.credentialengine.org"
-TEST_ALG     = "Ed25519"
-TEST_VM      = "did:key:z6MkgEaGfhgrDL3th8pZG8KZ1DPCX2YLa45GxUNbC2bBLkej#z6MkgEaGfhgrDL3th8pZG8KZ1DPCX2YLa45GxUNbC2bBLkej"
+PUBLISHER_BASE = os.environ.get("CE_PUBLISHER_BASE", "").rstrip("/")
 
+_RAW_DID_KEY = os.environ.get("CE_TEST_DID_KEY", "")
+TEST_CTID    = os.environ.get("CE_TEST_CTID", "")
+TEST_USER_ID = os.environ.get("CE_TEST_USER_ID", "")
+TEST_DID_KEY = _RAW_DID_KEY
+TEST_DID_WEB = os.environ.get("CE_TEST_DID_WEB")
+TEST_ALG     = os.environ.get("CE_TEST_ALG", "Ed25519")
+TEST_VM      = (
+    f"{_RAW_DID_KEY}#{_RAW_DID_KEY[len('did:key:'):]}"
+    if _RAW_DID_KEY.startswith("did:key:")
+    else os.environ.get("CE_TEST_VM", "")
+)
 
+# ---------------------------------------------------------------------------
+# Session-scoped fixtures
+# ---------------------------------------------------------------------------
 
-
-def _prompt_secret(message: str) -> str:
-    """Print a prompt to stderr and read a line from the terminal directly."""
-    sys.stderr.write(message)
-    sys.stderr.flush()
-    try:
-        tty = open("CON" if sys.platform == "win32" else "/dev/tty")
-        value = tty.readline().rstrip("\n")
-        tty.close()
-    except OSError:
-        value = ""
-    return value.strip()
-
-
-@pytest.fixture(scope="session")
-def access_token() -> str:
-    """Prompt for an access token once per session.
-
-    To skip the prompt, set CE_TEST_ACCESS_TOKEN in your environment.
-    To get a token: run `ce login --env dev` then copy it from the output.
-    """
-    token = os.getenv("CE_TEST_ACCESS_TOKEN", "").strip()
-    if token:
-        return token
-
-    sys.stderr.write(
-        "\n"
-        "  ┌─ Access Token Required ──────────────────────────────────────┐\n"
-        "  │  Run `ce login --env dev` to log in, then paste your token.  │\n"
-        "  │  The token will not be echoed or stored.                     │\n"
-        "  └──────────────────────────────────────────────────────────────┘\n"
-    )
-    token = _prompt_secret("  Access token: ")
-    if not token:
-        pytest.skip("No access token provided — skipping integration tests.")
-    return token
-
-
-@pytest.fixture(scope="session")
-def private_key() -> str:
-    """Prompt for the Ed25519 private key multibase once per session.
-
-    To skip the prompt, set CE_TEST_PRIVKEY_MULTIBASE in your environment.
-    The key is never stored or logged.
-    """
-    key = os.getenv("CE_TEST_PRIVKEY_MULTIBASE", "").strip()
-    if key:
-        return key
-
-    sys.stderr.write(
-        "\n"
-        "  ┌─ Private Key Required ───────────────────────────────────────┐\n"
-        "  │  Enter the Ed25519 private key multibase for your DID.       │\n"
-        "  │  It starts with 'z' and will not be echoed or stored.        │\n"
-        "  └──────────────────────────────────────────────────────────────┘\n"
-    )
-    key = _prompt_secret("  Private key (z...): ")
-    if not key:
-        pytest.skip("No private key provided — skipping crypto tests.")
-    return key
-
-
-@pytest.fixture(scope="session")
-def user_id(access_token) -> str:
-    if TEST_USER_ID:
-        return TEST_USER_ID
-    return extract_user_id_from_token(access_token)
+@pytest.fixture(scope="session", autouse=True)
+def _require_env():
+    """Fail fast with a clear message when mandatory variables are missing."""
+    missing = [
+        name for name in (
+            "CE_PUBLISHER_BASE",
+            "CE_TEST_ACCESS_TOKEN",
+            "CE_TEST_CTID",
+            "CE_TEST_DID_KEY",
+        )
+        if not os.environ.get(name, "").strip()
+    ]
+    if missing:
+        pytest.skip(
+            "Missing required environment variables (load .env.test first): "
+            + ", ".join(missing)
+        )
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -116,6 +83,33 @@ def server_available():
     except req.exceptions.ConnectionError:
         pytest.skip(f"API server not reachable at {PUBLISHER_BASE}")
 
+
+@pytest.fixture(scope="session")
+def access_token() -> str:
+    token = os.environ.get("CE_TEST_ACCESS_TOKEN", "").strip()
+    if not token:
+        pytest.skip("CE_TEST_ACCESS_TOKEN not set — skipping integration tests.")
+    return token
+
+
+@pytest.fixture(scope="session")
+def private_key() -> str:
+    key = os.environ.get("CE_TEST_PRIVKEY_MULTIBASE", "").strip()
+    if not key:
+        pytest.skip("CE_TEST_PRIVKEY_MULTIBASE not set — skipping crypto tests.")
+    return key
+
+
+@pytest.fixture(scope="session")
+def user_id(access_token) -> str:
+    if TEST_USER_ID:
+        return TEST_USER_ID
+    return extract_user_id_from_token(access_token)
+
+
+# ---------------------------------------------------------------------------
+# Tests
+# ---------------------------------------------------------------------------
 
 class TestIsUserMemberIntegration:
     def test_member_check_returns_a_bool(self, access_token, user_id):
@@ -140,7 +134,6 @@ class TestIsUserMemberIntegration:
         assert not ok
 
 
-
 class TestGetRegistryResourceIntegration:
     def test_known_ctid_exists_in_registry(self, access_token):
         ok, data, err = call_get_registry_resource(
@@ -158,7 +151,6 @@ class TestGetRegistryResourceIntegration:
         assert err
 
 
-
 class TestValidateDidKeyIntegration:
     def test_valid_did_key_returns_vm_ids(self, access_token):
         ok, data, err = call_validate_did_key(
@@ -174,7 +166,6 @@ class TestValidateDidKeyIntegration:
         assert not ok
 
 
-
 class TestValidateDidWebIntegration:
     def test_valid_did_web_resolves(self, access_token):
         ok, data, err = call_validate_did_web(
@@ -188,7 +179,6 @@ class TestValidateDidWebIntegration:
             access_token, PUBLISHER_BASE, ssl_verify=False,
         )
         assert not ok
-
 
 
 class TestFullChallengeFlowIntegration:
