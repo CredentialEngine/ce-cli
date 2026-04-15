@@ -19,21 +19,20 @@ tox -e unit
 
 ## Release pipeline
 
-Releases are triggered by pushing a version tag to `main`.
+Releases are triggered manually via **Actions → Release → Run workflow** in GitHub.
 
-**Tag format:** `vMAJOR.MINOR.PATCH` — for example, `v1.2.0`
+**Version format:** `YYYY.MM.DD.<run_number>` — for example, `2026.04.15.42`
 
-The version number is read automatically from the git tag via `setuptools-scm` — there is no version field to manually edit.
+The version is auto-generated from the date and the pipeline run number. There is no version field to manually edit and no tags to push.
 
 **What the pipeline does:**
-1. Runs unit tests — if they fail, the release is aborted
-2. Builds the package (`.whl` and `.tar.gz`)
-3. Creates a GitHub Release with both files attached and auto-generated release notes
+1. Generates the version from the current date and run number
+2. Runs unit tests — if they fail, the release is aborted
+3. Builds the package (`.whl` and `.tar.gz`) with the generated version embedded
+4. Creates a GitHub Release tagged `v<version>` with both files attached and auto-generated release notes
 
 **How to cut a release:**
-```
-git tag v1.2.0
-git push origin v1.2.0
-```
+
+Go to the repository on GitHub → Actions → Release → Run workflow → Run workflow.
 
 That's it. The pipeline takes care of the rest.
