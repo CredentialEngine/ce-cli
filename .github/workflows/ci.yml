@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Unit tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Generate version
+        run: echo "VERSION=$(date +%Y.%m.%d).${{ github.run_number }}" >> $GITHUB_ENV
+
+      - name: Install tox and build
+        run: pip install tox build
+
+      - name: Run unit tests
+        run: tox -e unit
+        env:
+          CE_PUBLISHER_BASE: ${{ secrets.CE_PUBLISHER_BASE }}
+          CE_TEST_ACCESS_TOKEN: ${{ secrets.CE_TEST_ACCESS_TOKEN }}
+          CE_TEST_USER_ID: ${{ secrets.CE_TEST_USER_ID }}
+          CE_TEST_CTID: ${{ secrets.CE_TEST_CTID }}
+          CE_TEST_CHALLENGE_UUID: ${{ secrets.CE_TEST_CHALLENGE_UUID }}
+          CE_TEST_DID_KEY: ${{ secrets.CE_TEST_DID_KEY }}
+
+      - name: Build package
+        run: python -m build
+        env:
+          SETUPTOOLS_SCM_PRETEND_VERSION: ${{ env.VERSION }}

@@ -9,6 +9,7 @@ except ImportError:
 import click
 from rich.console import Console
 
+from ce import __version__
 from ce.commands.auth import auth_group
 from ce.commands.env import env_group
 from ce.commands.iir import iir_group
@@ -20,7 +21,7 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 
 @click.group(context_settings=CONTEXT_SETTINGS)
-@click.version_option(version="0.1.0", prog_name="ce")
+@click.version_option(version=__version__, prog_name="ce")
 @click.option(
     "--debug",
     is_flag=True,

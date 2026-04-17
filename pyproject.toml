@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=68", "setuptools-scm>=8", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "ce-cli"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Credential Engine CLI - Internal platform management tool"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -33,8 +33,11 @@ dev = [
     "pytest-mock>=3",
     "pytest-recording>=0.13",
     "vcrpy>=6",
+    "python-dotenv>=1",
     "tox>=4",
 ]
+
+[tool.setuptools_scm]
 
 [tool.setuptools.packages.find]
 where = ["."]
@@ -64,6 +67,7 @@ deps =
     pytest-mock>=3
     pytest-recording>=0.13
     vcrpy>=6
+    python-dotenv>=1
 commands_pre =
     pip install -e .
 
