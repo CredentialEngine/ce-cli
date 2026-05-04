@@ -8,9 +8,9 @@ from __future__ import annotations
 import os
 import base64
 import json
-import sys
+from datetime import datetime, timezone
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -19,27 +19,35 @@ pytestmark = pytest.mark.unit
 
 import ce.iir.did_ops as did_ops
 from ce.iir.did_ops import (
+    IIR_TASK,
     _client,
     _did_web_to_url,
     _extract_ed25519_pub_from_did_key,
     _parse_uvarint,
-    call_create_challenge,
+    _parsed_to_dict,
+    call_create_challenges,
+    call_get_organization_iir_detail,
     call_get_registry_resource,
     call_is_user_member,
     call_save_challenge_token,
     call_submit_to_iir,
+    call_validate_did,
     call_validate_did_key,
     call_validate_did_web,
     call_verify_jwt_signature,
     classify_did,
     extract_user_id_from_token,
+    merge_autofill,
     sign_proof_jwt,
     validate_ctid,
     validate_date,
+    validate_date_range,
     validate_did_key_prefix,
     validate_verification_method,
     verify_proof_jwt,
 )
+
+from ce.iir.api.iir_client.types import UNSET
 
 
 PUBLISHER_BASE = os.getenv("CE_PUBLISHER_BASE")
@@ -50,7 +58,7 @@ CHALLENGE_UUID = os.getenv("CE_TEST_CHALLENGE_UUID")
 ED25519_DID_KEY = os.getenv("CE_TEST_DID_KEY")
 ED25519_KID = (
     f"{ED25519_DID_KEY}#{ED25519_DID_KEY[len('did:key:'):]}"
-    if ED25519_DID_KEY.startswith("did:key:")
+    if ED25519_DID_KEY and ED25519_DID_KEY.startswith("did:key:")
     else ""
 )
 
@@ -69,9 +77,6 @@ class _ParsedObj:
     def __init__(self, **kwargs):
         self._data = kwargs
 
-    # FIX 1: added so call_is_user_member / call_get_registry_resource can
-    # read the payload — without this, getattr(parsed, "additional_properties", {})
-    # always returned {}, causing every _ParsedObj-based test to fail.
     @property
     def additional_properties(self):
         return self._data
@@ -86,6 +91,28 @@ class TestClient:
         assert client._base_url == PUBLISHER_BASE
         assert client.token == ACCESS_TOKEN
         assert client._verify_ssl is False
+
+
+class TestParsedToDict:
+    """_parsed_to_dict centralises SDK response unwrapping; verify all 3 shapes."""
+
+    def test_dict_passthrough(self):
+        assert _parsed_to_dict({"valid": True}) == {"valid": True}
+
+    def test_object_with_to_dict(self):
+        assert _parsed_to_dict(_ParsedObj(valid=True, name="x")) == {"valid": True, "name": "x"}
+
+    def test_object_with_only_additional_properties(self):
+        class Bare:
+            additional_properties = {"valid": False}
+
+        assert _parsed_to_dict(Bare()) == {"valid": False}
+
+    def test_none_returns_empty_dict(self):
+        assert _parsed_to_dict(None) == {}
+
+    def test_falsy_returns_empty_dict(self):
+        assert _parsed_to_dict({}) == {}
 
 
 class TestValidateCtid:
@@ -128,6 +155,42 @@ class TestValidateDate:
 
     def test_impossible_date_fails(self):
         ok, err, _ = validate_date("13/99/2024", "ValidFrom")
+        assert not ok
+        assert "MM/DD/YYYY" in err
+
+
+class TestValidateDateRange:
+
+    def test_both_empty_is_ok(self):
+        ok, err = validate_date_range("", "")
+        assert ok and err == ""
+
+    def test_only_from_provided_fails(self):
+        ok, err = validate_date_range("01/01/2024", "")
+        assert not ok
+        assert "both" in err.lower()
+
+    def test_only_until_provided_fails(self):
+        ok, err = validate_date_range("", "01/01/2024")
+        assert not ok
+        assert "both" in err.lower()
+
+    def test_until_before_from_fails(self):
+        ok, err = validate_date_range("06/01/2024", "01/01/2024")
+        assert not ok
+        assert "after" in err.lower()
+
+    def test_until_equal_to_from_fails(self):
+        ok, err = validate_date_range("01/01/2024", "01/01/2024")
+        assert not ok
+        assert "after" in err.lower()
+
+    def test_until_after_from_passes(self):
+        ok, err = validate_date_range("01/01/2024", "01/02/2024")
+        assert ok and err == ""
+
+    def test_invalid_format_propagates_error(self):
+        ok, err = validate_date_range("not-a-date", "01/01/2024")
         assert not ok
         assert "MM/DD/YYYY" in err
 
@@ -214,16 +277,11 @@ class TestCallIsUserMember:
         assert ok and err == ""
 
     def test_object_payload_with_valid_true_succeeds(self):
-        # _ParsedObj.additional_properties returns {"valid": True}, which the
-        # implementation reads via getattr(parsed, "additional_properties", {}).
         with patch("ce.iir.did_ops.is_user_member_sync") as mock_sync:
             mock_sync.return_value = _fake_response(200, _ParsedObj(valid=True))
             ok, err = call_is_user_member(USER_ID, CTID, ACCESS_TOKEN, PUBLISHER_BASE, False)
         assert ok and err == ""
 
-    # FIX 2: was "test_current_implementation_treats_object_payload_as_success"
-    # and incorrectly asserted ok=True. With additional_properties present,
-    # valid=False is now correctly read, so the call returns (False, "not a member").
     def test_object_payload_with_valid_false_fails(self):
         with patch("ce.iir.did_ops.is_user_member_sync") as mock_sync:
             mock_sync.return_value = _fake_response(200, _ParsedObj(valid=False))
@@ -231,9 +289,6 @@ class TestCallIsUserMember:
         assert not ok
         assert "not a member" in err.lower()
 
-    # FIX 3: was "test_propagates_http_error_status" asserting "403" in err.
-    # call_is_user_member has no status-code branch — a 403 with parsed=None
-    # gives data={}, valid=False, and returns the generic "not a member" message.
     def test_http_error_yields_not_member_message(self):
         with patch("ce.iir.did_ops.is_user_member_sync") as mock_sync:
             mock_sync.return_value = _fake_response(403, None)
@@ -246,6 +301,24 @@ class TestCallIsUserMember:
             ok, err = call_is_user_member(USER_ID, CTID, ACCESS_TOKEN, PUBLISHER_BASE, False)
         assert not ok and "timeout" in err
 
+    def test_default_task_is_iir(self):
+        with patch("ce.iir.did_ops.is_user_member_sync") as mock_sync:
+            mock_sync.return_value = _fake_response(200, {"valid": True})
+            call_is_user_member(USER_ID, CTID, ACCESS_TOKEN, PUBLISHER_BASE, False)
+            args, kwargs = mock_sync.call_args
+            assert kwargs["task"] == "IIR"
+            assert kwargs["task"] == IIR_TASK
+            assert kwargs["ctid"] == CTID
+
+    def test_explicit_task_overrides_default(self):
+        with patch("ce.iir.did_ops.is_user_member_sync") as mock_sync:
+            mock_sync.return_value = _fake_response(200, {"valid": True})
+            call_is_user_member(
+                USER_ID, CTID, ACCESS_TOKEN, PUBLISHER_BASE, False, task="OTHER"
+            )
+            _, kwargs = mock_sync.call_args
+            assert kwargs["task"] == "OTHER"
+
 
 class TestCallGetRegistryResource:
     def test_returns_data_when_ctid_exists(self):
@@ -256,8 +329,6 @@ class TestCallGetRegistryResource:
         assert ok and err == ""
         assert data["Name"] == "Acme"
 
-    # FIX 4: was asserting data == {}. The implementation returns the parsed dict
-    # as-is on ExistsInRegistry=False, not an empty dict.
     def test_returns_false_when_ctid_not_in_registry_dict_payload(self):
         with patch("ce.iir.did_ops.get_registry_resource_sync") as mock_sync:
             mock_sync.return_value = _fake_response(200, {"ExistsInRegistry": False})
@@ -266,9 +337,6 @@ class TestCallGetRegistryResource:
         assert data == {"ExistsInRegistry": False}
         assert "not found" in err
 
-    # FIX 5: was asserting err == "Registry lookup failed". There is no status-code
-    # branch in call_get_registry_resource — a 400 with parsed=None gives data={},
-    # ExistsInRegistry missing → exists=False → returns the "not found" message.
     def test_400_falls_through_to_not_found_message(self):
         with patch("ce.iir.did_ops.get_registry_resource_sync") as mock_sync:
             mock_sync.return_value = _fake_response(400, None)
@@ -278,23 +346,134 @@ class TestCallGetRegistryResource:
 
     def test_exception_returns_api_request_failed_message(self):
         with patch(
-            "ce.iir.did_ops.get_registry_resource_sync", side_effect=RuntimeError("conn refused")
+            "ce.iir.did_ops.get_registry_resource_sync",
+            side_effect=RuntimeError("conn refused"),
         ):
             ok, data, err = call_get_registry_resource(CTID, ACCESS_TOKEN, PUBLISHER_BASE, False)
         assert not ok and data == {}
         assert "conn refused" in err
 
 
+class TestCallGetOrganizationIIRDetail:
+
+    def test_unwraps_envelope_on_success(self):
+        body = _ParsedObj(
+            valid=True,
+            data={"LegalName": "Acme Corp", "LogoUrl": "https://acme/logo.png"},
+        )
+        with patch("ce.iir.did_ops.get_organization_iir_detail_sync") as mock_sync:
+            mock_sync.return_value = _fake_response(200, body)
+            ok, data, err = call_get_organization_iir_detail(
+                CTID, ACCESS_TOKEN, PUBLISHER_BASE, False
+            )
+        assert ok and err == ""
+        assert data["LegalName"] == "Acme Corp"
+        assert data["LogoUrl"] == "https://acme/logo.png"
+
+    def test_valid_false_returns_failure(self):
+        with patch("ce.iir.did_ops.get_organization_iir_detail_sync") as mock_sync:
+            mock_sync.return_value = _fake_response(200, {"valid": False})
+            ok, data, err = call_get_organization_iir_detail(
+                CTID, ACCESS_TOKEN, PUBLISHER_BASE, False
+            )
+        assert not ok
+        assert "not available" in err.lower()
+
+    def test_empty_envelope_returns_failure(self):
+        with patch("ce.iir.did_ops.get_organization_iir_detail_sync") as mock_sync:
+            mock_sync.return_value = _fake_response(200, None)
+            ok, data, err = call_get_organization_iir_detail(
+                CTID, ACCESS_TOKEN, PUBLISHER_BASE, False
+            )
+        assert not ok and data == {}
+        assert "empty" in err.lower()
+
+    def test_missing_data_key_returns_empty_dict(self):
+        with patch("ce.iir.did_ops.get_organization_iir_detail_sync") as mock_sync:
+            mock_sync.return_value = _fake_response(200, {"valid": True})
+            ok, data, err = call_get_organization_iir_detail(
+                CTID, ACCESS_TOKEN, PUBLISHER_BASE, False
+            )
+        assert ok and err == ""
+        assert data == {}
+
+    def test_exception_returns_failure(self):
+        with patch(
+            "ce.iir.did_ops.get_organization_iir_detail_sync",
+            side_effect=RuntimeError("network error"),
+        ):
+            ok, data, err = call_get_organization_iir_detail(
+                CTID, ACCESS_TOKEN, PUBLISHER_BASE, False
+            )
+        assert not ok and data == {}
+        assert "network error" in err
+
+
+class TestMergeAutofill:
+    def test_accounts_legal_name_overrides_registry(self):
+        registry = {"Name": "Acme", "LegalName": "Acme Inc.", "Image": "logo.png"}
+        accounts = {"LegalName": "Acme Corporation"}
+        merged = merge_autofill(registry, accounts)
+        assert merged["legal_name"] == "Acme Corporation"
+        assert merged["name"] == "Acme"
+        assert merged["image"] == "logo.png"
+
+    def test_accounts_logo_only_fills_when_registry_image_empty(self):
+        registry = {"Name": "Acme", "LegalName": "", "Image": "registry-logo.png"}
+        accounts = {"LegalName": "Acme Corp", "LogoUrl": "accounts-logo.png"}
+        merged = merge_autofill(registry, accounts)
+        assert merged["image"] == "registry-logo.png"
+
+    def test_accounts_logo_used_when_registry_image_blank(self):
+        registry = {"Name": "Acme", "LegalName": "", "Image": ""}
+        accounts = {"LegalName": "Acme Corp", "LogoUrl": "accounts-logo.png"}
+        merged = merge_autofill(registry, accounts)
+        assert merged["image"] == "accounts-logo.png"
+
+    def test_no_accounts_data_falls_back_to_registry(self):
+        registry = {
+            "Name": "Acme",
+            "LegalName": "Acme Inc.",
+            "Image": "logo.png",
+            "CredentialRegistryUri": "https://registry/x",
+            "SubjectWebpage": "https://acme.example",
+            "LogoBase64": "abc",
+        }
+        merged = merge_autofill(registry, {})
+        assert merged["legal_name"] == "Acme Inc."
+        assert merged["image"] == "logo.png"
+        assert merged["registry_uri"] == "https://registry/x"
+        assert merged["subject_webpage"] == "https://acme.example"
+        assert merged["logo_base64"] == "abc"
+
+    def test_empty_accounts_legal_name_does_not_clear_registry(self):
+        registry = {"Name": "Acme", "LegalName": "Acme Inc."}
+        accounts = {"LegalName": ""}
+        merged = merge_autofill(registry, accounts)
+        assert merged["legal_name"] == "Acme Inc."
+
+    def test_handles_missing_registry_keys_gracefully(self):
+        merged = merge_autofill({}, {})
+        assert merged == {
+            "name": "",
+            "legal_name": "",
+            "registry_uri": "",
+            "subject_webpage": "",
+            "image": "",
+            "logo_base64": "",
+        }
+
+
 class TestCallValidateDidKey:
     def test_returns_verification_method_ids_on_success(self):
-        body = _ParsedObj(verificationMethodIds=[ED25519_KID])
+        body = _ParsedObj(VerificationMethodIds=[ED25519_KID])
         with patch("ce.iir.did_ops.validate_did_key_sync") as mock_sync:
             mock_sync.return_value = _fake_response(200, body)
             ok, data, err = call_validate_did_key(
                 ED25519_DID_KEY, "Ed25519", ACCESS_TOKEN, PUBLISHER_BASE, False
             )
         assert ok and err == ""
-        assert ED25519_KID in data["verificationMethodIds"]
+        assert ED25519_KID in data["VerificationMethodIds"]
 
     def test_400_returns_generic_failure_message(self):
         with patch("ce.iir.did_ops.validate_did_key_sync") as mock_sync:
@@ -308,14 +487,14 @@ class TestCallValidateDidKey:
 
 class TestCallValidateDidWeb:
     def test_success(self):
-        body = _ParsedObj(verificationMethodIds=["did:web:example.com#key-1"])
+        body = _ParsedObj(VerificationMethodIds=["did:web:example.com#key-1"])
         with patch("ce.iir.did_ops.validate_did_web_sync") as mock_sync:
             mock_sync.return_value = _fake_response(200, body)
             ok, data, err = call_validate_did_web(
                 "did:web:example.com", ACCESS_TOKEN, PUBLISHER_BASE, False
             )
         assert ok and err == ""
-        assert data["verificationMethodIds"] == ["did:web:example.com#key-1"]
+        assert data["VerificationMethodIds"] == ["did:web:example.com#key-1"]
 
     def test_502_means_remote_did_document_unreachable(self):
         with patch("ce.iir.did_ops.validate_did_web_sync") as mock_sync:
@@ -327,42 +506,118 @@ class TestCallValidateDidWeb:
         assert "502" in err
 
 
-class TestCallCreateChallenge:
-    def _challenge_body(self):
+class TestCallValidateDid:
+    def test_did_key_path_returns_vm_ids(self):
+        body = _ParsedObj(VerificationMethodIds=[ED25519_KID])
+        with patch("ce.iir.did_ops.validate_did_key_sync") as mock_sync:
+            mock_sync.return_value = _fake_response(200, body)
+            ok, vm_ids, data, err = call_validate_did(
+                ED25519_DID_KEY, "Ed25519", ACCESS_TOKEN, PUBLISHER_BASE, False
+            )
+        assert ok and err == ""
+        assert vm_ids == [ED25519_KID]
+        assert data["VerificationMethodIds"] == [ED25519_KID]
+
+    def test_did_web_path_returns_vm_ids(self):
+        body = _ParsedObj(VerificationMethodIds=["did:web:example.com#key-1"])
+        with patch("ce.iir.did_ops.validate_did_web_sync") as mock_sync:
+            mock_sync.return_value = _fake_response(200, body)
+            ok, vm_ids, data, err = call_validate_did(
+                "did:web:example.com", "", ACCESS_TOKEN, PUBLISHER_BASE, False
+            )
+        assert ok and err == ""
+        assert vm_ids == ["did:web:example.com#key-1"]
+
+    def test_unsupported_did_method_returns_classify_error(self):
+        ok, vm_ids, data, err = call_validate_did(
+            "did:ethr:0x123", "", ACCESS_TOKEN, PUBLISHER_BASE, False
+        )
+        assert not ok
+        assert vm_ids == []
+        assert "unrecognised" in err
+
+    def test_did_key_with_bad_prefix_short_circuits(self):
+        with patch("ce.iir.did_ops.validate_did_key_sync") as mock_sync:
+            ok, vm_ids, _, err = call_validate_did(
+                "did:key:zXXXunknown", "Ed25519", ACCESS_TOKEN, PUBLISHER_BASE, False
+            )
+        assert not ok and vm_ids == []
+        assert "unrecognised" in err.lower()
+        mock_sync.assert_not_called()
+
+    def test_missing_vm_ids_returns_empty_list_not_none(self):
+        with patch("ce.iir.did_ops.validate_did_web_sync") as mock_sync:
+            mock_sync.return_value = _fake_response(200, _ParsedObj(somethingElse=True))
+            ok, vm_ids, _, err = call_validate_did(
+                "did:web:example.com", "", ACCESS_TOKEN, PUBLISHER_BASE, False
+            )
+        assert ok and err == ""
+        assert vm_ids == []
+
+
+class TestCallCreateChallenges:
+    """Batch challenges: takes a list of vm_ids, returns a list of challenge dicts."""
+
+    def _challenge_body(self, did=None, challenge=None):
         return _ParsedObj(
-            challenge=CHALLENGE_UUID,
-            Did=ED25519_DID_KEY,
+            Challenge=challenge or CHALLENGE_UUID,
+            Did=did or ED25519_DID_KEY,
             Aud="ce-api",
             Iat=1700000000,
             Exp=1700003600,
         )
 
-    def test_returns_first_challenge_on_success(self):
+    def test_returns_list_on_success(self):
         with patch("ce.iir.did_ops.create_challenges_sync") as mock_sync:
-            mock_sync.return_value = _fake_response(200, [self._challenge_body()])
-            ok, data, err = call_create_challenge(
-                CTID, ED25519_KID, ACCESS_TOKEN, PUBLISHER_BASE, False
+            mock_sync.return_value = _fake_response(
+                200, [self._challenge_body(did=f"{ED25519_DID_KEY}#k1"),
+                      self._challenge_body(did=f"{ED25519_DID_KEY}#k2")]
+            )
+            ok, data, err = call_create_challenges(
+                CTID, [f"{ED25519_DID_KEY}#k1", f"{ED25519_DID_KEY}#k2"],
+                ACCESS_TOKEN, PUBLISHER_BASE, False,
             )
         assert ok and err == ""
-        assert data["challenge"] == CHALLENGE_UUID
+        assert isinstance(data, list)
+        assert len(data) == 2
+        assert all(c["Challenge"] == CHALLENGE_UUID for c in data)
+
+    def test_passes_all_vm_ids_in_single_request(self):
+        vm_ids = [f"{ED25519_DID_KEY}#k1", f"{ED25519_DID_KEY}#k2"]
+        with patch("ce.iir.did_ops.create_challenges_sync") as mock_sync:
+            mock_sync.return_value = _fake_response(200, [self._challenge_body()])
+            call_create_challenges(CTID, vm_ids, ACCESS_TOKEN, PUBLISHER_BASE, False)
+            _, kwargs = mock_sync.call_args
+            body = kwargs["body"]
+            assert mock_sync.call_count == 1
+            assert body.verification_method_ids == vm_ids
+            assert body.ctid == CTID
+
+    def test_empty_vm_ids_short_circuits_without_api_call(self):
+        with patch("ce.iir.did_ops.create_challenges_sync") as mock_sync:
+            ok, data, err = call_create_challenges(
+                CTID, [], ACCESS_TOKEN, PUBLISHER_BASE, False
+            )
+        assert not ok and data == []
+        assert "no verification methods" in err.lower()
+        mock_sync.assert_not_called()
 
     def test_empty_response_list_is_an_error(self):
-        # An empty list is falsy -> `if not data` fires -> "returned empty" message.
         with patch("ce.iir.did_ops.create_challenges_sync") as mock_sync:
             mock_sync.return_value = _fake_response(200, [])
-            ok, data, err = call_create_challenge(
-                CTID, ED25519_KID, ACCESS_TOKEN, PUBLISHER_BASE, False
+            ok, data, err = call_create_challenges(
+                CTID, [ED25519_KID], ACCESS_TOKEN, PUBLISHER_BASE, False
             )
-        assert not ok and data == {}
+        assert not ok and data == []
         assert "empty" in err
 
     def test_400_returns_generic_failure_message(self):
         with patch("ce.iir.did_ops.create_challenges_sync") as mock_sync:
             mock_sync.return_value = _fake_response(400, None)
-            ok, data, err = call_create_challenge(
-                CTID, "bad-vm", ACCESS_TOKEN, PUBLISHER_BASE, False
+            ok, data, err = call_create_challenges(
+                CTID, ["bad-vm"], ACCESS_TOKEN, PUBLISHER_BASE, False
             )
-        assert not ok and data == {}
+        assert not ok and data == []
         assert err == "createChallenges failed"
 
 
@@ -431,7 +686,7 @@ class TestCallSubmitToIir:
             ok, err = call_submit_to_iir(*self._base_args())
         assert not ok and err == "Did already exists"
 
-    def test_valid_from_and_until_are_passed_as_model_fields(self):
+    def test_iso_strings_become_datetime_objects_on_dto(self):
         with patch("ce.iir.did_ops.submit_to_iir_sync") as mock_sync:
             mock_sync.return_value = _fake_response(200, None)
             call_submit_to_iir(
@@ -441,19 +696,54 @@ class TestCallSubmitToIir:
             )
             _, kwargs = mock_sync.call_args
             body = kwargs["body"]
-            assert body.valid_from == "2024-01-01T00:00:00Z"
-            assert body.valid_until == "2025-01-01T00:00:00Z"
+            assert isinstance(body.valid_from, datetime)
+            assert isinstance(body.valid_until, datetime)
+            assert body.valid_from == datetime(2024, 1, 1, tzinfo=timezone.utc)
+            assert body.valid_until == datetime(2025, 1, 1, tzinfo=timezone.utc)
 
-    def test_empty_optional_fields_become_none_on_model(self):
+    def test_yyyy_mm_dd_dates_also_parse(self):
+        with patch("ce.iir.did_ops.submit_to_iir_sync") as mock_sync:
+            mock_sync.return_value = _fake_response(200, None)
+            call_submit_to_iir(
+                *self._base_args(), valid_from="2024-06-15", valid_until="2025-06-15"
+            )
+            _, kwargs = mock_sync.call_args
+            body = kwargs["body"]
+            assert isinstance(body.valid_from, datetime)
+            assert body.valid_from.year == 2024 and body.valid_from.month == 6
+
+    def test_empty_optional_fields_are_unset_not_none(self):
         with patch("ce.iir.did_ops.submit_to_iir_sync") as mock_sync:
             mock_sync.return_value = _fake_response(200, None)
             call_submit_to_iir(*self._base_args())
             _, kwargs = mock_sync.call_args
             body = kwargs["body"]
-            assert body.logo_uri is None
-            assert body.logo_base_64 is None
-            assert body.valid_from is None
-            assert body.valid_until is None
+            assert body.logo_uri is UNSET
+            assert body.logo_base_64 is UNSET
+            assert body.valid_from is UNSET
+            assert body.valid_until is UNSET
+
+    def test_dto_to_dict_does_not_crash_on_empty_optionals(self):
+        with patch("ce.iir.did_ops.submit_to_iir_sync") as mock_sync:
+            mock_sync.return_value = _fake_response(200, None)
+            call_submit_to_iir(*self._base_args())
+            _, kwargs = mock_sync.call_args
+            body = kwargs["body"]
+            d = body.to_dict()
+            assert "ValidFrom" not in d
+            assert "ValidUntil" not in d
+            assert "LogoUri" not in d
+            assert "LogoBase64" not in d
+
+    def test_invalid_date_string_falls_back_to_unset(self):
+        with patch("ce.iir.did_ops.submit_to_iir_sync") as mock_sync:
+            mock_sync.return_value = _fake_response(200, None)
+            call_submit_to_iir(
+                *self._base_args(), valid_from="garbage-date", valid_until=""
+            )
+            _, kwargs = mock_sync.call_args
+            body = kwargs["body"]
+            assert body.valid_from is UNSET
 
 
 class TestHelpers:
@@ -471,7 +761,10 @@ class TestHelpers:
         assert _did_web_to_url("did:web:example.com") == "https://example.com/.well-known/did.json"
 
     def test_did_web_to_url_with_path(self):
-        assert _did_web_to_url("did:web:example.com:users:alice") == "https://example.com/users/alice/did.json"
+        assert (
+            _did_web_to_url("did:web:example.com:users:alice")
+            == "https://example.com/users/alice/did.json"
+        )
 
 
 @pytest.fixture(scope="session")
@@ -510,10 +803,6 @@ class TestJwtCrypto:
         ok, err = verify_proof_jwt(token, ED25519_KID)
         assert ok, err
 
-    # FIX 6: the old version mutated the last base64url character, which may be
-    # padding-ignored (it can contribute 0 bits of actual data), so the decoded
-    # signature bytes were unchanged and verification still passed. Mutating the
-    # first character always affects the decoded bytes.
     def test_tampered_signature_fails_verification(self, private_key):
         token = sign_proof_jwt(private_key, ED25519_KID, self._make_payload())
         parts = token.split(".")

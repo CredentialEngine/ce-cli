@@ -20,7 +20,8 @@ import pytest
 import requests as req
 
 from ce.iir.did_ops import (
-    call_create_challenge,
+    call_create_challenges,
+    call_get_organization_iir_detail,
     call_get_registry_resource,
     call_is_user_member,
     call_save_challenge_token,
@@ -79,8 +80,8 @@ def _require_env():
 def server_available():
     """Skip everything if the API server isn't reachable."""
     try:
-        req.get(f"{PUBLISHER_BASE}/api/iir/isUserAMember", timeout=5, verify=False)
-    except req.exceptions.ConnectionError:
+        req.get(f"{PUBLISHER_BASE}/api/iir", timeout=5, verify=False)
+    except (req.exceptions.ConnectionError, req.exceptions.Timeout):
         pytest.skip(f"API server not reachable at {PUBLISHER_BASE}")
 
 
@@ -151,6 +152,28 @@ class TestGetRegistryResourceIntegration:
         assert err
 
 
+class TestGetOrganizationIIRDetailIntegration:
+
+    def test_known_ctid_returns_org_detail_or_skips(self, access_token):
+        ok, data, err = call_get_organization_iir_detail(
+            TEST_CTID, access_token, PUBLISHER_BASE, ssl_verify=False
+        )
+        if not ok:
+            pytest.skip(f"Org has no Accounts detail yet: {err}")
+
+        assert data.get("LegalName") or data.get("LogoUrl"), (
+            "getOrganizationIIRDetail returned valid=true but data was empty"
+        )
+
+    def test_unknown_ctid_returns_failure(self, access_token):
+        ok, _, err = call_get_organization_iir_detail(
+            "ce-00000000-0000-0000-0000-999999999999",
+            access_token, PUBLISHER_BASE, ssl_verify=False,
+        )
+        assert not ok
+        assert err
+
+
 class TestValidateDidKeyIntegration:
     def test_valid_did_key_returns_vm_ids(self, access_token):
         ok, data, err = call_validate_did_key(
@@ -168,6 +191,8 @@ class TestValidateDidKeyIntegration:
 
 class TestValidateDidWebIntegration:
     def test_valid_did_web_resolves(self, access_token):
+        if not TEST_DID_WEB:
+            pytest.skip("CE_TEST_DID_WEB not set — skipping did:web integration test.")
         ok, data, err = call_validate_did_web(
             TEST_DID_WEB, access_token, PUBLISHER_BASE, ssl_verify=False
         )
@@ -183,19 +208,29 @@ class TestValidateDidWebIntegration:
 
 class TestFullChallengeFlowIntegration:
     def test_create_challenge(self, access_token):
-        ok, challenge, err = call_create_challenge(
-            TEST_CTID, TEST_VM, access_token, PUBLISHER_BASE, ssl_verify=False
+        ok, challenges, err = call_create_challenges(
+            TEST_CTID, [TEST_VM], access_token, PUBLISHER_BASE, ssl_verify=False
         )
         assert ok, f"createChallenges failed: {err}"
-        assert challenge.get("challenge") or challenge.get("Challenge")
+        assert isinstance(challenges, list) and challenges
+        first = challenges[0]
+        assert first.get("Challenge") or first.get("challenge")
 
     def test_full_sign_verify_save_flow(self, access_token, private_key):
-        ok, challenge, err = call_create_challenge(
-            TEST_CTID, TEST_VM, access_token, PUBLISHER_BASE, ssl_verify=False
+        ok, challenges, err = call_create_challenges(
+            TEST_CTID, [TEST_VM], access_token, PUBLISHER_BASE, ssl_verify=False
         )
         assert ok, f"createChallenges failed: {err}"
+        assert challenges, "createChallenges returned empty list"
 
-        challenge_uuid = challenge.get("challenge") or challenge.get("Challenge", "")
+        challenge = next(
+            (c for c in challenges if (c.get("Did") or c.get("did")) == TEST_VM),
+            challenges[0],
+        )
+
+        challenge_uuid = challenge.get("Challenge") or challenge.get("challenge", "")
+        assert challenge_uuid, "Challenge UUID missing from response"
+
         payload = {
             "did":       challenge.get("Did") or challenge.get("did", TEST_DID_KEY),
             "challenge": challenge_uuid,

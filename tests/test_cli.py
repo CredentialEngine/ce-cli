@@ -23,7 +23,7 @@ from ce.iir.did_ops import (
     _did_web_to_url,
     _extract_ed25519_pub_from_did_key,
     _parse_uvarint,
-    call_create_challenge,
+    call_create_challenges,
     call_get_registry_resource,
     call_is_user_member,
     call_save_challenge_token,
@@ -322,44 +322,44 @@ class TestCallValidateDidWeb:
         assert "502" in err
 
 
-class TestCallCreateChallenge:
+class TestCallCreateChallenges:
     def _challenge_body(self):
         return _ParsedObj(
-            challenge=CHALLENGE_UUID,
+            Challenge=CHALLENGE_UUID,
             Did=ED25519_DID_KEY,
             Aud="ce-api",
             Iat=1700000000,
             Exp=1700003600,
         )
 
-    def test_returns_first_challenge_on_success(self):
+    def test_returns_list_on_success(self):
         with patch("ce.iir.did_ops.create_challenges_sync") as mock_sync:
             mock_sync.return_value = _fake_response(200, [self._challenge_body()])
-            ok, data, err = call_create_challenge(
-                CTID, ED25519_KID, ACCESS_TOKEN, PUBLISHER_BASE, False
+            ok, data, err = call_create_challenges(
+                CTID, [ED25519_KID], ACCESS_TOKEN, PUBLISHER_BASE, False
             )
         assert ok and err == ""
-        assert data["challenge"] == CHALLENGE_UUID
+        assert isinstance(data, list)
+        assert len(data) == 1
+        assert data[0]["Challenge"] == CHALLENGE_UUID
 
     def test_empty_response_list_is_an_error(self):
-        # An empty list is falsy -> `if not data` fires -> "returned empty" message.
         with patch("ce.iir.did_ops.create_challenges_sync") as mock_sync:
             mock_sync.return_value = _fake_response(200, [])
-            ok, data, err = call_create_challenge(
-                CTID, ED25519_KID, ACCESS_TOKEN, PUBLISHER_BASE, False
+            ok, data, err = call_create_challenges(
+                CTID, [ED25519_KID], ACCESS_TOKEN, PUBLISHER_BASE, False
             )
-        assert not ok and data == {}
+        assert not ok and data == []
         assert "empty" in err
 
     def test_400_returns_generic_failure_message(self):
         with patch("ce.iir.did_ops.create_challenges_sync") as mock_sync:
             mock_sync.return_value = _fake_response(400, None)
-            ok, data, err = call_create_challenge(
-                CTID, "bad-vm", ACCESS_TOKEN, PUBLISHER_BASE, False
+            ok, data, err = call_create_challenges(
+                CTID, ["bad-vm"], ACCESS_TOKEN, PUBLISHER_BASE, False
             )
-        assert not ok and data == {}
+        assert not ok and data == []
         assert err == "createChallenges failed"
-
 
 class TestCallVerifyJwtSignature:
     def test_success(self):
@@ -427,6 +427,7 @@ class TestCallSubmitToIir:
         assert not ok and err == "Did already exists"
 
     def test_valid_from_and_until_are_passed_as_model_fields(self):
+        from datetime import datetime, timezone
         with patch("ce.iir.did_ops.submit_to_iir_sync") as mock_sync:
             mock_sync.return_value = _fake_response(200, None)
             call_submit_to_iir(
@@ -436,19 +437,22 @@ class TestCallSubmitToIir:
             )
             _, kwargs = mock_sync.call_args
             body = kwargs["body"]
-            assert body.valid_from == "2024-01-01T00:00:00Z"
-            assert body.valid_until == "2025-01-01T00:00:00Z"
+            assert isinstance(body.valid_from, datetime)
+            assert isinstance(body.valid_until, datetime)
+            assert body.valid_from == datetime(2024, 1, 1, tzinfo=timezone.utc)
+            assert body.valid_until == datetime(2025, 1, 1, tzinfo=timezone.utc)
 
-    def test_empty_optional_fields_become_none_on_model(self):
+    def test_empty_optional_fields_are_unset_not_none(self):
+        from ce.iir.api.iir_client.types import UNSET
         with patch("ce.iir.did_ops.submit_to_iir_sync") as mock_sync:
             mock_sync.return_value = _fake_response(200, None)
             call_submit_to_iir(*self._base_args())
             _, kwargs = mock_sync.call_args
             body = kwargs["body"]
-            assert body.logo_uri is None
-            assert body.logo_base_64 is None
-            assert body.valid_from is None
-            assert body.valid_until is None
+            assert body.logo_uri is UNSET
+            assert body.logo_base_64 is UNSET
+            assert body.valid_from is UNSET
+            assert body.valid_until is UNSET
 
 
 class TestHelpers:
