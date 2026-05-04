@@ -7,6 +7,7 @@ from .iir_api_federation_fetch_response_200 import IIRApiFederationFetchResponse
 from .iir_api_get_issuer_by_did_response_200 import IIRApiGetIssuerByDidResponse200
 from .iir_api_get_issuers_by_user_response_200 import IIRApiGetIssuersByUserResponse200
 from .iir_api_get_issuers_response_200 import IIRApiGetIssuersResponse200
+from .iir_api_get_organization_iir_detail_response_200 import IIRApiGetOrganizationIIRDetailResponse200
 from .iir_api_get_registry_resource_response_200 import IIRApiGetRegistryResourceResponse200
 from .iir_api_is_user_a_member_of_org_response_200 import IIRApiIsUserAMemberOfOrgResponse200
 from .iir_api_is_user_a_member_response_200 import IIRApiIsUserAMemberResponse200
@@ -16,7 +17,7 @@ from .iir_api_update_issuer_response_200 import IIRApiUpdateIssuerResponse200
 from .iir_api_validate_jwt_signature_response_200 import IIRApiValidateJwtSignatureResponse200
 from .iir_api_validate_key_response_200 import IIRApiValidateKeyResponse200
 from .iir_api_validate_web_response_200 import IIRApiValidateWebResponse200
-from .issuer_dto import IssuerDTO
+from .pub_issuer_dto import PubIssuerDTO
 from .safe_wait_handle import SafeWaitHandle
 from .save_challenge_token_request import SaveChallengeTokenRequest
 from .validate_jwt_request import ValidateJwtRequest
@@ -31,6 +32,7 @@ __all__ = (
     "IIRApiGetIssuerByDidResponse200",
     "IIRApiGetIssuersByUserResponse200",
     "IIRApiGetIssuersResponse200",
+    "IIRApiGetOrganizationIIRDetailResponse200",
     "IIRApiGetRegistryResourceResponse200",
     "IIRApiIsUserAMemberOfOrgResponse200",
     "IIRApiIsUserAMemberResponse200",
@@ -40,7 +42,7 @@ __all__ = (
     "IIRApiValidateJwtSignatureResponse200",
     "IIRApiValidateKeyResponse200",
     "IIRApiValidateWebResponse200",
-    "IssuerDTO",
+    "PubIssuerDTO",
     "SafeWaitHandle",
     "SaveChallengeTokenRequest",
     "ValidateJwtRequest",

@@ -1,4 +1,7 @@
+npm install -g swagger2openapi
 pip install openapi-python-client --user
+
+swagger2openapi ce/iir/swagger.json -o ce/iir/openapi.json
 
 python -m openapi_python_client generate `
     --path ce/iir/openapi.json `

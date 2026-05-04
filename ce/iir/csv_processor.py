@@ -22,7 +22,7 @@ from rich.table import Table, box
 
 from ce.iir.did_ops import (
     call_is_user_member,
-    call_create_challenge,
+    call_create_challenges,
     call_get_registry_resource,
     call_save_challenge_token, 
     call_validate_did_key,
@@ -165,7 +165,7 @@ def run_generate(
             if not ok:
                 fail(err)
             else:
-                api_vm_ids = data.get("verificationMethodIds") or []
+                api_vm_ids = data.get("VerificationMethodIds") or data.get("verificationMethodIds") or []
 
         if not error:
             ok, err = validate_verification_method(vm, did, api_vm_ids)
@@ -175,19 +175,25 @@ def run_generate(
         challenge_uuid    = ""
         challenge_payload = {}
         if not error:
-            ok, challenge, err = call_create_challenge(
-                ctid, vm, access_token, env.publisher_base, env.ssl_verify
+            ok, challenges_list, err = call_create_challenges(
+                ctid, [vm], access_token, env.publisher_base, env.ssl_verify
             )
             if not ok:
                 fail(err)
+            elif not challenges_list:
+                fail("createChallenges returned no challenges")
             else:
-                challenge_uuid = challenge.get("challenge") or challenge.get("Challenge", "")
+                challenge = next(
+                    (c for c in challenges_list if (c.get("Did") or c.get("did")) == vm),
+                    challenges_list[0],
+                )
+                challenge_uuid = challenge.get("Challenge") or challenge.get("challenge", "")
                 challenge_payload = {
-                    "did":       challenge.get("Did") or challenge.get("did", did),          
+                    "did":       challenge.get("Did")       or challenge.get("did", did),
                     "challenge": challenge_uuid,
-                    "aud":       challenge.get("Aud") or challenge.get("aud", ""),
-                    "iat":       challenge.get("Iat") or challenge.get("iat", 0),
-                    "exp":       challenge.get("Exp") or challenge.get("exp", 0),
+                    "aud":       challenge.get("Aud")       or challenge.get("aud", ""),
+                    "iat":       challenge.get("Iat")       or challenge.get("iat", 0),
+                    "exp":       challenge.get("Exp")       or challenge.get("exp", 0),
                     "ctid":      ctid,
                 }
 

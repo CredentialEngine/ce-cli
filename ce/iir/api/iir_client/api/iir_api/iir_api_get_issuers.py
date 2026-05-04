@@ -9,22 +9,41 @@ from ...types import Response, UNSET
 from ... import errors
 
 from ...models.iir_api_get_issuers_response_200 import IIRApiGetIssuersResponse200
+from ...types import UNSET, Unset
 from typing import cast
 
 
 
 def _get_kwargs(
-    
+    *,
+    page: int | Unset = UNSET,
+    page_size: int | Unset = UNSET,
+    keyword: str | Unset = UNSET,
+    task: str | Unset = UNSET,
+
 ) -> dict[str, Any]:
     
 
     
 
-    
+    params: dict[str, Any] = {}
+
+    params["page"] = page
+
+    params["pageSize"] = page_size
+
+    params["keyword"] = keyword
+
+    params["task"] = task
+
+
+    params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
+
 
     _kwargs: dict[str, Any] = {
         "method": "get",
         "url": "/api/iir/issuers",
+        "params": params,
     }
 
 
@@ -58,9 +77,19 @@ def _build_response(*, client: AuthenticatedClient | Client, response: httpx.Res
 def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
+    page: int | Unset = UNSET,
+    page_size: int | Unset = UNSET,
+    keyword: str | Unset = UNSET,
+    task: str | Unset = UNSET,
 
 ) -> Response[IIRApiGetIssuersResponse200]:
     """ 
+    Args:
+        page (int | Unset):
+        page_size (int | Unset):
+        keyword (str | Unset):
+        task (str | Unset):
+
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
@@ -71,7 +100,11 @@ def sync_detailed(
 
 
     kwargs = _get_kwargs(
-        
+        page=page,
+        page_size=page_size,
+        keyword=keyword,
+        task=task,
+
     )
 
     response = client.get_httpx_client().request(
@@ -83,9 +116,19 @@ def sync_detailed(
 def sync(
     *,
     client: AuthenticatedClient | Client,
+    page: int | Unset = UNSET,
+    page_size: int | Unset = UNSET,
+    keyword: str | Unset = UNSET,
+    task: str | Unset = UNSET,
 
 ) -> IIRApiGetIssuersResponse200 | None:
     """ 
+    Args:
+        page (int | Unset):
+        page_size (int | Unset):
+        keyword (str | Unset):
+        task (str | Unset):
+
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
@@ -97,15 +140,29 @@ def sync(
 
     return sync_detailed(
         client=client,
+page=page,
+page_size=page_size,
+keyword=keyword,
+task=task,
 
     ).parsed
 
 async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
+    page: int | Unset = UNSET,
+    page_size: int | Unset = UNSET,
+    keyword: str | Unset = UNSET,
+    task: str | Unset = UNSET,
 
 ) -> Response[IIRApiGetIssuersResponse200]:
     """ 
+    Args:
+        page (int | Unset):
+        page_size (int | Unset):
+        keyword (str | Unset):
+        task (str | Unset):
+
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
@@ -116,7 +173,11 @@ async def asyncio_detailed(
 
 
     kwargs = _get_kwargs(
-        
+        page=page,
+        page_size=page_size,
+        keyword=keyword,
+        task=task,
+
     )
 
     response = await client.get_async_httpx_client().request(
@@ -128,9 +189,19 @@ async def asyncio_detailed(
 async def asyncio(
     *,
     client: AuthenticatedClient | Client,
+    page: int | Unset = UNSET,
+    page_size: int | Unset = UNSET,
+    keyword: str | Unset = UNSET,
+    task: str | Unset = UNSET,
 
 ) -> IIRApiGetIssuersResponse200 | None:
     """ 
+    Args:
+        page (int | Unset):
+        page_size (int | Unset):
+        keyword (str | Unset):
+        task (str | Unset):
+
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
@@ -142,5 +213,9 @@ async def asyncio(
 
     return (await asyncio_detailed(
         client=client,
+        page=page,
+        page_size=page_size,
+        keyword=keyword,
+        task=task,
 
     )).parsed

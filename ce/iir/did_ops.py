@@ -21,17 +21,18 @@ from ce.iir.api.iir_client import AuthenticatedClient
 from ce.iir.api.iir_client.models.create_challenges_request import CreateChallengesRequest
 from ce.iir.api.iir_client.models.save_challenge_token_request import SaveChallengeTokenRequest
 from ce.iir.api.iir_client.models.validate_jwt_request import ValidateJwtRequest
-from ce.iir.api.iir_client.models.issuer_dto import IssuerDTO
+from ce.iir.api.iir_client.models.pub_issuer_dto import PubIssuerDTO
 
 from ce.iir.api.iir_client.api.iir_api.iir_api_is_user_a_member import sync_detailed as is_user_member_sync
 from ce.iir.api.iir_client.api.iir_api.iir_api_get_registry_resource import sync_detailed as get_registry_resource_sync
+from ce.iir.api.iir_client.api.iir_api.iir_api_get_organization_iir_detail import sync_detailed as get_organization_iir_detail_sync
 from ce.iir.api.iir_client.api.iir_api.iir_api_validate_key import sync_detailed as validate_did_key_sync
 from ce.iir.api.iir_client.api.iir_api.iir_api_validate_web import sync_detailed as validate_did_web_sync
 from ce.iir.api.iir_client.api.iir_api.iir_api_create_challenges import sync_detailed as create_challenges_sync
 from ce.iir.api.iir_client.api.iir_api.iir_api_validate_jwt_signature import sync_detailed as validate_jwt_sync
 from ce.iir.api.iir_client.api.iir_api.iir_api_save_challenge_token import sync_detailed as save_challenge_token_sync
 from ce.iir.api.iir_client.api.iir_api.iir_api_submit_to_iir import sync_detailed as submit_to_iir_sync
-
+from ce.iir.api.iir_client.types import UNSET
 
 CE_GUID_RE = re.compile(
     r"^ce-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
@@ -47,6 +48,8 @@ DID_KEY_PREFIX_MAP = {
     "z6LS": "X25519",
 }
 
+IIR_TASK = "IIR"
+
 def _client(token: str, base_url: str, ssl_verify: bool) -> AuthenticatedClient:
     return AuthenticatedClient(
         base_url=base_url.rstrip("/"),
@@ -54,6 +57,23 @@ def _client(token: str, base_url: str, ssl_verify: bool) -> AuthenticatedClient:
         verify_ssl=ssl_verify,
         timeout=60.0,
     )
+
+
+def _parsed_to_dict(parsed: Any) -> dict:
+   
+    if not parsed:
+        return {}
+    if isinstance(parsed, dict):
+        return parsed
+    if hasattr(parsed, "to_dict"):
+        try:
+            d = parsed.to_dict()
+            if isinstance(d, dict):
+                return d
+        except Exception:
+            pass
+    return getattr(parsed, "additional_properties", {}) or {}
+
 
 def validate_ctid(ctid: str) -> tuple[bool, str]:
     if not ctid:
@@ -74,6 +94,31 @@ def validate_date(value: str, field_name: str) -> tuple[bool, str, str]:
         return True, "", iso_value
     except ValueError:
         return False, f"{field_name} must be in MM/DD/YYYY format, got '{value}'", ""
+
+
+def validate_date_range(valid_from: str, valid_until: str) -> tuple[bool, str]:
+    """Mirror the React page's both-or-neither + vu > vf cross-check.
+
+    Inputs are the raw user values (any format accepted by validate_date).
+    """
+    vf = (valid_from or "").strip()
+    vu = (valid_until or "").strip()
+
+    if not vf and not vu:
+        return True, ""
+    if bool(vf) != bool(vu):
+        return False, "If you provide dates, both Valid From and Valid Until are required."
+
+    ok_vf, err_vf, iso_vf = validate_date(vf, "Valid From")
+    if not ok_vf:
+        return False, err_vf
+    ok_vu, err_vu, iso_vu = validate_date(vu, "Valid Until")
+    if not ok_vu:
+        return False, err_vu
+
+    if iso_vu <= iso_vf:
+        return False, "Valid Until must be after Valid From."
+    return True, ""
 
 
 def classify_did(did: str) -> tuple[str, str]:
@@ -116,20 +161,15 @@ def validate_verification_method(vm: str, did: str, api_vm_ids: list[str]) -> tu
         )
     return True, ""
 
-def call_is_user_member(user_id, ctid, token, publisher_base, ssl_verify) -> tuple[bool, str]:
+
+def call_is_user_member(
+    user_id, ctid, token, publisher_base, ssl_verify, task: str = IIR_TASK
+) -> tuple[bool, str]:
     try:
         client = _client(token, publisher_base, ssl_verify)
-        response = is_user_member_sync(client=client, user_id=user_id, ctid=ctid)
+        response = is_user_member_sync(user_id, client=client, task=task, ctid=ctid)
 
-        # Extract data
-        data = {}
-        parsed = response.parsed
-        if parsed:
-            if isinstance(parsed, dict):
-                data = parsed
-            else:
-                data = getattr(parsed, "additional_properties", {})
-
+        data = _parsed_to_dict(response.parsed)
         valid = data.get("valid", False)
         if not valid:
             return False, "User is not a member of this organization"
@@ -144,14 +184,7 @@ def call_get_registry_resource(ctid, token, publisher_base, ssl_verify) -> tuple
         client = _client(token, publisher_base, ssl_verify)
         response = get_registry_resource_sync(client=client, ctid=ctid)
 
-        data = {}
-        parsed = response.parsed
-        if parsed:
-            if isinstance(parsed, dict):
-                data = parsed
-            else:
-                data = getattr(parsed, "additional_properties", {})
-
+        data = _parsed_to_dict(response.parsed)
         exists = data.get("ExistsInRegistry", False)
         if not exists:
             return False, data, f"CTID '{ctid}' not found in registry"
@@ -160,6 +193,56 @@ def call_get_registry_resource(ctid, token, publisher_base, ssl_verify) -> tuple
 
     except Exception as e:
         return False, {}, f"Registry API request failed: {e}"
+
+
+def call_get_organization_iir_detail(
+    ctid, token, publisher_base, ssl_verify
+) -> tuple[bool, dict, str]:
+    try:
+        client = _client(token, publisher_base, ssl_verify)
+        response = get_organization_iir_detail_sync(client=client, ctid=ctid)
+
+        envelope = _parsed_to_dict(response.parsed)
+        if not envelope:
+            return False, {}, "getOrganizationIIRDetail returned empty"
+
+        if not envelope.get("valid", False):
+            return False, envelope, "Organization IIR detail not available"
+
+        inner = envelope.get("data") or {}
+        if not isinstance(inner, dict):
+            inner = {}
+
+        return True, inner, ""
+
+    except Exception as e:
+        return False, {}, f"getOrganizationIIRDetail request failed: {e}"
+
+
+def merge_autofill(registry: dict, accounts: dict) -> dict:
+   
+    name = registry.get("Name", "") or ""
+    registry_uri = registry.get("CredentialRegistryUri", "") or ""
+    subject_webpage = registry.get("SubjectWebpage", "") or ""
+    image = registry.get("Image", "") or ""
+    legal_name = registry.get("LegalName", "") or ""
+    logo_base64 = registry.get("LogoBase64", "") or ""
+
+    if accounts:
+        if accounts.get("LegalName"):
+            legal_name = accounts["LegalName"]
+        if not image and accounts.get("LogoUrl"):
+            image = accounts["LogoUrl"]
+
+    return {
+        "name": name,
+        "legal_name": legal_name,
+        "registry_uri": registry_uri,
+        "subject_webpage": subject_webpage,
+        "image": image,
+        "logo_base64": logo_base64,
+    }
+
 
 def call_validate_did_key(
     did: str, alg: str, token: str, publisher_base: str, ssl_verify: bool
@@ -178,7 +261,7 @@ def call_validate_did_key(
         if response.status_code >= 400:
             return False, {}, f"validateDidKey error {response.status_code}"
 
-        return True, (response.parsed.to_dict() if response.parsed is not None else {}), ""
+        return True, _parsed_to_dict(response.parsed), ""
 
     except Exception as e:
         return False, {}, f"validateDidKey request failed: {e}"
@@ -202,25 +285,49 @@ def call_validate_did_web(
         if response.status_code >= 400:
             return False, {}, f"validateDidWeb error {response.status_code}"
 
-        data = response.parsed or {}
-        if hasattr(data, "to_dict"):
-            data = data.to_dict()
-
-        return True, data if isinstance(data, dict) else {}, ""
+        return True, _parsed_to_dict(response.parsed), ""
 
     except Exception as e:
         return False, {}, f"validateDidWeb request failed: {e}"
 
 
-def call_create_challenge(
-    ctid: str, vm_id: str, token: str, publisher_base: str, ssl_verify: bool
-) -> tuple[bool, dict, str]:
+def call_validate_did(
+    did: str, alg: str, token: str, publisher_base: str, ssl_verify: bool
+) -> tuple[bool, list[str], dict, str]:
+   
+    kind, kind_err = classify_did(did)
+    if kind == "unknown":
+        return False, [], {}, kind_err or "Unsupported DID method"
+
+    if kind == "did:key":
+        ok_pfx, err_pfx = validate_did_key_prefix(did, alg)
+        if not ok_pfx:
+            return False, [], {}, err_pfx
+        ok, data, err = call_validate_did_key(did, alg, token, publisher_base, ssl_verify)
+    else:
+        ok, data, err = call_validate_did_web(did, token, publisher_base, ssl_verify)
+
+    if not ok:
+        return False, [], data, err
+
+    vm_ids = data.get("VerificationMethodIds") or []
+    if not isinstance(vm_ids, list):
+        vm_ids = []
+    return True, vm_ids, data, ""
+
+
+def call_create_challenges(
+    ctid: str, vm_ids: list[str], token: str, publisher_base: str, ssl_verify: bool
+) -> tuple[bool, list[dict], str]:
+    if not vm_ids:
+        return False, [], "no verification methods to challenge"
+
     try:
         client = _client(token, publisher_base, ssl_verify)
 
         body = CreateChallengesRequest(
             ctid=ctid,
-            verification_method_ids=[vm_id],
+            verification_method_ids=vm_ids,
         )
 
         response = create_challenges_sync(
@@ -229,22 +336,26 @@ def call_create_challenge(
         )
 
         if response.status_code == 400:
-            return False, {}, "createChallenges failed"
+            return False, [], "createChallenges failed"
         if response.status_code >= 400:
-            return False, {}, f"createChallenges error {response.status_code}"
+            return False, [], f"createChallenges error {response.status_code}"
 
         data = response.parsed
         if not data:
-            return False, {}, "createChallenges returned empty"
+            return False, [], "createChallenges returned empty"
 
         if isinstance(data, list):
-            first = data[0]
-            return True, first.to_dict() if hasattr(first, "to_dict") else first, ""
+            items = [c.to_dict() if hasattr(c, "to_dict") else dict(c) for c in data]
+            return True, items, ""
 
-        return True, {}, ""
+        single = data.to_dict() if hasattr(data, "to_dict") else None
+        if isinstance(single, dict):
+            return True, [single], ""
+
+        return False, [], "createChallenges returned unexpected shape"
 
     except Exception as e:
-        return False, {}, f"createChallenges request failed: {e}"
+        return False, [], f"createChallenges request failed: {e}"
 
 
 def call_verify_jwt_signature(
@@ -320,26 +431,36 @@ def call_submit_to_iir(
     valid_from: str = "",
     valid_until: str = "",
 ) -> tuple[bool, str]:
+    from datetime import datetime
+
+    def _to_dt_or_unset(value: str):
+        if not value:
+            return UNSET
+        try:
+            return datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError:
+            try:
+                return datetime.strptime(value, "%Y-%m-%d")
+            except ValueError:
+                return UNSET
+
     try:
         client = _client(token, publisher_base, ssl_verify)
 
-        body = IssuerDTO(
+        body = PubIssuerDTO(
             ctid=ctid,
             did=did,
             name=name,
             legal_name=legal_name,
             credential_registry_uri=registry_uri,
             subject_web_page=subject_web_page,
-            logo_base_64=logo_base64 or None,
-            logo_uri=logo_uri or None,
-            valid_from=valid_from or None,
-            valid_until=valid_until or None,
+            logo_base_64=logo_base64 if logo_base64 else UNSET,
+            logo_uri=logo_uri if logo_uri else UNSET,
+            valid_from=_to_dt_or_unset(valid_from),
+            valid_until=_to_dt_or_unset(valid_until),
         )
 
-        response = submit_to_iir_sync(
-            client=client,
-            body=body,
-        )
+        response = submit_to_iir_sync(client=client, body=body)
 
         if response.status_code == 409:
             return False, "Did already exists"
@@ -352,8 +473,7 @@ def call_submit_to_iir(
 
     except Exception as e:
         return False, f"submitToIIR request failed: {e}"
-
-
+    
 def _parse_uvarint(data: bytes) -> tuple[int, int]:
     x, s = 0, 0
     for i, b in enumerate(data):
