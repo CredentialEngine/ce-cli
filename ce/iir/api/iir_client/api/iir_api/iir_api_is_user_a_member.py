@@ -37,7 +37,7 @@ def _get_kwargs(
 
     _kwargs: dict[str, Any] = {
         "method": "get",
-        "url": "/api/iir/isUserAMember/{user_id}".format(user_id=quote(str(user_id), safe=""),),
+        "url": "/iir-api/isUserAMember/{user_id}".format(user_id=quote(str(user_id), safe=""),),
         "params": params,
     }
 

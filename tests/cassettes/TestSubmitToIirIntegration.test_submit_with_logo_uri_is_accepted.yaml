@@ -1,0 +1,46 @@
+interactions:
+- request:
+    body: CTID=ce-a4041983-b1ae-4ad4-a43d-284a5b4b2d73&DID=did%3Akey%3Az6MkfUvJ9QJ7Gh6y9MXUyByLc3bxhuP9yffH8iHSNBmhhBic&Name=Acme+Test&LegalName=Acme+Test+Corp&CredentialRegistryUri=https%3A%2F%2Fregistry.example.com&SubjectWebPage=https%3A%2F%2Facme.example.com&LogoUri=https%3A%2F%2Facme.example.com%2Flogo.png
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Content-Length:
+      - '302'
+      Content-Type:
+      - application/x-www-form-urlencoded
+      Host:
+      - localhost:44330
+      User-Agent:
+      - python-httpx/0.28.1
+      authorization:
+      - REDACTED
+    method: POST
+    uri: https://localhost:44330/iir-api/submitToIIR
+  response:
+    body:
+      string: '{"Error":""}'
+    headers:
+      Access-Control-Expose-Headers:
+      - Request-Context
+      Content-Length:
+      - '12'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Thu, 07 May 2026 21:34:30 GMT
+      Request-Context:
+      - appId=cid-v1:3de5a21a-3b87-4008-b83b-c667a37cd396
+      Server:
+      - Microsoft-IIS/10.0
+      X-Powered-By:
+      - ASP.NET
+      X-SourceFiles:
+      - =?UTF-8?B?RDpcQ3JlZGVudGlhbEVuZ2luZVxQdWJsaXNoZXJcRGlyZWN0b3J5XGlpci1hcGlcc3VibWl0VG9JSVI=?=
+    status:
+      code: 409
+      message: Conflict
+version: 1

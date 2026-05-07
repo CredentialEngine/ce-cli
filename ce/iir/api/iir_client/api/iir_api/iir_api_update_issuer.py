@@ -28,7 +28,7 @@ def _get_kwargs(
 
     _kwargs: dict[str, Any] = {
         "method": "put",
-        "url": "/api/iir/updateIssuer",
+        "url": "/iir-api/updateIssuer",
     }
 
     if isinstance(body, PubIssuerDTO):

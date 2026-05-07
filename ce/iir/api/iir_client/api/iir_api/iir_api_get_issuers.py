@@ -42,7 +42,7 @@ def _get_kwargs(
 
     _kwargs: dict[str, Any] = {
         "method": "get",
-        "url": "/api/iir/issuers",
+        "url": "/iir-api/issuers",
         "params": params,
     }
 
@@ -101,9 +101,9 @@ def sync_detailed(
 
     kwargs = _get_kwargs(
         page=page,
-        page_size=page_size,
-        keyword=keyword,
-        task=task,
+page_size=page_size,
+keyword=keyword,
+task=task,
 
     )
 
@@ -174,9 +174,9 @@ async def asyncio_detailed(
 
     kwargs = _get_kwargs(
         page=page,
-        page_size=page_size,
-        keyword=keyword,
-        task=task,
+page_size=page_size,
+keyword=keyword,
+task=task,
 
     )
 
@@ -213,9 +213,9 @@ async def asyncio(
 
     return (await asyncio_detailed(
         client=client,
-        page=page,
-        page_size=page_size,
-        keyword=keyword,
-        task=task,
+page=page,
+page_size=page_size,
+keyword=keyword,
+task=task,
 
     )).parsed

@@ -32,7 +32,7 @@ def _get_kwargs(
 
     _kwargs: dict[str, Any] = {
         "method": "get",
-        "url": "/api/iir/getOrganizationIIRDetail",
+        "url": "/iir-api/getOrganizationIIRDetail",
         "params": params,
     }
 

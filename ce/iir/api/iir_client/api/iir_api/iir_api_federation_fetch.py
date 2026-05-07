@@ -32,7 +32,7 @@ def _get_kwargs(
 
     _kwargs: dict[str, Any] = {
         "method": "get",
-        "url": "/api/iir/federationFetch",
+        "url": "/iir-api/federationFetch",
         "params": params,
     }
 

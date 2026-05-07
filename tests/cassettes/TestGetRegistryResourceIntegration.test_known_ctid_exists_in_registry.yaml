@@ -1,0 +1,44 @@
+interactions:
+- request:
+    body: ''
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Host:
+      - localhost:44330
+      User-Agent:
+      - python-httpx/0.28.1
+      authorization:
+      - REDACTED
+    method: GET
+    uri: https://localhost:44330/iir-api/getRegistryResource?ctid=ce-a4041983-b1ae-4ad4-a43d-284a5b4b2d73
+  response:
+    body:
+      string: '{"CTID":"ce-a4041983-b1ae-4ad4-a43d-284a5b4b2d73","ExistsInRegistry":true,"RegistryUri":"https://sandbox.credentialengineregistry.org/resources/ce-a4041983-b1ae-4ad4-a43d-284a5b4b2d73","CTDLType":"ceterms:CredentialOrganization","Name":"Credential
+        Engine Administration - Sandbox","LegalName":"Credential Engine Administration
+        - Sandbox","CredentialRegistryUri":"https://sandbox.credentialengineregistry.org/resources/ce-a4041983-b1ae-4ad4-a43d-284a5b4b2d73","SubjectWebpage":"https://sandbox.credentialengine.org/","Image":null}'
+    headers:
+      Access-Control-Expose-Headers:
+      - Request-Context
+      Content-Length:
+      - '529'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Thu, 07 May 2026 21:34:24 GMT
+      Request-Context:
+      - appId=cid-v1:3de5a21a-3b87-4008-b83b-c667a37cd396
+      Server:
+      - Microsoft-IIS/10.0
+      X-Powered-By:
+      - ASP.NET
+      X-SourceFiles:
+      - =?UTF-8?B?RDpcQ3JlZGVudGlhbEVuZ2luZVxQdWJsaXNoZXJcRGlyZWN0b3J5XGlpci1hcGlcZ2V0UmVnaXN0cnlSZXNvdXJjZQ==?=
+    status:
+      code: 200
+      message: OK
+version: 1

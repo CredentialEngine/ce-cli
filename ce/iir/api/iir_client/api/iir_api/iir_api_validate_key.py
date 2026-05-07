@@ -35,7 +35,7 @@ def _get_kwargs(
 
     _kwargs: dict[str, Any] = {
         "method": "get",
-        "url": "/api/iir/validateDidKey",
+        "url": "/iir-api/validateDidKey",
         "params": params,
     }
 

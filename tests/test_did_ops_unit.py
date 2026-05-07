@@ -1,11 +1,10 @@
 """
 Unit tests for ce.iir.did_ops.
 Run with:
-    pytest -m "not integration" -s
+    pytest -m unit -s
 """
 
 from __future__ import annotations
-import os
 import base64
 import json
 from datetime import datetime, timezone
@@ -17,7 +16,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-import ce.iir.did_ops as did_ops
+
 from ce.iir.did_ops import (
     IIR_TASK,
     _client,
@@ -46,22 +45,18 @@ from ce.iir.did_ops import (
     validate_verification_method,
     verify_proof_jwt,
 )
-
 from ce.iir.api.iir_client.types import UNSET
 
 
-PUBLISHER_BASE = os.getenv("CE_PUBLISHER_BASE")
-ACCESS_TOKEN = os.getenv("CE_TEST_ACCESS_TOKEN")
-USER_ID = os.getenv("CE_TEST_USER_ID")
-CTID = os.getenv("CE_TEST_CTID")
-CHALLENGE_UUID = os.getenv("CE_TEST_CHALLENGE_UUID")
-ED25519_DID_KEY = os.getenv("CE_TEST_DID_KEY")
-ED25519_KID = (
-    f"{ED25519_DID_KEY}#{ED25519_DID_KEY[len('did:key:'):]}"
-    if ED25519_DID_KEY and ED25519_DID_KEY.startswith("did:key:")
-    else ""
-)
+#Test parameters
+PUBLISHER_BASE = "https://fake-publisher.test"
+ACCESS_TOKEN = "fake-token-for-unit-tests"
+USER_ID = "00000000-0000-0000-0000-000000000001"
+CTID = "ce-12345678-1234-1234-1234-123456789abc"
+CHALLENGE_UUID = "11111111-2222-3333-4444-555555555555"
 
+ED25519_DID_KEY = "did:key:z6MkhaXgBZDvf7gKKWXjGmgkbQXyrXYY4uZmTaTzPhRgg9Wm"
+ED25519_KID = f"{ED25519_DID_KEY}#{ED25519_DID_KEY[len('did:key:'):]}"
 
 def _fake_response(status_code: int, parsed=None) -> SimpleNamespace:
     return SimpleNamespace(status_code=status_code, parsed=parsed)
@@ -85,6 +80,54 @@ class _ParsedObj:
         return dict(self._data)
 
 
+@pytest.fixture(scope="session")
+def ed25519_keypair():
+    """Generate a fresh Ed25519 keypair for crypto tests.
+
+    Returns (private_key_multibase, did_key, kid). The matching public
+    key is encoded as a did:key, so signatures created with this private
+    key will verify against the returned kid.
+    """
+    try:
+        from cryptography.hazmat.primitives import serialization
+        from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+    except ImportError:
+        pytest.skip("cryptography package not installed")
+
+    try:
+        import base58
+    except ImportError:
+        pytest.skip("base58 package not installed")
+
+    sk = Ed25519PrivateKey.generate()
+    seed = sk.private_bytes(
+        encoding=serialization.Encoding.Raw,
+        format=serialization.PrivateFormat.Raw,
+        encryption_algorithm=serialization.NoEncryption(),
+    )
+    pub = sk.public_key().public_bytes(
+        encoding=serialization.Encoding.Raw,
+        format=serialization.PublicFormat.Raw,
+    )
+
+    # did:key encoding: multicodec prefix 0xed01 (Ed25519 pub) + raw pub bytes,
+    # then base58btc encoded with 'z' multibase prefix.
+    pub_multicodec = bytes([0xED, 0x01]) + pub
+    did_key = "did:key:z" + base58.b58encode(pub_multicodec).decode()
+
+    # Private key in the same multibase form your code expects.
+    # Adjust the multicodec prefix if did_ops uses a different encoding.
+    priv_multicodec = bytes([0x80, 0x26]) + seed  # 0x8026 = Ed25519 priv multicodec
+    priv_multibase = "z" + base58.b58encode(priv_multicodec).decode()
+
+    kid = f"{did_key}#{did_key[len('did:key:'):]}"
+    return priv_multibase, did_key, kid
+
+
+# ---------------------------------------------------------------------------
+# Client construction
+# ---------------------------------------------------------------------------
+
 class TestClient:
     def test_client_strips_trailing_slash(self):
         client = _client(ACCESS_TOKEN, PUBLISHER_BASE + "/", ssl_verify=False)
@@ -94,7 +137,7 @@ class TestClient:
 
 
 class TestParsedToDict:
-    """_parsed_to_dict centralises SDK response unwrapping; verify all 3 shapes."""
+    """``_parsed_to_dict`` centralises SDK response unwrapping; verify all 3 shapes."""
 
     def test_dict_passthrough(self):
         assert _parsed_to_dict({"valid": True}) == {"valid": True}
@@ -118,8 +161,7 @@ class TestParsedToDict:
 class TestValidateCtid:
     def test_valid_ctid_passes(self):
         ok, err = validate_ctid(CTID)
-        assert ok
-        assert err == ""
+        assert ok and err == ""
 
     def test_empty_string_fails(self):
         ok, err = validate_ctid("")
@@ -139,13 +181,11 @@ class TestValidateCtid:
 class TestValidateDate:
     def test_empty_value_is_treated_as_optional(self):
         ok, err, iso = validate_date("", "ValidFrom")
-        assert ok
-        assert err == "" and iso == ""
+        assert ok and err == "" and iso == ""
 
     def test_valid_date_converts_to_iso8601(self):
         ok, err, iso = validate_date("01/15/2024", "ValidFrom")
-        assert ok
-        assert err == ""
+        assert ok and err == ""
         assert iso == "2024-01-15T00:00:00Z"
 
     def test_iso_format_input_is_rejected(self):
@@ -293,8 +333,7 @@ class TestCallIsUserMember:
         with patch("ce.iir.did_ops.is_user_member_sync") as mock_sync:
             mock_sync.return_value = _fake_response(403, None)
             ok, err = call_is_user_member(USER_ID, CTID, ACCESS_TOKEN, PUBLISHER_BASE, False)
-        assert not ok
-        assert err != ""
+        assert not ok and err != ""
 
     def test_handles_exception_gracefully(self):
         with patch("ce.iir.did_ops.is_user_member_sync", side_effect=RuntimeError("timeout")):
@@ -305,9 +344,8 @@ class TestCallIsUserMember:
         with patch("ce.iir.did_ops.is_user_member_sync") as mock_sync:
             mock_sync.return_value = _fake_response(200, {"valid": True})
             call_is_user_member(USER_ID, CTID, ACCESS_TOKEN, PUBLISHER_BASE, False)
-            args, kwargs = mock_sync.call_args
-            assert kwargs["task"] == "IIR"
-            assert kwargs["task"] == IIR_TASK
+            _, kwargs = mock_sync.call_args
+            assert kwargs["task"] == "IIR" == IIR_TASK
             assert kwargs["ctid"] == CTID
 
     def test_explicit_task_overrides_default(self):
@@ -355,7 +393,6 @@ class TestCallGetRegistryResource:
 
 
 class TestCallGetOrganizationIIRDetail:
-
     def test_unwraps_envelope_on_success(self):
         body = _ParsedObj(
             valid=True,
@@ -529,7 +566,7 @@ class TestCallValidateDid:
         assert vm_ids == ["did:web:example.com#key-1"]
 
     def test_unsupported_did_method_returns_classify_error(self):
-        ok, vm_ids, data, err = call_validate_did(
+        ok, vm_ids, _data, err = call_validate_did(
             "did:ethr:0x123", "", ACCESS_TOKEN, PUBLISHER_BASE, False
         )
         assert not ok
@@ -570,11 +607,15 @@ class TestCallCreateChallenges:
     def test_returns_list_on_success(self):
         with patch("ce.iir.did_ops.create_challenges_sync") as mock_sync:
             mock_sync.return_value = _fake_response(
-                200, [self._challenge_body(did=f"{ED25519_DID_KEY}#k1"),
-                      self._challenge_body(did=f"{ED25519_DID_KEY}#k2")]
+                200,
+                [
+                    self._challenge_body(did=f"{ED25519_DID_KEY}#k1"),
+                    self._challenge_body(did=f"{ED25519_DID_KEY}#k2"),
+                ],
             )
             ok, data, err = call_create_challenges(
-                CTID, [f"{ED25519_DID_KEY}#k1", f"{ED25519_DID_KEY}#k2"],
+                CTID,
+                [f"{ED25519_DID_KEY}#k1", f"{ED25519_DID_KEY}#k2"],
                 ACCESS_TOKEN, PUBLISHER_BASE, False,
             )
         assert ok and err == ""
@@ -628,8 +669,7 @@ class TestCallVerifyJwtSignature:
             ok, err = call_verify_jwt_signature(
                 "proof.jwt.token", CHALLENGE_UUID, ACCESS_TOKEN, PUBLISHER_BASE, False
             )
-        assert ok
-        assert err == ""
+        assert ok and err == ""
 
     def test_404_means_challenge_expired_or_missing(self):
         with patch("ce.iir.did_ops.validate_jwt_sync") as mock_sync:
@@ -767,25 +807,11 @@ class TestHelpers:
         )
 
 
-@pytest.fixture(scope="session")
-def private_key() -> str:
-    key = os.getenv("CE_TEST_PRIVKEY_MULTIBASE", "").strip()
-
-    if not key:
-        pytest.skip("CE_TEST_PRIVKEY_MULTIBASE not set in .env.test")
-
-    try:
-        did_ops._extract_ed25519_seed(key)
-    except Exception as e:
-        pytest.skip(f"Invalid CE_TEST_PRIVKEY_MULTIBASE format: {e}")
-
-    return key
-
 
 class TestJwtCrypto:
-    def _make_payload(self) -> dict:
+    def _make_payload(self, did_key: str) -> dict:
         return {
-            "did": ED25519_DID_KEY,
+            "did": did_key,
             "challenge": CHALLENGE_UUID,
             "aud": "ce-api",
             "iat": 1700000000,
@@ -793,27 +819,31 @@ class TestJwtCrypto:
             "ctid": CTID,
         }
 
-    def test_sign_produces_a_three_part_jwt(self, private_key):
-        token = sign_proof_jwt(private_key, ED25519_KID, self._make_payload())
+    def test_sign_produces_a_three_part_jwt(self, ed25519_keypair):
+        priv, did_key, kid = ed25519_keypair
+        token = sign_proof_jwt(priv, kid, self._make_payload(did_key))
         assert isinstance(token, str)
         assert token.count(".") == 2
 
-    def test_sign_and_verify_roundtrip(self, private_key):
-        token = sign_proof_jwt(private_key, ED25519_KID, self._make_payload())
-        ok, err = verify_proof_jwt(token, ED25519_KID)
+    def test_sign_and_verify_roundtrip(self, ed25519_keypair):
+        priv, did_key, kid = ed25519_keypair
+        token = sign_proof_jwt(priv, kid, self._make_payload(did_key))
+        ok, err = verify_proof_jwt(token, kid)
         assert ok, err
 
-    def test_tampered_signature_fails_verification(self, private_key):
-        token = sign_proof_jwt(private_key, ED25519_KID, self._make_payload())
+    def test_tampered_signature_fails_verification(self, ed25519_keypair):
+        priv, did_key, kid = ed25519_keypair
+        token = sign_proof_jwt(priv, kid, self._make_payload(did_key))
         parts = token.split(".")
         first = parts[2][0]
         parts[2] = ("B" if first != "B" else "C") + parts[2][1:]
-        ok, err = verify_proof_jwt(".".join(parts), ED25519_KID)
+        ok, err = verify_proof_jwt(".".join(parts), kid)
         assert not ok and "signature" in err.lower()
 
-    def test_bad_private_key_raises(self):
+    def test_bad_private_key_raises(self, ed25519_keypair):
+        _, _, kid = ed25519_keypair
         with pytest.raises(Exception):
-            sign_proof_jwt("zNOTVALID", ED25519_KID, self._make_payload())
+            sign_proof_jwt("zNOTVALID", kid, self._make_payload(ED25519_DID_KEY))
 
 
 class TestExtractUserIdFromToken:

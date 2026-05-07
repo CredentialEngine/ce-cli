@@ -21,6 +21,7 @@ from rich.console import Console
 from rich.table import Table, box
 
 from ce.iir.did_ops import (
+    call_get_organization_iir_detail,
     call_is_user_member,
     call_create_challenges,
     call_get_registry_resource,
@@ -29,6 +30,7 @@ from ce.iir.did_ops import (
     call_validate_did_web,
     call_verify_jwt_signature,
     classify_did,
+    merge_autofill,
     sign_proof_jwt,
     validate_ctid,
     validate_date,
@@ -335,13 +337,22 @@ def run_upload(
             if not ok:
                 pub_fail(err)
             else:
+                ok_acc, accounts_data, acc_err = call_get_organization_iir_detail(
+                    ctid, access_token, env.publisher_base, env.ssl_verify
+                )
+                if not ok_acc:
+                    accounts_data = {}
+
+                merged = merge_autofill(registry_data, accounts_data)
                 ok, err = call_submit_to_iir(
                     ctid, did,
-                    registry_data.get("Name", ""),
-                    registry_data.get("LegalName", ""),
-                    registry_data.get("CredentialRegistryUri", ""),
-                    registry_data.get("SubjectWebpage", ""),
+                    merged["name"],
+                    merged["legal_name"],
+                    merged["registry_uri"],
+                    merged["subject_webpage"],
                     access_token, env.publisher_base, env.ssl_verify,
+                    logo_uri=merged["image"],
+                    logo_base64=merged["logo_base64"],
                     valid_from=valid_from,
                     valid_until=valid_until,
                 )
