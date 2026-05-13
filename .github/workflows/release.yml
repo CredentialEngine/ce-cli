@@ -45,7 +45,7 @@ jobs:
           CE_TEST_DID_WEB: ${{ secrets.CE_TEST_DID_WEB }}
           CE_TEST_PRIVKEY_MULTIBASE: ${{ secrets.CE_TEST_PRIVKEY_MULTIBASE }}
           CE_TEST_USER_ID: ${{ secrets.CE_TEST_USER_ID }}
-          VCR_RECORD_MODE: nones
+          VCR_RECORD_MODE: none
 
       - name: Build package
         run: python -m build
