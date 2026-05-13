@@ -2,16 +2,14 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock
+import os
 from pathlib import Path
-from dotenv import load_dotenv
-
+from unittest.mock import MagicMock
 
 import pytest
+from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).resolve().parents[1] / ".env.test")
-
-import os
 
 PUBLISHER_BASE = os.getenv("CE_PUBLISHER_BASE", "https://localhost:44330")
 ACCESS_TOKEN = os.getenv("CE_TEST_ACCESS_TOKEN", "")
@@ -38,6 +36,10 @@ def pytest_configure(config):
         "markers",
         "integration: mark test as an integration test requiring a live server",
     )
+    config.addinivalue_line(
+        "markers",
+        "vcr: mark test as using recorded HTTP interactions (pytest-recording)",
+    )
 
 
 @pytest.fixture
@@ -46,3 +48,32 @@ def mock_env():
     env.publisher_base = PUBLISHER_BASE
     env.ssl_verify = False
     return env
+
+
+
+
+@pytest.fixture(scope="session")
+def vcr_config():
+    return {
+        "filter_headers": [
+            ("authorization", "REDACTED"),
+            ("cookie", "REDACTED"),
+            ("x-api-key", "REDACTED"),
+        ],
+        "filter_query_parameters": [
+            ("access_token", "REDACTED"),
+            ("token", "REDACTED"),
+        ],
+        "filter_post_data_parameters": [
+            ("access_token", "REDACTED"),
+            ("client_secret", "REDACTED"),
+        ],
+        "match_on": ["method", "scheme", "host", "port", "path", "query"],
+        "record_mode": os.getenv("VCR_RECORD_MODE", "none"),
+    }
+
+
+@pytest.fixture(scope="module")
+def vcr_cassette_dir(request):
+    """Store cassettes alongside the test module under a 'cassettes/' folder."""
+    return str(Path(request.module.__file__).parent / "cassettes")

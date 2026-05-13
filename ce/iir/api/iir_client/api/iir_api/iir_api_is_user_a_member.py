@@ -17,6 +17,7 @@ from uuid import UUID
 def _get_kwargs(
     user_id: UUID,
     *,
+    task: str,
     ctid: str,
 
 ) -> dict[str, Any]:
@@ -26,6 +27,8 @@ def _get_kwargs(
 
     params: dict[str, Any] = {}
 
+    params["task"] = task
+
     params["ctid"] = ctid
 
 
@@ -34,7 +37,7 @@ def _get_kwargs(
 
     _kwargs: dict[str, Any] = {
         "method": "get",
-        "url": "/api/iir/isUserAMember/{user_id}".format(user_id=quote(str(user_id), safe=""),),
+        "url": "/iir-api/isUserAMember/{user_id}".format(user_id=quote(str(user_id), safe=""),),
         "params": params,
     }
 
@@ -70,12 +73,14 @@ def sync_detailed(
     user_id: UUID,
     *,
     client: AuthenticatedClient | Client,
+    task: str,
     ctid: str,
 
 ) -> Response[IIRApiIsUserAMemberResponse200]:
     """ 
     Args:
         user_id (UUID):
+        task (str):
         ctid (str):
 
     Raises:
@@ -89,6 +94,7 @@ def sync_detailed(
 
     kwargs = _get_kwargs(
         user_id=user_id,
+task=task,
 ctid=ctid,
 
     )
@@ -103,12 +109,14 @@ def sync(
     user_id: UUID,
     *,
     client: AuthenticatedClient | Client,
+    task: str,
     ctid: str,
 
 ) -> IIRApiIsUserAMemberResponse200 | None:
     """ 
     Args:
         user_id (UUID):
+        task (str):
         ctid (str):
 
     Raises:
@@ -123,6 +131,7 @@ def sync(
     return sync_detailed(
         user_id=user_id,
 client=client,
+task=task,
 ctid=ctid,
 
     ).parsed
@@ -131,12 +140,14 @@ async def asyncio_detailed(
     user_id: UUID,
     *,
     client: AuthenticatedClient | Client,
+    task: str,
     ctid: str,
 
 ) -> Response[IIRApiIsUserAMemberResponse200]:
     """ 
     Args:
         user_id (UUID):
+        task (str):
         ctid (str):
 
     Raises:
@@ -150,6 +161,7 @@ async def asyncio_detailed(
 
     kwargs = _get_kwargs(
         user_id=user_id,
+task=task,
 ctid=ctid,
 
     )
@@ -164,12 +176,14 @@ async def asyncio(
     user_id: UUID,
     *,
     client: AuthenticatedClient | Client,
+    task: str,
     ctid: str,
 
 ) -> IIRApiIsUserAMemberResponse200 | None:
     """ 
     Args:
         user_id (UUID):
+        task (str):
         ctid (str):
 
     Raises:
@@ -184,6 +198,7 @@ async def asyncio(
     return (await asyncio_detailed(
         user_id=user_id,
 client=client,
+task=task,
 ctid=ctid,
 
     )).parsed

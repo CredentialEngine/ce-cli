@@ -1,0 +1,42 @@
+interactions:
+- request:
+    body: ''
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Host:
+      - localhost:44330
+      User-Agent:
+      - python-httpx/0.28.1
+      authorization:
+      - REDACTED
+    method: GET
+    uri: https://localhost:44330/iir-api/validateDidWeb?did=did%3Aweb%3Asandbox.credentialengine.org
+  response:
+    body:
+      string: '{"DidDocumentUrl":"https://sandbox.credentialengine.org/.well-known/did.json","VerificationMethodIds":["did:web:sandbox.credentialengine.org#z6MkwYGVFm6oFReLYwoHLobjVV5PBjnaYwB9VvJahn4nAx4f"]}'
+    headers:
+      Access-Control-Expose-Headers:
+      - Request-Context
+      Content-Length:
+      - '192'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Thu, 07 May 2026 21:34:27 GMT
+      Request-Context:
+      - appId=cid-v1:3de5a21a-3b87-4008-b83b-c667a37cd396
+      Server:
+      - Microsoft-IIS/10.0
+      X-Powered-By:
+      - ASP.NET
+      X-SourceFiles:
+      - =?UTF-8?B?RDpcQ3JlZGVudGlhbEVuZ2luZVxQdWJsaXNoZXJcRGlyZWN0b3J5XGlpci1hcGlcdmFsaWRhdGVEaWRXZWI=?=
+    status:
+      code: 200
+      message: OK
+version: 1

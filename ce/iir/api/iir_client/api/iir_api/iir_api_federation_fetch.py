@@ -15,7 +15,6 @@ from typing import cast
 
 def _get_kwargs(
     *,
-    ctid: str,
     sub: str,
 
 ) -> dict[str, Any]:
@@ -25,8 +24,6 @@ def _get_kwargs(
 
     params: dict[str, Any] = {}
 
-    params["ctid"] = ctid
-
     params["sub"] = sub
 
 
@@ -35,7 +32,7 @@ def _get_kwargs(
 
     _kwargs: dict[str, Any] = {
         "method": "get",
-        "url": "/api/iir/federationFetch",
+        "url": "/iir-api/federationFetch",
         "params": params,
     }
 
@@ -70,13 +67,11 @@ def _build_response(*, client: AuthenticatedClient | Client, response: httpx.Res
 def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
-    ctid: str,
     sub: str,
 
 ) -> Response[IIRApiFederationFetchResponse200]:
     """ 
     Args:
-        ctid (str):
         sub (str):
 
     Raises:
@@ -89,8 +84,7 @@ def sync_detailed(
 
 
     kwargs = _get_kwargs(
-        ctid=ctid,
-sub=sub,
+        sub=sub,
 
     )
 
@@ -103,13 +97,11 @@ sub=sub,
 def sync(
     *,
     client: AuthenticatedClient | Client,
-    ctid: str,
     sub: str,
 
 ) -> IIRApiFederationFetchResponse200 | None:
     """ 
     Args:
-        ctid (str):
         sub (str):
 
     Raises:
@@ -123,7 +115,6 @@ def sync(
 
     return sync_detailed(
         client=client,
-ctid=ctid,
 sub=sub,
 
     ).parsed
@@ -131,13 +122,11 @@ sub=sub,
 async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
-    ctid: str,
     sub: str,
 
 ) -> Response[IIRApiFederationFetchResponse200]:
     """ 
     Args:
-        ctid (str):
         sub (str):
 
     Raises:
@@ -150,8 +139,7 @@ async def asyncio_detailed(
 
 
     kwargs = _get_kwargs(
-        ctid=ctid,
-sub=sub,
+        sub=sub,
 
     )
 
@@ -164,13 +152,11 @@ sub=sub,
 async def asyncio(
     *,
     client: AuthenticatedClient | Client,
-    ctid: str,
     sub: str,
 
 ) -> IIRApiFederationFetchResponse200 | None:
     """ 
     Args:
-        ctid (str):
         sub (str):
 
     Raises:
@@ -184,7 +170,6 @@ async def asyncio(
 
     return (await asyncio_detailed(
         client=client,
-ctid=ctid,
 sub=sub,
 
     )).parsed

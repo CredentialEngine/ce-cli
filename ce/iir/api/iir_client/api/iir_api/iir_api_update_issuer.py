@@ -5,18 +5,18 @@ from urllib.parse import quote
 import httpx
 
 from ...client import AuthenticatedClient, Client
-from ...types import Response, UNSET, Unset
+from ...types import Response, UNSET
 from ... import errors
 
 from ...models.iir_api_update_issuer_response_200 import IIRApiUpdateIssuerResponse200
-from ...models.issuer_dto import IssuerDTO
+from ...models.pub_issuer_dto import PubIssuerDTO
 from typing import cast
 
 
 
 def _get_kwargs(
     *,
-    body:    IssuerDTO  |     IssuerDTO  | Unset = UNSET,
+    body:    PubIssuerDTO  |     PubIssuerDTO  | Unset = UNSET,
 
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
@@ -28,15 +28,15 @@ def _get_kwargs(
 
     _kwargs: dict[str, Any] = {
         "method": "put",
-        "url": "/api/iir/updateIssuer",
+        "url": "/iir-api/updateIssuer",
     }
 
-    if isinstance(body, IssuerDTO):
+    if isinstance(body, PubIssuerDTO):
         _kwargs["json"] = body.to_dict()
 
 
         headers["Content-Type"] = "application/json"
-    if isinstance(body, IssuerDTO):
+    if isinstance(body, PubIssuerDTO):
         _kwargs["data"] = body.to_dict()
 
         headers["Content-Type"] = "application/x-www-form-urlencoded"
@@ -72,13 +72,13 @@ def _build_response(*, client: AuthenticatedClient | Client, response: httpx.Res
 def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
-    body:    IssuerDTO  |     IssuerDTO  | Unset = UNSET,
+    body:    PubIssuerDTO  |     PubIssuerDTO  | Unset = UNSET,
 
 ) -> Response[IIRApiUpdateIssuerResponse200]:
     """ 
     Args:
-        body (IssuerDTO):
-        body (IssuerDTO):
+        body (PubIssuerDTO):
+        body (PubIssuerDTO):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -103,13 +103,13 @@ def sync_detailed(
 def sync(
     *,
     client: AuthenticatedClient | Client,
-    body:    IssuerDTO  |     IssuerDTO  | Unset = UNSET,
+    body:    PubIssuerDTO  |     PubIssuerDTO  | Unset = UNSET,
 
 ) -> IIRApiUpdateIssuerResponse200 | None:
     """ 
     Args:
-        body (IssuerDTO):
-        body (IssuerDTO):
+        body (PubIssuerDTO):
+        body (PubIssuerDTO):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -129,13 +129,13 @@ body=body,
 async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
-    body:    IssuerDTO  |     IssuerDTO  | Unset = UNSET,
+    body:    PubIssuerDTO  |     PubIssuerDTO  | Unset = UNSET,
 
 ) -> Response[IIRApiUpdateIssuerResponse200]:
     """ 
     Args:
-        body (IssuerDTO):
-        body (IssuerDTO):
+        body (PubIssuerDTO):
+        body (PubIssuerDTO):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -160,13 +160,13 @@ async def asyncio_detailed(
 async def asyncio(
     *,
     client: AuthenticatedClient | Client,
-    body:    IssuerDTO  |     IssuerDTO  | Unset = UNSET,
+    body:    PubIssuerDTO  |     PubIssuerDTO  | Unset = UNSET,
 
 ) -> IIRApiUpdateIssuerResponse200 | None:
     """ 
     Args:
-        body (IssuerDTO):
-        body (IssuerDTO):
+        body (PubIssuerDTO):
+        body (PubIssuerDTO):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.

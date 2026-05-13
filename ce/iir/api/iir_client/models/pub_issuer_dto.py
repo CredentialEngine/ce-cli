@@ -18,12 +18,12 @@ import datetime
 
 
 
-T = TypeVar("T", bound="IssuerDTO")
+T = TypeVar("T", bound="PubIssuerDTO")
 
 
 
 @_attrs_define
-class IssuerDTO:
+class PubIssuerDTO:
     """ 
         Attributes:
             ctid (str | Unset):
@@ -72,12 +72,12 @@ class IssuerDTO:
         logo_uri = self.logo_uri
 
         valid_from: str | Unset = UNSET
-        if self.valid_from is not UNSET:
-            valid_from = self.valid_from.isoformat() if hasattr(self.valid_from, "isoformat") else self.valid_from
+        if not isinstance(self.valid_from, Unset):
+            valid_from = self.valid_from.isoformat()
 
         valid_until: str | Unset = UNSET
-        if self.valid_until is not UNSET:
-            valid_until = self.valid_until.isoformat() if hasattr(self.valid_until, "isoformat") else self.valid_until
+        if not isinstance(self.valid_until, Unset):
+            valid_until = self.valid_until.isoformat()
 
 
         field_dict: dict[str, Any] = {}
@@ -148,7 +148,7 @@ class IssuerDTO:
 
 
 
-        issuer_dto = cls(
+        pub_issuer_dto = cls(
             ctid=ctid,
             did=did,
             name=name,
@@ -162,8 +162,8 @@ class IssuerDTO:
         )
 
 
-        issuer_dto.additional_properties = d
-        return issuer_dto
+        pub_issuer_dto.additional_properties = d
+        return pub_issuer_dto
 
     @property
     def additional_keys(self) -> list[str]:

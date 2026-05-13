@@ -9,6 +9,7 @@ from ...types import Response, UNSET
 from ... import errors
 
 from ...models.iir_api_get_issuers_by_user_response_200 import IIRApiGetIssuersByUserResponse200
+from ...types import UNSET, Unset
 from typing import cast
 from uuid import UUID
 
@@ -16,17 +17,35 @@ from uuid import UUID
 
 def _get_kwargs(
     user_id: UUID,
+    *,
+    page: int | Unset = UNSET,
+    page_size: int | Unset = UNSET,
+    keyword: str | Unset = UNSET,
+    task: str | Unset = UNSET,
 
 ) -> dict[str, Any]:
     
 
     
 
-    
+    params: dict[str, Any] = {}
+
+    params["page"] = page
+
+    params["pageSize"] = page_size
+
+    params["keyword"] = keyword
+
+    params["task"] = task
+
+
+    params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
+
 
     _kwargs: dict[str, Any] = {
         "method": "get",
-        "url": "/api/iir/users/{user_id}/issuers".format(user_id=quote(str(user_id), safe=""),),
+        "url": "/iir-api/users/{user_id}/issuers".format(user_id=quote(str(user_id), safe=""),),
+        "params": params,
     }
 
 
@@ -61,11 +80,19 @@ def sync_detailed(
     user_id: UUID,
     *,
     client: AuthenticatedClient | Client,
+    page: int | Unset = UNSET,
+    page_size: int | Unset = UNSET,
+    keyword: str | Unset = UNSET,
+    task: str | Unset = UNSET,
 
 ) -> Response[IIRApiGetIssuersByUserResponse200]:
     """ 
     Args:
         user_id (UUID):
+        page (int | Unset):
+        page_size (int | Unset):
+        keyword (str | Unset):
+        task (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -78,6 +105,10 @@ def sync_detailed(
 
     kwargs = _get_kwargs(
         user_id=user_id,
+page=page,
+page_size=page_size,
+keyword=keyword,
+task=task,
 
     )
 
@@ -91,11 +122,19 @@ def sync(
     user_id: UUID,
     *,
     client: AuthenticatedClient | Client,
+    page: int | Unset = UNSET,
+    page_size: int | Unset = UNSET,
+    keyword: str | Unset = UNSET,
+    task: str | Unset = UNSET,
 
 ) -> IIRApiGetIssuersByUserResponse200 | None:
     """ 
     Args:
         user_id (UUID):
+        page (int | Unset):
+        page_size (int | Unset):
+        keyword (str | Unset):
+        task (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -109,6 +148,10 @@ def sync(
     return sync_detailed(
         user_id=user_id,
 client=client,
+page=page,
+page_size=page_size,
+keyword=keyword,
+task=task,
 
     ).parsed
 
@@ -116,11 +159,19 @@ async def asyncio_detailed(
     user_id: UUID,
     *,
     client: AuthenticatedClient | Client,
+    page: int | Unset = UNSET,
+    page_size: int | Unset = UNSET,
+    keyword: str | Unset = UNSET,
+    task: str | Unset = UNSET,
 
 ) -> Response[IIRApiGetIssuersByUserResponse200]:
     """ 
     Args:
         user_id (UUID):
+        page (int | Unset):
+        page_size (int | Unset):
+        keyword (str | Unset):
+        task (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -133,6 +184,10 @@ async def asyncio_detailed(
 
     kwargs = _get_kwargs(
         user_id=user_id,
+page=page,
+page_size=page_size,
+keyword=keyword,
+task=task,
 
     )
 
@@ -146,11 +201,19 @@ async def asyncio(
     user_id: UUID,
     *,
     client: AuthenticatedClient | Client,
+    page: int | Unset = UNSET,
+    page_size: int | Unset = UNSET,
+    keyword: str | Unset = UNSET,
+    task: str | Unset = UNSET,
 
 ) -> IIRApiGetIssuersByUserResponse200 | None:
     """ 
     Args:
         user_id (UUID):
+        page (int | Unset):
+        page_size (int | Unset):
+        keyword (str | Unset):
+        task (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -164,5 +227,9 @@ async def asyncio(
     return (await asyncio_detailed(
         user_id=user_id,
 client=client,
+page=page,
+page_size=page_size,
+keyword=keyword,
+task=task,
 
     )).parsed

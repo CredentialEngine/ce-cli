@@ -1,0 +1,42 @@
+interactions:
+- request:
+    body: ''
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate
+      Connection:
+      - keep-alive
+      Host:
+      - localhost:44330
+      User-Agent:
+      - python-httpx/0.28.1
+      authorization:
+      - REDACTED
+    method: GET
+    uri: https://localhost:44330/iir-api/validateDidKey?alg=Ed25519&did=did%3Akey%3Az6MkfUvJ9QJ7Gh6y9MXUyByLc3bxhuP9yffH8iHSNBmhhBic
+  response:
+    body:
+      string: '{"Algorithm":"Ed25519","VerificationMethodIds":["did:key:z6MkfUvJ9QJ7Gh6y9MXUyByLc3bxhuP9yffH8iHSNBmhhBic#z6MkfUvJ9QJ7Gh6y9MXUyByLc3bxhuP9yffH8iHSNBmhhBic"],"PublicKeyBytes":"D0iEqVnPUSkCcPSlMi6tTI8sWRVUs7R98R67EB1UVRU="}'
+    headers:
+      Access-Control-Expose-Headers:
+      - Request-Context
+      Content-Length:
+      - '221'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Thu, 07 May 2026 21:34:26 GMT
+      Request-Context:
+      - appId=cid-v1:3de5a21a-3b87-4008-b83b-c667a37cd396
+      Server:
+      - Microsoft-IIS/10.0
+      X-Powered-By:
+      - ASP.NET
+      X-SourceFiles:
+      - =?UTF-8?B?RDpcQ3JlZGVudGlhbEVuZ2luZVxQdWJsaXNoZXJcRGlyZWN0b3J5XGlpci1hcGlcdmFsaWRhdGVEaWRLZXk=?=
+    status:
+      code: 200
+      message: OK
+version: 1

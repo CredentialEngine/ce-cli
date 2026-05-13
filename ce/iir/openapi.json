@@ -5,7 +5,7 @@
         "title": "CTI Directory API"
     },
     "paths": {
-        "/api/iir/IsUserAMemberOfOrg": {
+        "/iir-api/IsUserAMemberOfOrg": {
             "get": {
                 "tags": [
                     "IIRApi"
@@ -14,6 +14,14 @@
                 "parameters": [
                     {
                         "name": "ctid",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "task",
                         "in": "query",
                         "required": true,
                         "schema": {
@@ -50,7 +58,7 @@
                 }
             }
         },
-        "/api/iir/isUserAMember/{userId}": {
+        "/iir-api/isUserAMember/{userId}": {
             "get": {
                 "tags": [
                     "IIRApi"
@@ -64,6 +72,14 @@
                         "schema": {
                             "type": "string",
                             "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "task",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
                         }
                     },
                     {
@@ -104,7 +120,52 @@
                 }
             }
         },
-        "/api/iir/getRegistryResource": {
+        "/iir-api/getOrganizationIIRDetail": {
+            "get": {
+                "tags": [
+                    "IIRApi"
+                ],
+                "operationId": "IIRApi_GetOrganizationIIRDetail",
+                "parameters": [
+                    {
+                        "name": "ctid",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            },
+                            "text/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            },
+                            "application/xml": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            },
+                            "text/xml": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/iir-api/getRegistryResource": {
             "get": {
                 "tags": [
                     "IIRApi"
@@ -149,7 +210,7 @@
                 }
             }
         },
-        "/api/iir/validateDidWeb": {
+        "/iir-api/validateDidWeb": {
             "get": {
                 "tags": [
                     "IIRApi"
@@ -194,7 +255,7 @@
                 }
             }
         },
-        "/api/iir/validateDidKey": {
+        "/iir-api/validateDidKey": {
             "get": {
                 "tags": [
                     "IIRApi"
@@ -247,7 +308,7 @@
                 }
             }
         },
-        "/api/iir/createChallenges": {
+        "/iir-api/createChallenges": {
             "post": {
                 "tags": [
                     "IIRApi"
@@ -312,7 +373,7 @@
                 }
             }
         },
-        "/api/iir/validateJwt": {
+        "/iir-api/validateJwt": {
             "post": {
                 "tags": [
                     "IIRApi"
@@ -377,7 +438,7 @@
                 }
             }
         },
-        "/api/iir/saveChallengeToken": {
+        "/iir-api/saveChallengeToken": {
             "post": {
                 "tags": [
                     "IIRApi"
@@ -442,14 +503,14 @@
                 }
             }
         },
-        "/api/iir/submitToIIR": {
+        "/iir-api/submitToIIR": {
             "post": {
                 "tags": [
                     "IIRApi"
                 ],
                 "operationId": "IIRApi_SubmitToIIR",
                 "requestBody": {
-                    "$ref": "#/components/requestBodies/IssuerDTO"
+                    "$ref": "#/components/requestBodies/PubIssuerDTO"
                 },
                 "responses": {
                     "200": {
@@ -480,12 +541,48 @@
                 }
             }
         },
-        "/api/iir/issuers": {
+        "/iir-api/issuers": {
             "get": {
                 "tags": [
                     "IIRApi"
                 ],
                 "operationId": "IIRApi_GetIssuers",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32"
+                        }
+                    },
+                    {
+                        "name": "pageSize",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32"
+                        }
+                    },
+                    {
+                        "name": "keyword",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "task",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -515,7 +612,7 @@
                 }
             }
         },
-        "/api/iir/users/{userId}/issuers": {
+        "/iir-api/users/{userId}/issuers": {
             "get": {
                 "tags": [
                     "IIRApi"
@@ -530,6 +627,40 @@
                             "type": "string",
                             "format": "uuid"
                         }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32"
+                        }
+                    },
+                    {
+                        "name": "pageSize",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32"
+                        }
+                    },
+                    {
+                        "name": "keyword",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "task",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
                     }
                 ],
                 "responses": {
@@ -561,21 +692,13 @@
                 }
             }
         },
-        "/api/iir/federationFetch": {
+        "/iir-api/federationFetch": {
             "get": {
                 "tags": [
                     "IIRApi"
                 ],
                 "operationId": "IIRApi_FederationFetch",
                 "parameters": [
-                    {
-                        "name": "ctid",
-                        "in": "query",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
                     {
                         "name": "sub",
                         "in": "query",
@@ -614,7 +737,7 @@
                 }
             }
         },
-        "/api/iir/issuerByDid": {
+        "/iir-api/issuerByDid": {
             "get": {
                 "tags": [
                     "IIRApi"
@@ -659,14 +782,14 @@
                 }
             }
         },
-        "/api/iir/updateIssuer": {
+        "/iir-api/updateIssuer": {
             "put": {
                 "tags": [
                     "IIRApi"
                 ],
                 "operationId": "IIRApi_UpdateIssuer",
                 "requestBody": {
-                    "$ref": "#/components/requestBodies/IssuerDTO"
+                    "$ref": "#/components/requestBodies/PubIssuerDTO"
                 },
                 "responses": {
                     "200": {
@@ -705,31 +828,31 @@
     ],
     "components": {
         "requestBodies": {
-            "IssuerDTO": {
+            "PubIssuerDTO": {
                 "content": {
                     "application/json": {
                         "schema": {
-                            "$ref": "#/components/schemas/IssuerDTO"
+                            "$ref": "#/components/schemas/PubIssuerDTO"
                         }
                     },
                     "text/json": {
                         "schema": {
-                            "$ref": "#/components/schemas/IssuerDTO"
+                            "$ref": "#/components/schemas/PubIssuerDTO"
                         }
                     },
                     "application/xml": {
                         "schema": {
-                            "$ref": "#/components/schemas/IssuerDTO"
+                            "$ref": "#/components/schemas/PubIssuerDTO"
                         }
                     },
                     "text/xml": {
                         "schema": {
-                            "$ref": "#/components/schemas/IssuerDTO"
+                            "$ref": "#/components/schemas/PubIssuerDTO"
                         }
                     },
                     "application/x-www-form-urlencoded": {
                         "schema": {
-                            "$ref": "#/components/schemas/IssuerDTO"
+                            "$ref": "#/components/schemas/PubIssuerDTO"
                         }
                     }
                 },
@@ -820,7 +943,7 @@
                     }
                 }
             },
-            "IssuerDTO": {
+            "PubIssuerDTO": {
                 "type": "object",
                 "properties": {
                     "CTID": {

@@ -28,7 +28,7 @@ def _get_kwargs(
 
     _kwargs: dict[str, Any] = {
         "method": "post",
-        "url": "/api/iir/createChallenges",
+        "url": "/iir-api/createChallenges",
     }
 
     if isinstance(body, CreateChallengesRequest):
