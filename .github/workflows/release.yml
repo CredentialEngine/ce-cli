@@ -37,7 +37,7 @@ jobs:
       - name: Run integration tests (VCR playback)
         run: pytest -m integration -v
         env:
-          CE_PUBLISHER_BASE: ${{ secrets.CE_PUBLISHER_BASE }}s
+          CE_PUBLISHER_BASE: ${{ secrets.CE_PUBLISHER_BASE }}
           CE_TEST_ACCESS_TOKEN: ${{ secrets.CE_TEST_ACCESS_TOKEN }}
           CE_TEST_CHALLENGE_UUID: ${{ secrets.CE_TEST_CHALLENGE_UUID }}
           CE_TEST_CTID: ${{ secrets.CE_TEST_CTID }}
