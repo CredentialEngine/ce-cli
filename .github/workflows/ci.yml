@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    name: Unit tests
+    name: Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -25,18 +25,18 @@ jobs:
       - name: Generate version
         run: echo "VERSION=$(date +%Y.%m.%d).${{ github.run_number }}" >> $GITHUB_ENV
 
-      - name: Install tox and build
-        run: pip install tox build
+      - name: Install dependencies
+        run: |
+          pip install build
+          pip install -e ".[test]"
 
       - name: Run unit tests
-        run: tox -e unit
+        run: pytest -m unit -v
+
+      - name: Run integration tests (VCR playback)
+        run: pytest -m integration -v
         env:
-          CE_PUBLISHER_BASE: ${{ secrets.CE_PUBLISHER_BASE }}
-          CE_TEST_ACCESS_TOKEN: ${{ secrets.CE_TEST_ACCESS_TOKEN }}
-          CE_TEST_USER_ID: ${{ secrets.CE_TEST_USER_ID }}
-          CE_TEST_CTID: ${{ secrets.CE_TEST_CTID }}
-          CE_TEST_CHALLENGE_UUID: ${{ secrets.CE_TEST_CHALLENGE_UUID }}
-          CE_TEST_DID_KEY: ${{ secrets.CE_TEST_DID_KEY }}
+          VCR_RECORD_MODE: none
 
       - name: Build package
         run: python -m build
