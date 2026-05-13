@@ -41,6 +41,8 @@ jobs:
           CE_TEST_CHALLENGE_UUID: ${{ secrets.CE_TEST_CHALLENGE_UUID }}
           CE_TEST_CTID: ${{ secrets.CE_TEST_CTID }}
           CE_TEST_DID_KEY: ${{ secrets.CE_TEST_DID_KEY }}
+          CE_TEST_DID_WEB: ${{ secrets.CE_TEST_DID_WEB }}
+          CE_TEST_PRIVKEY_MULTIBASE: ${{ secrets.CE_TEST_PRIVKEY_MULTIBASE }}
           CE_TEST_USER_ID: ${{ secrets.CE_TEST_USER_ID }}
           VCR_RECORD_MODE: none
 
