@@ -36,6 +36,10 @@ def cli(ctx: click.Context, debug: bool) -> None:
     Manage Credential Engine platform resources and services.
 
     \b
+    IIR — single challenge:
+    ce iir sign-individual-challenge --privateKey z... --challengeFile challenge.json
+
+    \b
     First time?
       ce env list              Select your environment (dev / sandbox / prod)
       ce login                 Sign in via Keycloak device authorization

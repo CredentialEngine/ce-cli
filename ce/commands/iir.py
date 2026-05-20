@@ -8,6 +8,8 @@ from pathlib import Path
 import click
 from rich.console import Console
 
+from ce.commands.iir_sign_challenge import sign_individual_challenge
+
 from ce.auth.token_manager import require_login
 from ce.config.context import require_environment
 from ce.iir.csv_processor import run_generate, run_upload
@@ -27,6 +29,7 @@ def iir_group() -> None:
 def bulk_upload_dids_group() -> None:
     """Bulk DID challenge generation and issuer publishing."""
 
+iir_group.add_command(sign_individual_challenge)
 
 @bulk_upload_dids_group.command("sign-challenges")
 @click.option(
