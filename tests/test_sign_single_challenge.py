@@ -14,7 +14,7 @@ from unittest.mock import MagicMock, patch
 import click
 import pytest
 import requests
-from click.testing import CliRunner
+
 
 
 pytestmark = pytest.mark.unit
@@ -32,7 +32,6 @@ from ce.commands.iir_sign_challenge import (
     _resolve_public_key_bytes_for_kid,
     _sign_payload,
     _verify_signature_only,
-    sign_individual_challenge,
 )
 
 
