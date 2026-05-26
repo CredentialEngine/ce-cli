@@ -2,6 +2,12 @@
 
 A command-line tool for managing Credential Engine platform resources.
 
+All commands follow the format:
+
+```
+ce <noun> [<noun>] <verb> [--<parameters>]
+```
+
 ## Requirements
 
 - Python 3.10+
@@ -17,29 +23,31 @@ This puts the `ce` command on your `$PATH`.
 ## Quick start
 
 ```bash
-# Sign in
-ce login
-
+# Pick an environment, then sign in
+ce env list
+ce env use dev
+ce account login
+ce account show
 ```
 
 ## Command reference
 
-### Authentication
+### Account (`ce account`)
 
-| Command     | Description                               |
-| ----------- | ----------------------------------------- |
-| `ce login`  | Sign in via Keycloak device authorization |
-| `ce logout` | Sign out and revoke tokens                |
-| `ce whoami` | Show who you're signed in as              |
+| Command             | Description                               |
+| ------------------- | ----------------------------------------- |
+| `ce account login`  | Sign in via Keycloak device authorization |
+| `ce account logout` | Sign out and revoke tokens                |
+| `ce account show`   | Show who you're signed in as              |
 
 ### Environments (`ce env`)
 
 Environments let you switch between `dev`, `sandbox`, and `prod` without touching env vars. Each environment maps a friendly name to an API URL (plus optional OIDC overrides).
 
-| Command          | Description                                    |
-| ---------------- | ---------------------------------------------- |
-| `ce env list`    | List all environments (● marks the active one) |
-| `ce env use <n>` | Switch to a different environment              |
+| Command             | Description                                    |
+| ------------------- | ---------------------------------------------- |
+| `ce env list`       | List all environments (● marks the active one) |
+| `ce env use <name>` | Switch to a different environment              |
 
 ```bash
 ce env list
@@ -48,30 +56,35 @@ ce env use dev
 
 ### IIR — Issuer Identity Registry (`ce iir`)
 
-| Command                                   | Login required | Description                                                  |
-| ----------------------------------------- | -------------- | ------------------------------------------------------------ |
-| `ce iir sign-individual-challenge`        | No             | Sign a single CE challenge JSON file and produce a Proof JWT |
-| `ce iir bulk-upload-dids sign-challenges` | Yes            | Bulk-validate and sign challenges from a CSV                 |
-| `ce iir bulk-upload-dids publish`         | Yes            | Publish signed issuers to the IIR registry                   |
+IIR commands are grouped by the noun they operate on:
 
-#### Sign an individual challenge (`ce iir sign-individual-challenge`)
+- `ce iir challenge ...` — sign challenges (single or bulk)
+- `ce iir issuer-did ...` — publish signed issuers to the registry
 
-Signs a CE-generated challenge JSON file with an Ed25519 private key (alg `EdDSA`) and verifies the resulting JWT against the public key resolved from the DID in the payload. No login required — this is an offline operation for `did:key` and a single HTTPS fetch for `did:web`.
+| Command                      | Login required | Description                                                  |
+| ---------------------------- | -------------- | ------------------------------------------------------------ |
+| `ce iir challenge sign`      | No             | Sign a single CE challenge JSON file and produce a Proof JWT |
+| `ce iir challenge bulk-sign` | Yes            | Bulk-validate and sign challenges from a CSV                 |
+| `ce iir issuer-did publish`  | Yes            | Publish signed issuers to the IIR registry                   |
+
+#### Sign a single challenge (`ce iir challenge sign`)
+
+Signs a CE-generated challenge JSON file with an Ed25519 private key (alg `EdDSA`) and verifies the resulting JWT against the public key resolved from the DID in the payload. No login required — offline for `did:key`, single HTTPS fetch for `did:web`.
 
 ```bash
-ce iir sign-individual-challenge \
-  --privateKey z3u2en... \
-  --challengeFile challenge.json \
-  --out proof.jwt
+ce iir challenge sign \
+  --private-key z3u2en... \
+  --challenge-file challenge.json \
+  --output signed-challenge.jwt
 ```
 
-| Flag              | Required | Description                                                          |
-| ----------------- | -------- | -------------------------------------------------------------------- |
-| `--privateKey`    | Yes      | Ed25519 private seed, multibase base58btc (starts with `z`)          |
-| `--challengeFile` | Yes      | Path to the challenge JSON produced by CE                            |
-| `--out`           | No       | Write the JWT to this file. If omitted, the JWT is printed to stdout |
+| Flag               | Required | Description                                                          |
+| ------------------ | -------- | -------------------------------------------------------------------- |
+| `--private-key`    | Yes      | Ed25519 private seed, multibase base58btc (starts with `z`)          |
+| `--challenge-file` | Yes      | Path to the challenge JSON produced by CE                            |
+| `--output`, `-o`   | No       | Write the JWT to this file. If omitted, the JWT is printed to stdout |
 
-The challenge JSON must include `did`, `challenge`, `aud`, `iat`, and `exp`. The `did` field is used as the JWT header `kid` and to resolve the public key for verification (`did:key` resolves offline, `did:web` is fetched over HTTPS using the OS trust store).
+The challenge JSON must include `did`, `challenge`, `aud`, `iat`, and `exp`. The `did` field is used as the JWT header `kid` and to resolve the public key for verification (`did:key` resolves offline; `did:web` is fetched over HTTPS using the OS trust store).
 
 Example challenge file:
 
@@ -89,28 +102,28 @@ On success, the JWT is written (or printed) and a verification confirmation is s
 
 ```
 Signature verification: OK (matches DID public key)
-Wrote Proof JWT to: proof.jwt
+Wrote Proof JWT to: signed-challenge.jwt
 ```
 
-#### Bulk DID Upload (`ce iir bulk-upload-dids`)
+#### Bulk DID upload
 
-Register DIDs for multiple organizations in one go. The process has two phases:
+Register DIDs for multiple organizations in one go. The process has two phases.
 
-**Phase 1 — Generate signed challenges:**
+**Phase 1 — Sign challenges (`ce iir challenge bulk-sign`):**
 
 ```bash
-ce iir bulk-upload-dids sign-challenges --csv input.csv
+ce iir challenge bulk-sign --csv input.csv --output output.csv
 ```
 
-Validates each row (membership, registry lookup, DID resolution), creates challenges, signs JWTs with the provided private keys, and writes the results to an output CSV.
+Validates each row (membership, registry lookup, DID resolution), creates challenges, signs JWTs with the provided private keys, and writes the results to an output CSV. If `--output` is omitted, defaults to `Output-<stem>-<UTC>.csv`. Failed rows are written to `Errors-<stem>-<UTC>.csv` (override with `--errors`).
 
-**Phase 2 — Publish to the IIR registry:**
+**Phase 2 — Publish to the IIR registry (`ce iir issuer-did publish`):**
 
 ```bash
-ce iir bulk-upload-dids publish --output-file Output-input-20240101T000000Z.csv
+ce iir issuer-did publish --input output.csv
 ```
 
-Verifies the JWT signatures server-side and publishes each issuer to the IIR.
+Verifies the JWT signatures and publishes each issuer to the IIR. Pass `--yes`/`-y` to skip the confirmation prompt. Failed publishes are written to `PublishErrors-<stem>-<UTC>.csv` (override with `--publish-errors`).
 
 #### Input CSV format
 
@@ -140,25 +153,25 @@ ce-87654321-...,did:web:example.com,did:web:example.com#key-1,,z3u2en...,,
 ce-cli/
 ├── pyproject.toml
 └── ce/
-    ├── main.py                  # Root CLI group + top-level aliases
+    ├── main.py                    # Root CLI group
     ├── auth/
-    │   ├── device_flow.py       # RFC 8628 Keycloak client
-    │   └── token_manager.py     # Silent token refresh + require_login()
+    │   ├── device_flow.py         # RFC 8628 Keycloak client
+    │   └── token_manager.py       # Silent token refresh + require_login()
     ├── commands/
-    │   ├── auth.py              # ce login / logout / account show
-    │   ├── env.py               # ce env list/add/use/show/remove
-    │   ├── config.py            # ce config set/get/list/reset
-    │   ├── iir.py               # ce iir group + bulk-upload-dids subcommands
-    │   ├── iir_sign_challenge.py  # ce iir sign-individual-challenge
-    │   └── resource.py          # ce resource list/show/create/delete
+    │   ├── auth.py                # ce account login / logout / show
+    │   ├── env.py                 # ce env list / use / show / add / remove
+    │   ├── config.py              # ce config set / get / list / reset
+    │   ├── iir.py                 # ce iir challenge bulk-sign, ce iir issuer-did publish
+    │   ├── iir_sign_challenge.py  # ce iir challenge sign
+    │   └── resource.py            # ce resource list / show / create / delete
     ├── config/
-    │   ├── settings.py          # OIDCSettings, token I/O, paths
-    │   └── context.py           # Environment model, active-env helpers
+    │   ├── settings.py            # OIDCSettings, token I/O, paths
+    │   └── context.py             # Environment model, active-env helpers
     ├── iir/
-    │   ├── csv_processor.py     # Bulk DID upload (sign-challenges + publish)
-    │   └── did_ops.py           # DID validation, challenges, JWT signing
+    │   ├── csv_processor.py       # Bulk DID upload (bulk-sign + publish)
+    │   └── did_ops.py             # DID validation, challenges, JWT signing
     └── utils/
-        ├── http.py              # Authenticated httpx wrapper + APIError
-        ├── output.py            # table/json/yaml/tsv renderer + @output_option
-        └── errors.py            # @handle_api_errors decorator
+        ├── http.py                # Authenticated httpx wrapper + APIError
+        ├── output.py              # table/json/yaml/tsv renderer + @output_option
+        └── errors.py              # @handle_api_errors decorator
 ```

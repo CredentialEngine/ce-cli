@@ -4,7 +4,7 @@ import click
 from rich.console import Console
 from rich.table import Table, box
 
-from ce.config.context import load_cli_config, save_cli_config
+from ce.config.context import CLIConfig, load_cli_config, save_cli_config
 from ce.utils.output import OUTPUT_FORMATS
 
 console = Console()
@@ -12,7 +12,7 @@ err_console = Console(stderr=True)
 
 
 _SETTABLE_KEYS = {
-    "output": "output_format",          
+    "output": "output_format",
 }
 
 _KEY_HELP = {
@@ -26,9 +26,15 @@ def config_group() -> None:
 
 
 @click.command("set")
-@click.argument("assignments", nargs=-1, required=True, metavar="KEY=VALUE …")
+@click.argument("assignments", nargs=-1, required=True, metavar="KEY=VALUE...")
 def config_set(assignments: tuple[str, ...]) -> None:
-   
+    """Set one or more CLI configuration values.
+
+    \b
+    Examples:
+      ce config set output=json
+      ce config set output=table
+    """
     cli_config = load_cli_config()
     changed: list[str] = []
     errors: list[str] = []
@@ -53,7 +59,8 @@ def config_set(assignments: tuple[str, ...]) -> None:
         # Validate
         if key == "output" and value not in OUTPUT_FORMATS:
             errors.append(
-                f"Invalid value '{value}' for 'output'. Must be one of: {', '.join(OUTPUT_FORMATS)}."
+                f"Invalid value '{value}' for 'output'. "
+                f"Must be one of: {', '.join(OUTPUT_FORMATS)}."
             )
             continue
 
@@ -72,17 +79,24 @@ def config_set(assignments: tuple[str, ...]) -> None:
         raise SystemExit(1)
 
 
+# ce config get
 
 @click.command("get")
 @click.argument("key")
 def config_get(key: str) -> None:
-    """Print the value of a configuration key."""
+    """Print the value of a configuration key.
+
+    \b
+    Example:
+      ce config get output
+    """
     key = key.strip().lower()
     cli_config = load_cli_config()
 
     if key not in _SETTABLE_KEYS:
         err_console.print(
-            f"[red]✗[/red] Unknown key '{key}'. Valid keys: {', '.join(sorted(_SETTABLE_KEYS))}."
+            f"[red]✗[/red] Unknown key '{key}'. "
+            f"Valid keys: {', '.join(sorted(_SETTABLE_KEYS))}."
         )
         raise SystemExit(1)
 
@@ -103,7 +117,11 @@ def config_list() -> None:
 
     for key, field in sorted(_SETTABLE_KEYS.items()):
         value = getattr(cli_config, field, "")
-        table.add_row(key, str(value) if value else "[dim]—[/dim]", _KEY_HELP.get(key, ""))
+        table.add_row(
+            key,
+            str(value) if value else "[dim]—[/dim]",
+            _KEY_HELP.get(key, ""),
+        )
 
     console.print()
     console.print(table)
@@ -114,13 +132,15 @@ def config_list() -> None:
 @click.command("reset")
 @click.option("--yes", "-y", is_flag=True, help="Skip confirmation.")
 def config_reset(yes: bool) -> None:
-    """Reset all CLI configuration to defaults."""
+    """Reset all CLI configuration to defaults.
+
+    Environments and the active environment selection are preserved.
+    """
     if not yes:
         click.confirm("  Reset all CLI configuration to defaults?", abort=True)
 
-    from ce.config.context import CLIConfig, save_cli_config
     current = load_cli_config()
-    # Preserve environments and active env; only reset preferences
+    # Preserve environments and active env; only reset preferences.
     reset = CLIConfig(
         current_environment=current.current_environment,
         environments=current.environments,
@@ -129,8 +149,7 @@ def config_reset(yes: bool) -> None:
     console.print("[green]✓[/green] Configuration reset to defaults.")
 
 
-
-config_group.add_command(config_set, name="set")
-config_group.add_command(config_get, name="get")
-config_group.add_command(config_list, name="list")
-config_group.add_command(config_reset, name="reset")
+config_group.add_command(config_set)
+config_group.add_command(config_get)
+config_group.add_command(config_list)
+config_group.add_command(config_reset)

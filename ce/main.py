@@ -36,29 +36,29 @@ def cli(ctx: click.Context, debug: bool) -> None:
     Manage Credential Engine platform resources and services.
 
     \b
-    IIR — single challenge:
-    ce iir sign-individual-challenge --privateKey z... --challengeFile challenge.json
-
-    \b
     First time?
-      ce env list              Select your environment (dev / sandbox / prod)
-      ce login                 Sign in via Keycloak device authorization
-      ce whoami                Confirm who you are signed in as
+      ce env list                      Select your environment (dev / sandbox / prod)
+      ce account login                 Sign in via Keycloak device authorization
+      ce account show                  Confirm who you are signed in as
 
     \b
     Everyday use:
-      ce logout                Sign out
-      ce env use <n>           Switch environment
+      ce account logout                Sign out
+      ce env use <name>                Switch environment
+
+    \b
+    IIR — sign a single challenge:
+      ce iir challenge sign --challenge-file challenge.json --output signed-challenge.jwt
 
     \b
     IIR — bulk DID upload:
-      ce iir bulk-upload-dids sign-challenges --csv input.csv
-      ce iir bulk-upload-dids publish   --output-file Output-input-....csv
+      ce iir challenge bulk-sign --csv input.csv --output output.csv
+      ce iir issuer-did publish --input output.csv
 
     \b
     Run any command with --help for full options:
-      ce login --help
-      ce iir bulk-upload-dids sign-challenges --help
+      ce account login --help
+      ce iir challenge bulk-sign --help
     """
     ctx.ensure_object(dict)
     ctx.obj["debug"] = debug
@@ -68,38 +68,9 @@ def cli(ctx: click.Context, debug: bool) -> None:
         enable_debug()
 
 
-# Top-level commands
-
-@cli.command("login")
-@click.option("--env", "env_name", default=None, metavar="NAME",
-              help="Environment to log in to (default: active environment).")
-@click.pass_context
-def login_alias(ctx: click.Context, env_name: str | None) -> None:
-    """Sign in to Credential Engine via Keycloak device authorization."""
-    from ce.commands.auth import login as _login
-    ctx.invoke(_login, env_name=env_name)
-
-
-@cli.command("logout")
-@click.option("--yes", "-y", is_flag=True, help="Skip confirmation prompt.")
-@click.pass_context
-def logout_alias(ctx: click.Context, yes: bool) -> None:
-    """Sign out and remove stored credentials."""
-    from ce.commands.auth import logout as _logout
-    ctx.invoke(_logout, yes=yes)
-
-
-@cli.command("whoami")
-@click.pass_context
-def whoami(ctx: click.Context) -> None:
-    """Show the currently signed-in account."""
-    from ce.commands.auth import account_show as _show
-    ctx.invoke(_show)
-
-
 # Command groups
 
-cli.add_command(auth_group)     # ce account ...
-cli.add_command(env_group)      # ce env ...
-cli.add_command(iir_group)      # ce iir ...
+cli.add_command(auth_group)       # ce account login / logout / show
+cli.add_command(env_group)        # ce env list / use / show
+cli.add_command(iir_group)        # ce iir challenge ... / ce iir issuer-did ...
 cli.add_command(version_command)  # ce version

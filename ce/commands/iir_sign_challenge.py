@@ -1,4 +1,4 @@
-"""`ce iir sign-individual-challenge` - sign and verify a Proof JWT for a single CE challenge.
+"""`ce iir challenge sign` - sign and verify a Proof JWT for a single CE challenge.
 
 Reads a challenge JSON file produced by CE, signs it with an Ed25519 private key
 (alg=EdDSA), and verifies the resulting JWT against the public key resolved from
@@ -24,9 +24,8 @@ console = Console()
 err_console = Console(stderr=True)
 
 
-# -------------------------
+
 # Multibase + multicodec helpers
-# -------------------------
 
 def _parse_uvarint(data: bytes) -> Tuple[int, int]:
     x = 0
@@ -45,9 +44,9 @@ def _decode_multibase_base58btc(z_value: str) -> bytes:
     return base58.b58decode(z_value[1:])
 
 
-# -------------------------
-# Private key -> Ed25519 seed
-# -------------------------
+
+# Private key to Ed25519 seed
+
 
 def _extract_ed25519_seed_from_private_key(private_key_multibase: str) -> bytes:
     raw = _decode_multibase_base58btc(private_key_multibase.strip())
@@ -66,9 +65,8 @@ def _extract_ed25519_seed_from_private_key(private_key_multibase: str) -> bytes:
     raise ValueError("Unrecognized privateKey encoding")
 
 
-# -------------------------
+
 # did:key resolution (offline)
-# -------------------------
 
 def _extract_ed25519_pub_from_did_key(did_or_kid: str) -> bytes:
     base = did_or_kid.split("#", 1)[0].strip()
@@ -88,9 +86,8 @@ def _extract_ed25519_pub_from_did_key(did_or_kid: str) -> bytes:
     raise ValueError("Invalid did:key encoding (expected Ed25519 public key)")
 
 
-# -------------------------
+
 # did:web resolution (HTTPS using OS trust)
-# -------------------------
 
 def _did_web_to_url(did_web: str) -> str:
     if not did_web.startswith("did:web:"):
@@ -177,9 +174,8 @@ def _resolve_public_key_bytes_for_kid(kid: str) -> bytes:
     raise ValueError(f"Unsupported DID method: {base}")
 
 
-# -------------------------
+
 # Signing + verification
-# -------------------------
 
 def _sign_payload(private_key_mb: str, kid: str, payload_obj: Dict[str, Any]) -> str:
     seed = _extract_ed25519_seed_from_private_key(private_key_mb)
@@ -234,20 +230,19 @@ def _assert_signature_verifiable(token: str, kid: str) -> None:
     )
 
 
-# -------------------------
-# Click command
-# -------------------------
 
-@click.command("sign-individual-challenge")
+# Click command
+
+@click.command("sign")
 @click.option(
-    "--privateKey",
+    "--private-key",
     "private_key",
     required=True,
     metavar="MULTIBASE",
     help="Ed25519 private seed (multibase base58btc, starts with 'z').",
 )
 @click.option(
-    "--challengeFile",
+    "--challenge-file",
     "challenge_file",
     required=True,
     type=click.Path(exists=True, dir_okay=False, readable=True),
@@ -255,7 +250,7 @@ def _assert_signature_verifiable(token: str, kid: str) -> None:
     help="Path to CE-generated challenge JSON file.",
 )
 @click.option(
-    "--out",
+    "--output", "-o",
     "out_path",
     default=None,
     type=click.Path(dir_okay=False, writable=True),
@@ -271,14 +266,14 @@ def sign_individual_challenge(
 
     \b
     The challenge JSON must include: did, challenge, aud, iat, exp.
-    (did:key offline, or did:web via HTTPS) for signature verification.
+    Signature verification uses did:key (offline) or did:web (HTTPS).
 
     \b
     Example:
-      ce iir sign-individual-challenge \\
-        --privateKey zABC... \\
-        --challengeFile challenge.json \\
-        --out proof.jwt
+      ce iir challenge sign \\
+        --private-key zABC... \\
+        --challenge-file challenge.json \\
+        --output signed-challenge.jwt
     """
     try:
         with open(challenge_file, "r", encoding="utf-8") as f:

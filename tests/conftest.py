@@ -9,7 +9,9 @@ from unittest.mock import MagicMock
 import pytest
 from dotenv import load_dotenv
 
-load_dotenv(Path(__file__).resolve().parents[1] / ".env.test")
+if os.environ.get("VCR_RECORD_MODE", "none").lower() != "none":
+    from dotenv import load_dotenv
+    load_dotenv(Path(__file__).resolve().parents[1] / ".env.test")
 
 PUBLISHER_BASE = os.getenv("CE_PUBLISHER_BASE", "https://localhost:44330")
 ACCESS_TOKEN = os.getenv("CE_TEST_ACCESS_TOKEN", "")

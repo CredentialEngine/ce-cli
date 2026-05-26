@@ -1,15 +1,22 @@
 """CSV processing for bulk DID upload.
-  sign-challenges
-        CTID Validation  
-        registry lookup,
-        DID validation,
-        challenge creation, 
-        JWT signing  
-            Output CSV
-  publish
-        JWT signature verify
-        Save Token
-        publish issuer
+
+Two phases, mirroring the CLI commands:
+
+  ce iir challenge bulk-sign
+      - CTID format validation
+      - Membership check
+      - Registry lookup
+      - DID classification + validation
+      - Verification method check
+      - Challenge creation
+      - JWT signing + local verification
+      - writes Output CSV and Errors CSV
+
+  ce iir issuer-did publish
+      - JWT signature verification 
+      - Save challenge token
+      - Submit issuer to IIR
+      - writes PublishErrors CSV
 """
 
 from __future__ import annotations
@@ -21,11 +28,12 @@ from rich.console import Console
 from rich.table import Table, box
 
 from ce.iir.did_ops import (
-    call_get_organization_iir_detail,
-    call_is_user_member,
     call_create_challenges,
+    call_get_organization_iir_detail,
     call_get_registry_resource,
-    call_save_challenge_token, 
+    call_is_user_member,
+    call_save_challenge_token,
+    call_submit_to_iir,
     call_validate_did_key,
     call_validate_did_web,
     call_verify_jwt_signature,
@@ -37,7 +45,6 @@ from ce.iir.did_ops import (
     validate_did_key_prefix,
     validate_verification_method,
     verify_proof_jwt,
-    call_submit_to_iir
 )
 
 console = Console()
@@ -256,7 +263,7 @@ def run_generate(
         console.print(f"[red]✗[/red] {len(error_rows)} failed     →  [bold]{errors_file}[/bold]")
         console.print(
             f"  Fix errors and rerun: "
-            f"[bold]ce iir bulk-upload-dids sign-challenges --csv {errors_file.name}[/bold]"
+            f"[bold]ce iir challenge bulk-sign --csv {errors_file.name}[/bold]"
         )
 
     return len(ok_rows), len(error_rows)

@@ -1,4 +1,4 @@
-"""Auth command group: ce login, ce logout, ce account show."""
+"""Auth command group: ce account login, ce account logout, ce account show."""
 
 from __future__ import annotations
 
@@ -26,7 +26,7 @@ def auth_group() -> None:
     """Manage Credential Engine account and authentication."""
 
 
-# ce login
+# ce account login
 
 @click.command("login")
 @click.option("--env", "env_name", default=None, metavar="NAME",
@@ -49,14 +49,14 @@ def login(env_name: str | None) -> None:
     else:
         result = get_current_environment()
         if result is None:
-            err_console.print("No active environment. Run [bold]ce env use <n>[/bold] first.")
+            err_console.print("No active environment. Run [bold]ce env use <name>[/bold] first.")
             raise SystemExit(1)
         active_name, env = result
 
     if is_logged_in():
         console.print(f"Already signed in to [bold]{active_name}[/bold] "
                       f"([dim]{env.label}[/dim]). Run [bold]ce account show[/bold] for details.")
-        console.print("  To switch accounts, run [bold]ce logout[/bold] first.")
+        console.print("  To switch accounts, run [bold]ce account logout[/bold] first.")
         return
 
     client = KeycloakDeviceFlowClient(env)
@@ -103,7 +103,7 @@ def login(env_name: str | None) -> None:
         raise SystemExit(1)
     except TokenExpiredError:
         console.print()
-        err_console.print("The device code expired. Run [bold]ce login[/bold] again.")
+        err_console.print("The device code expired. Run [bold]ce account login[/bold] again.")
         raise SystemExit(1)
     except DeviceFlowError as exc:
         console.print()
@@ -126,11 +126,11 @@ def login(env_name: str | None) -> None:
         greeting += f" [dim]({email})[/dim]"
     greeting += f"  [dim]-> {active_name} ({env.label})[/dim]"
     console.print(greeting)
-    console.print("  Run [bold]ce whoami show[/bold] to view your account details.")
+    console.print("  Run [bold]ce account show[/bold] to view your account details.")
     console.print()
 
 
-# ce logout
+# ce account logout
 
 @click.command("logout")
 @click.option("--yes", "-y", is_flag=True, help="Skip confirmation prompt.")
@@ -157,7 +157,7 @@ def logout(yes: bool) -> None:
     console.print("Signed out successfully.")
 
 
-# ce whoami
+# ce account show
 
 @click.command("show")
 def account_show() -> None:
@@ -166,7 +166,7 @@ def account_show() -> None:
 
     tokens = load_tokens()
     if tokens is None:
-        console.print("Not signed in. Run [bold]ce login[/bold].")
+        console.print("Not signed in. Run [bold]ce account login[/bold].")
         return
 
     result = get_current_environment()
@@ -177,7 +177,7 @@ def account_show() -> None:
 
     token = get_valid_access_token()
     if not token:
-        err_console.print("Session expired. Run [bold]ce login[/bold] again.")
+        err_console.print("Session expired. Run [bold]ce account login[/bold] again.")
         return
 
     client = KeycloakDeviceFlowClient(env)
