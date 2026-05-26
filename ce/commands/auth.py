@@ -126,7 +126,7 @@ def login(env_name: str | None) -> None:
         greeting += f" [dim]({email})[/dim]"
     greeting += f"  [dim]-> {active_name} ({env.label})[/dim]"
     console.print(greeting)
-    console.print("  Run [bold]ce account show[/bold] to view your account details.")
+    console.print("  Run [bold]ce whoami[/bold] to view your account details.")
     console.print()
 
 

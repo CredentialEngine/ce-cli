@@ -26,19 +26,19 @@ This puts the `ce` command on your `$PATH`.
 # Pick an environment, then sign in
 ce env list
 ce env use dev
-ce account login
-ce account show
+ce login
+ce whoami
 ```
 
 ## Command reference
 
-### Account (`ce account`)
+### Account (`ce`)
 
-| Command             | Description                               |
-| ------------------- | ----------------------------------------- |
-| `ce account login`  | Sign in via Keycloak device authorization |
-| `ce account logout` | Sign out and revoke tokens                |
-| `ce account show`   | Show who you're signed in as              |
+| Command     | Description                               |
+| ----------- | ----------------------------------------- |
+| `ce login`  | Sign in via Keycloak device authorization |
+| `ce logout` | Sign out and revoke tokens                |
+| `ce whoami` | Show who you're signed in as              |
 
 ### Environments (`ce env`)
 
@@ -158,7 +158,7 @@ ce-cli/
     │   ├── device_flow.py         # RFC 8628 Keycloak client
     │   └── token_manager.py       # Silent token refresh + require_login()
     ├── commands/
-    │   ├── auth.py                # ce account login / logout / show
+    │   ├── auth.py                # ce login / logout / whoami
     │   ├── env.py                 # ce env list / use / show / add / remove
     │   ├── config.py              # ce config set / get / list / reset
     │   ├── iir.py                 # ce iir challenge bulk-sign, ce iir issuer-did publish

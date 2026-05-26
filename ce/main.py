@@ -10,7 +10,7 @@ import click
 from rich.console import Console
 
 from ce import __version__
-from ce.commands.auth import auth_group
+from ce.commands.auth import account_show, login, logout
 from ce.commands.env import env_group
 from ce.commands.iir import iir_group
 from ce.commands.version import version_command
@@ -38,26 +38,17 @@ def cli(ctx: click.Context, debug: bool) -> None:
     \b
     First time?
       ce env list                      Select your environment (dev / sandbox / prod)
-      ce account login                 Sign in via Keycloak device authorization
-      ce account show                  Confirm who you are signed in as
+      ce login                         Sign in via Keycloak device authorization
+      ce whoami                        Confirm who you are signed in as
 
     \b
     Everyday use:
-      ce account logout                Sign out
+      ce logout                        Sign out
       ce env use <name>                Switch environment
 
     \b
-    IIR — sign a single challenge:
-      ce iir challenge sign --challenge-file challenge.json --output signed-challenge.jwt
-
-    \b
-    IIR — bulk DID upload:
-      ce iir challenge bulk-sign --csv input.csv --output output.csv
-      ce iir issuer-did publish --input output.csv
-
-    \b
     Run any command with --help for full options:
-      ce account login --help
+      ce login --help
       ce iir challenge bulk-sign --help
     """
     ctx.ensure_object(dict)
@@ -68,9 +59,12 @@ def cli(ctx: click.Context, debug: bool) -> None:
         enable_debug()
 
 
-# Command groups
+# Top-level account commands (promoted from `ce account ...`)
+cli.add_command(login, name="login")           # ce login
+cli.add_command(logout, name="logout")         # ce logout
+cli.add_command(account_show, name="whoami")   # ce whoami
 
-cli.add_command(auth_group)       # ce account login / logout / show
+# Command groups
 cli.add_command(env_group)        # ce env list / use / show
 cli.add_command(iir_group)        # ce iir challenge ... / ce iir issuer-did ...
 cli.add_command(version_command)  # ce version
