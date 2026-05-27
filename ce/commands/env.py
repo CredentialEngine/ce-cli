@@ -1,4 +1,4 @@
-"""Environment command group: ce env list/add/use/show/remove."""
+"""Environment command group: ce env list / add / use / show / remove."""
 
 from __future__ import annotations
 
@@ -10,7 +10,6 @@ from rich.table import Table, box
 from ce.config.context import (
     DEFAULT_ENVIRONMENTS,
     Environment,
-    get_current_environment,
     load_cli_config,
     save_cli_config,
 )
@@ -21,9 +20,10 @@ err_console = Console(stderr=True)
 
 @click.group("env")
 def env_group() -> None:
-    """Manage Credential Engine environments (dev, sandbox, prod, …)."""
+    """Manage Credential Engine environments (dev, sandbox, prod, ...)."""
 
 
+# ce env list
 
 @click.command("list")
 def env_list() -> None:
@@ -53,19 +53,35 @@ def env_list() -> None:
     console.print()
 
 
+# ce env add
 
 @click.command("add")
 @click.argument("name")
-@click.option("--label",          default=None, help="Human-readable label.")
-@click.option("--client-id",      default=None, metavar="ID",  help="OIDC client ID.")
-@click.option("--device-auth-url",default=None, metavar="URL", help="Device authorization endpoint.")
-@click.option("--token-url",      default=None, metavar="URL", help="Token endpoint.")
-@click.option("--scopes",         default=None, help="Space-separated OIDC scopes.")
-@click.option("--publisher-base", default=None, metavar="URL", help="Publisher service base URL.")
-@click.option("--no-ssl-verify",  is_flag=True, default=False, help="Disable SSL verification.")
-@click.option("--activate", "-a", is_flag=True, default=False, help="Set as active immediately.")
+@click.option("--label",           default=None, help="Human-readable label.")
+@click.option("--client-id",       default=None, metavar="ID",  help="OIDC client ID.")
+@click.option("--device-auth-url", default=None, metavar="URL", help="Device authorization endpoint.")
+@click.option("--token-url",       default=None, metavar="URL", help="Token endpoint.")
+@click.option("--scopes",          default=None, help="Space-separated OIDC scopes.")
+@click.option("--publisher-base",  default=None, metavar="URL", help="Publisher service base URL.")
+@click.option("--no-ssl-verify",   is_flag=True, default=False, help="Disable SSL verification.")
+@click.option("--activate", "-a",  is_flag=True, default=False, help="Set as active immediately.")
 def env_add(name, label, client_id, device_auth_url, token_url, scopes,
             publisher_base, no_ssl_verify, activate):
+    """Add or update an environment.
+
+    \b
+    Built-in environments (dev, sandbox, prod) can be added with no options —
+    defaults will be filled in. For a custom environment, provide all of:
+    --label, --client-id, --device-auth-url, --token-url, --publisher-base.
+
+    \b
+    Examples:
+      ce env add dev
+      ce env add staging --label "Staging" --client-id ce-cli \\
+        --device-auth-url https://auth.example.com/.../device \\
+        --token-url       https://auth.example.com/.../token \\
+        --publisher-base  https://publisher.example.com
+    """
     config = load_cli_config()
     existing = name in config.environments
     base = DEFAULT_ENVIRONMENTS.get(name) or config.environments.get(name)
@@ -79,13 +95,13 @@ def env_add(name, label, client_id, device_auth_url, token_url, scopes,
         raise SystemExit(1)
 
     config.environments[name] = Environment(
-        label=           label            or (base.label if base else name),
-        client_id=       client_id        or (base.client_id if base else ""),
-        device_auth_url= device_auth_url  or (base.device_auth_url if base else ""),
-        token_url=       token_url        or (base.token_url if base else ""),
-        scopes=          scopes           or (base.scopes if base else "openid profile"),
-        publisher_base=  publisher_base   or (base.publisher_base if base else ""),
-        ssl_verify=      not no_ssl_verify,
+        label=          label           or (base.label          if base else name),
+        client_id=      client_id       or (base.client_id      if base else ""),
+        device_auth_url=device_auth_url or (base.device_auth_url if base else ""),
+        token_url=      token_url       or (base.token_url      if base else ""),
+        scopes=         scopes          or (base.scopes         if base else "openid profile"),
+        publisher_base= publisher_base  or (base.publisher_base if base else ""),
+        ssl_verify=     not no_ssl_verify,
     )
     if activate or config.current_environment is None:
         config.current_environment = name
@@ -97,10 +113,17 @@ def env_add(name, label, client_id, device_auth_url, token_url, scopes,
         console.print("  [dim]Now active.[/dim]")
 
 
+# ce env use
+
 @click.command("use")
 @click.argument("name")
 def env_use(name: str) -> None:
-    """Set NAME as the active environment."""
+    """Set NAME as the active environment.
+
+    \b
+    Example:
+      ce env use dev
+    """
     config = load_cli_config()
     if name not in config.environments:
         err_console.print(
@@ -114,15 +137,26 @@ def env_use(name: str) -> None:
     console.print(f"[green]✓[/green] Switched to [bold]{name}[/bold] ({env.label}).")
 
 
+# ce env show
+
 @click.command("show")
 @click.argument("name", required=False)
 def env_show(name: str | None) -> None:
-    """Show all details for an environment (defaults to active)."""
+    """Show all details for an environment (defaults to active).
+
+    \b
+    Examples:
+      ce env show
+      ce env show sandbox
+    """
     config = load_cli_config()
     target = name or config.current_environment
 
     if not target:
-        err_console.print("[yellow]⚠[/yellow]  No active environment.")
+        err_console.print(
+            "[yellow]⚠[/yellow]  No active environment. "
+            "Run [bold]ce env use <name>[/bold] to select one."
+        )
         return
 
     env = config.environments.get(target)
@@ -136,30 +170,41 @@ def env_show(name: str | None) -> None:
 
     active_label = " [green](active)[/green]" if target == config.current_environment else ""
     rows = [
-        ("Name",             f"{target}{active_label}"),
-        ("Label",            env.label),
-        ("Client ID",        env.client_id),
-        ("Device auth URL",  env.device_auth_url),
-        ("Token URL",        env.token_url),
-        ("Scopes",           env.scopes),
-        ("Publisher base",   env.publisher_base),
-        ("SSL verify",       str(env.ssl_verify)),
+        ("Name",            f"{target}{active_label}"),
+        ("Label",           env.label),
+        ("Client ID",       env.client_id),
+        ("Device auth URL", env.device_auth_url),
+        ("Token URL",       env.token_url),
+        ("Scopes",          env.scopes),
+        ("Publisher base",  env.publisher_base),
+        ("SSL verify",      str(env.ssl_verify)),
     ]
     for k, v in rows:
         table.add_row(k, v)
 
     console.print()
-    console.print(Panel(table, title=f"[bold]Environment: {target}[/bold]",
-                        border_style="blue", padding=(1, 2)))
+    console.print(Panel(
+        table,
+        title=f"[bold]Environment: {target}[/bold]",
+        border_style="blue",
+        padding=(1, 2),
+    ))
     console.print()
 
 
+# ce env remove
 
 @click.command("remove")
 @click.argument("name")
 @click.option("--yes", "-y", is_flag=True, help="Skip confirmation.")
 def env_remove(name: str, yes: bool) -> None:
-    """Remove environment NAME."""
+    """Remove environment NAME.
+
+    \b
+    Example:
+      ce env remove staging
+      ce env remove staging --yes
+    """
     config = load_cli_config()
     if name not in config.environments:
         err_console.print(f"[red]✗[/red] Environment [bold]{name}[/bold] not found.")
@@ -172,19 +217,19 @@ def env_remove(name: str, yes: bool) -> None:
     if config.current_environment == name:
         config.current_environment = next(iter(config.environments), None)
         if config.current_environment:
-            console.print(f"  [dim]Switched active environment to "
-                          f"[bold]{config.current_environment}[/bold].[/dim]")
+            console.print(
+                f"  [dim]Switched active environment to "
+                f"[bold]{config.current_environment}[/bold].[/dim]"
+            )
 
     save_cli_config(config)
     console.print(f"[green]✓[/green] Removed environment [bold]{name}[/bold].")
 
 
-# ---------------------------------------------------------------------------
 # Wire up
-# ---------------------------------------------------------------------------
 
-env_group.add_command(env_list,   name="list")
-env_group.add_command(env_add,    name="add")
-env_group.add_command(env_use,    name="use")
-env_group.add_command(env_show,   name="show")
-env_group.add_command(env_remove, name="remove")
+env_group.add_command(env_list)
+env_group.add_command(env_add)
+env_group.add_command(env_use)
+env_group.add_command(env_show)
+env_group.add_command(env_remove)

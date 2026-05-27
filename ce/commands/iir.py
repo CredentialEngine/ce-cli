@@ -1,4 +1,9 @@
-"""IIR command group: ce iir bulk-upload-dids sign-challenges / publish."""
+"""IIR command group:
+
+    ce iir challenge sign           # single challenge
+    ce iir challenge bulk-sign      # bulk DID challenge signing
+    ce iir issuer-did publish       # publish signed challenges to IIR
+"""
 
 from __future__ import annotations
 
@@ -7,6 +12,8 @@ from pathlib import Path
 
 import click
 from rich.console import Console
+
+from ce.commands.iir_sign_challenge import sign_individual_challenge
 
 from ce.auth.token_manager import require_login
 from ce.config.context import require_environment
@@ -23,12 +30,28 @@ def iir_group() -> None:
     """IIR (Issuer Identity Registry) commands."""
 
 
-@iir_group.group("bulk-upload-dids")
-def bulk_upload_dids_group() -> None:
-    """Bulk DID challenge generation and issuer publishing."""
+# ce iir challenge ...
+
+@iir_group.group("challenge")
+def challenge_group() -> None:
+    """Sign IIR challenges (single or bulk)."""
 
 
-@bulk_upload_dids_group.command("sign-challenges")
+# ce iir issuer-did ...
+
+@iir_group.group("issuer-did")
+def issuer_did_group() -> None:
+    """Publish signed challenges to the Issuer Identity Registry."""
+
+
+# ce iir challenge sign  (single)
+
+challenge_group.add_command(sign_individual_challenge, name="sign")
+
+
+# ce iir challenge bulk-sign
+
+@challenge_group.command("bulk-sign")
 @click.option(
     "--csv", "csv_path",
     required=True,
@@ -46,20 +69,20 @@ def bulk_upload_dids_group() -> None:
     help="Errors CSV path. Default: Errors-<stem>-<UTC>.csv",
 )
 @handle_api_errors
-def generate(csv_path: str, output_path: str | None, errors_path: str | None) -> None:
+def bulk_sign(csv_path: str, output_path: str | None, errors_path: str | None) -> None:
     """Check membership & registry, validate DIDs, create challenges, sign JWTs.
 
     \b
     Checks per row:
-      1. CTID format
-      2. Date format validation (ValidFrom, ValidUntil if provided)
-      3. Membership check - Is User a member of the org
-      4. Registry check - Is CTID published to the registry
-      5. DID classification
-      6. DID validation via API
-      7. Verification method
-      8. Create challenge
-      9. Sign JWT
+      1.  CTID format
+      2.  Date format validation (ValidFrom, ValidUntil if provided)
+      3.  Membership check - Is user a member of the org
+      4.  Registry check - Is CTID published to the registry
+      5.  DID classification
+      6.  DID validation via API
+      7.  Verification method
+      8.  Create challenge
+      9.  Sign JWT
       10. Local JWT verification
 
     \b
@@ -77,8 +100,8 @@ def generate(csv_path: str, output_path: str | None, errors_path: str | None) ->
 
     \b
     Examples:
-      ce iir bulk-upload-dids sign-challenges --csv input.csv
-      ce iir bulk-upload-dids sign-challenges --csv input.csv --output signed.csv
+      ce iir challenge bulk-sign --csv input.csv
+      ce iir challenge bulk-sign --csv input.csv --output signed.csv
     """
     access_token = require_login()
     _, env = require_environment()
@@ -89,7 +112,7 @@ def generate(csv_path: str, output_path: str | None, errors_path: str | None) ->
         err_console.print(f"[red]✗[/red] {e}")
         raise SystemExit(1)
 
-    stem      = Path(csv_path).stem
+    stem = Path(csv_path).stem
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
 
     resolved_output = output_path or f"Output-{stem}-{timestamp}.csv"
@@ -110,17 +133,18 @@ def generate(csv_path: str, output_path: str | None, errors_path: str | None) ->
     if ok > 0:
         console.print(
             f"\n[dim]Next step:[/dim] "
-            f"[bold]ce iir bulk-upload-dids publish  --output-file \"{resolved_output}\"[/bold]"
+            f"[bold]ce iir issuer-did publish --input \"{resolved_output}\"[/bold]"
         )
 
 
+# ce iir issuer-did publish
 
-@bulk_upload_dids_group.command("publish")
+@issuer_did_group.command("publish")
 @click.option(
-    "--output-file", "output_path",
+    "--input", "input_path",
     required=True,
     type=click.Path(exists=True, dir_okay=False, readable=True),
-    help="Output CSV produced by the sign-challenges step.",
+    help="Signed-challenges CSV produced by `ce iir challenge bulk-sign`.",
 )
 @click.option(
     "--publish-errors", "publish_errors_path",
@@ -134,32 +158,31 @@ def generate(csv_path: str, output_path: str | None, errors_path: str | None) ->
     help="Skip confirmation prompt.",
 )
 @handle_api_errors
-def upload(output_path: str, publish_errors_path: str | None, yes: bool) -> None:
-    """Verify JWT signatures and publish issuers.
+def publish(input_path: str, publish_errors_path: str | None, yes: bool) -> None:
+    """Verify JWT signatures and publish issuers to the IIR.
 
     \b
     Steps per row:
-      1. JWT signature verify  
-      2. Save Token
-      3. Submit to IIR        
-
+      1. JWT signature verify
+      2. Save token
+      3. Submit to IIR
 
     \b
     Examples:
-      ce iir bulk-upload-dids publish --output-file Output-input-20240101T000000Z.csv
-      ce iir bulk-upload-dids publish --output-file signed.csv --yes
+      ce iir issuer-did publish --input Output-input-20240101T000000Z.csv
+      ce iir issuer-did publish --input signed.csv --yes
     """
     access_token = require_login()
     _, env = require_environment()
 
-    stem      = Path(output_path).stem
+    stem = Path(input_path).stem
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     resolved_pub_errors = publish_errors_path or f"PublishErrors-{stem}-{timestamp}.csv"
 
     console.print(f"\n[dim]Environment:[/dim] [bold]{env.label}[/bold]  ({env.publisher_base})")
 
     run_upload(
-        output_path=output_path,
+        output_path=input_path,
         publish_errors_path=resolved_pub_errors,
         access_token=access_token,
         env=env,
