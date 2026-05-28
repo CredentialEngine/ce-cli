@@ -7,7 +7,7 @@ Run with:
 from __future__ import annotations
 import base64
 import json
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -184,19 +184,19 @@ class TestValidateDate:
         assert ok and err == "" and iso == ""
 
     def test_valid_date_converts_to_iso8601(self):
-        ok, err, iso = validate_date("01/15/2024", "ValidFrom")
+        ok, err, iso = validate_date("2024-01-15", "ValidFrom")
         assert ok and err == ""
         assert iso == "2024-01-15T00:00:00Z"
 
-    def test_iso_format_input_is_rejected(self):
-        ok, err, _ = validate_date("2024-01-15", "ValidFrom")
+    def test_mm_dd_yyyy_input_is_rejected(self):
+        ok, err, _ = validate_date("01/15/2024", "ValidFrom")
         assert not ok
-        assert "MM/DD/YYYY" in err
+        assert "YYYY-MM-DD" in err
 
     def test_impossible_date_fails(self):
-        ok, err, _ = validate_date("13/99/2024", "ValidFrom")
+        ok, err, _ = validate_date("2024-99-99", "ValidFrom")
         assert not ok
-        assert "MM/DD/YYYY" in err
+        assert "YYYY-MM-DD" in err
 
 
 class TestValidateDateRange:
@@ -206,33 +206,33 @@ class TestValidateDateRange:
         assert ok and err == ""
 
     def test_only_from_provided_fails(self):
-        ok, err = validate_date_range("01/01/2024", "")
+        ok, err = validate_date_range("2024-01-01", "")
         assert not ok
         assert "both" in err.lower()
 
     def test_only_until_provided_fails(self):
-        ok, err = validate_date_range("", "01/01/2024")
+        ok, err = validate_date_range("", "2024-01-01")
         assert not ok
         assert "both" in err.lower()
 
     def test_until_before_from_fails(self):
-        ok, err = validate_date_range("06/01/2024", "01/01/2024")
+        ok, err = validate_date_range("2024-06-01", "2024-01-01")
         assert not ok
         assert "after" in err.lower()
 
     def test_until_equal_to_from_fails(self):
-        ok, err = validate_date_range("01/01/2024", "01/01/2024")
+        ok, err = validate_date_range("2024-01-01", "2024-01-01")
         assert not ok
         assert "after" in err.lower()
 
     def test_until_after_from_passes(self):
-        ok, err = validate_date_range("01/01/2024", "01/02/2024")
+        ok, err = validate_date_range("2024-01-01", "2024-01-02")
         assert ok and err == ""
 
     def test_invalid_format_propagates_error(self):
-        ok, err = validate_date_range("not-a-date", "01/01/2024")
+        ok, err = validate_date_range("not-a-date", "2024-01-01")
         assert not ok
-        assert "MM/DD/YYYY" in err
+        assert "YYYY-MM-DD" in err
 
 
 class TestClassifyDid:
@@ -714,6 +714,12 @@ class TestCallSubmitToIir:
             ACCESS_TOKEN, PUBLISHER_BASE, False,
         )
 
+    @staticmethod
+    def _local_date_of_z(z: str) -> date:
+        """Parse a 'YYYY-MM-DDT00:00:00Z' string and return its date in local time."""
+        dt = datetime.strptime(z, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+        return dt.astimezone().date()
+
     def test_success(self):
         with patch("ce.iir.did_ops.submit_to_iir_sync") as mock_sync:
             mock_sync.return_value = _fake_response(200, None)
@@ -726,7 +732,7 @@ class TestCallSubmitToIir:
             ok, err = call_submit_to_iir(*self._base_args())
         assert not ok and err == "Did already exists"
 
-    def test_iso_strings_become_datetime_objects_on_dto(self):
+    def test_iso_strings_become_z_strings_in_additional_properties(self):
         with patch("ce.iir.did_ops.submit_to_iir_sync") as mock_sync:
             mock_sync.return_value = _fake_response(200, None)
             call_submit_to_iir(
@@ -736,10 +742,11 @@ class TestCallSubmitToIir:
             )
             _, kwargs = mock_sync.call_args
             body = kwargs["body"]
-            assert isinstance(body.valid_from, datetime)
-            assert isinstance(body.valid_until, datetime)
-            assert body.valid_from == datetime(2024, 1, 1, tzinfo=timezone.utc)
-            assert body.valid_until == datetime(2025, 1, 1, tzinfo=timezone.utc)
+            df = body.additional_properties["DateValidFrom"]
+            du = body.additional_properties["DateValidUntil"]
+            assert df.endswith("Z") and du.endswith("Z")
+            assert self._local_date_of_z(df) == date(2024, 1, 1)
+            assert self._local_date_of_z(du) == date(2025, 1, 1)
 
     def test_yyyy_mm_dd_dates_also_parse(self):
         with patch("ce.iir.did_ops.submit_to_iir_sync") as mock_sync:
@@ -749,10 +756,21 @@ class TestCallSubmitToIir:
             )
             _, kwargs = mock_sync.call_args
             body = kwargs["body"]
-            assert isinstance(body.valid_from, datetime)
-            assert body.valid_from.year == 2024 and body.valid_from.month == 6
+            df = body.additional_properties["DateValidFrom"]
+            assert self._local_date_of_z(df) == date(2024, 6, 15)
 
-    def test_empty_optional_fields_are_unset_not_none(self):
+    def test_dto_to_dict_serializes_dates_under_capitalized_keys(self):
+        with patch("ce.iir.did_ops.submit_to_iir_sync") as mock_sync:
+            mock_sync.return_value = _fake_response(200, None)
+            call_submit_to_iir(
+                *self._base_args(), valid_from="2024-06-15", valid_until="2025-06-15"
+            )
+            _, kwargs = mock_sync.call_args
+            d = kwargs["body"].to_dict()
+            assert d["DateValidFrom"].endswith("Z")
+            assert d["DateValidUntil"].endswith("Z")
+
+    def test_empty_optional_fields_are_absent(self):
         with patch("ce.iir.did_ops.submit_to_iir_sync") as mock_sync:
             mock_sync.return_value = _fake_response(200, None)
             call_submit_to_iir(*self._base_args())
@@ -762,20 +780,23 @@ class TestCallSubmitToIir:
             assert body.logo_base_64 is UNSET
             assert body.valid_from is UNSET
             assert body.valid_until is UNSET
+            assert "DateValidFrom" not in body.additional_properties
+            assert "DateValidUntil" not in body.additional_properties
 
     def test_dto_to_dict_does_not_crash_on_empty_optionals(self):
         with patch("ce.iir.did_ops.submit_to_iir_sync") as mock_sync:
             mock_sync.return_value = _fake_response(200, None)
             call_submit_to_iir(*self._base_args())
             _, kwargs = mock_sync.call_args
-            body = kwargs["body"]
-            d = body.to_dict()
+            d = kwargs["body"].to_dict()
             assert "ValidFrom" not in d
             assert "ValidUntil" not in d
+            assert "DateValidFrom" not in d
+            assert "DateValidUntil" not in d
             assert "LogoUri" not in d
             assert "LogoBase64" not in d
 
-    def test_invalid_date_string_falls_back_to_unset(self):
+    def test_invalid_date_string_is_omitted(self):
         with patch("ce.iir.did_ops.submit_to_iir_sync") as mock_sync:
             mock_sync.return_value = _fake_response(200, None)
             call_submit_to_iir(
@@ -783,8 +804,8 @@ class TestCallSubmitToIir:
             )
             _, kwargs = mock_sync.call_args
             body = kwargs["body"]
-            assert body.valid_from is UNSET
-
+            assert "DateValidFrom" not in body.additional_properties
+            assert "DateValidUntil" not in body.additional_properties
 
 class TestHelpers:
     def test_parse_uvarint_roundtrip_example(self):
