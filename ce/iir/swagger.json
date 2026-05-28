@@ -706,6 +706,14 @@
                 "ValidUntil": {
                     "format": "date-time",
                     "type": "string"
+                },
+                "DateValidFrom": {
+                    "format": "date-time",
+                    "type": "string"
+                },
+                "DateValidUntil": {
+                    "format": "date-time",
+                    "type": "string"
                 }
             }
         }

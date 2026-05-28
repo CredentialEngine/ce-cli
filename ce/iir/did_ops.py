@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+from datetime import timezone
 import json
 import re
 from functools import lru_cache
@@ -88,12 +89,12 @@ def validate_date(value: str, field_name: str) -> tuple[bool, str, str]:
         return True, "", ""
     from datetime import datetime, timezone
     try:
-        parsed = datetime.strptime(value, "%m/%d/%Y")
-        utc_dt = parsed.replace(tzinfo=timezone.utc)
+        parsed = datetime.strptime(value, "%Y-%m-%d")
+        utc_dt = parsed.replace(hour=0, minute=0, second=0, tzinfo=timezone.utc)
         iso_value = utc_dt.strftime("%Y-%m-%dT%H:%M:%SZ")
         return True, "", iso_value
     except ValueError:
-        return False, f"{field_name} must be in MM/DD/YYYY format, got '{value}'", ""
+        return False, f"{field_name} must be in YYYY-MM-DD format, got '{value}'", ""
 
 
 def validate_date_range(valid_from: str, valid_until: str) -> tuple[bool, str]:
@@ -433,16 +434,18 @@ def call_submit_to_iir(
 ) -> tuple[bool, str]:
     from datetime import datetime
 
-    def _to_dt_or_unset(value: str):
+    def _to_iso_z(value: str) -> str:
         if not value:
-            return UNSET
+            return ""
         try:
-            return datetime.fromisoformat(value.replace("Z", "+00:00"))
+            dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
         except ValueError:
             try:
-                return datetime.strptime(value, "%Y-%m-%d")
+                dt = datetime.strptime(value, "%Y-%m-%d")
             except ValueError:
-                return UNSET
+                return ""
+        local_midnight = datetime(dt.year, dt.month, dt.day).astimezone()
+        return local_midnight.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     try:
         client = _client(token, publisher_base, ssl_verify)
@@ -456,9 +459,14 @@ def call_submit_to_iir(
             subject_web_page=subject_web_page,
             logo_base_64=logo_base64 if logo_base64 else UNSET,
             logo_uri=logo_uri if logo_uri else UNSET,
-            valid_from=_to_dt_or_unset(valid_from),
-            valid_until=_to_dt_or_unset(valid_until),
         )
+
+        df = _to_iso_z(valid_from)
+        du = _to_iso_z(valid_until)
+        if df:
+            body.additional_properties["DateValidFrom"] = df
+        if du:
+            body.additional_properties["DateValidUntil"] = du
 
         response = submit_to_iir_sync(client=client, body=body)
 

@@ -3,87 +3,88 @@
 A command-line tool for managing Credential Engine platform resources.
 
 ## Requirements
- 
+
 - Python 3.10 or later
 - `pip`
+
 ## Installation
- 
+
 > **Recommended:** install inside a virtual environment. This avoids file-permission errors, PATH conflicts, and "invalid distribution" warnings from previous installs.
- 
+
 ### Option 1: Install from source with a virtual environment (recommended)
- 
+
 **macOS / Linux:**
- 
+
 ```bash
 git clone https://github.com/CredentialEngine/ce-cli.git
 cd ce-cli
- 
+
 python3 -m venv .venv
 source .venv/bin/activate
- 
+
 pip install -e .
 ```
- 
+
 **Windows (PowerShell):**
- 
+
 ```powershell
 git clone https://github.com/CredentialEngine/ce-cli.git
 cd ce-cli
- 
+
 python -m venv .venv
 .venv\Scripts\activate
- 
+
 pip install -e .
 ```
- 
+
 When the venv is active you'll see `(.venv)` in your prompt, and `ce` is automatically on `PATH`. To leave the venv, run `deactivate`. To re-enter it next time, run the activate command above from the project folder.
- 
+
 ### Option 2: Install from a release
- 
+
 1. Download the `.whl` from the [Releases page](https://github.com/CredentialEngine/ce-cli/releases).
 2. Install it (inside a venv is still recommended):
    ```bash
    pip install ce_cli-<version>-py3-none-any.whl
    ```
 
- ### Upgrading
- 
+### Upgrading
+
 From a release `.whl`:
- 
+
 ```bash
 pip install --upgrade ce_cli-<version>-py3-none-any.whl
 ```
- 
+
 From source: `git pull` and re-run `pip install -e .` inside your venv.
- 
+
 ### Option 3: Install from source without a venv
- 
+
 ```bash
 git clone https://github.com/CredentialEngine/ce-cli.git
 cd ce-cli
 pip install -e .
 ```
- 
+
 This puts the `ce` command on your `$PATH`. On Windows, see the [Windows PATH note](#windows-path-note) below if `ce` isn't found.
- 
+
 ### Verify the installation
- 
+
 ```bash
 ce --help
 ```
- 
+
 You should see the top-level command list.
- 
+
 ### Windows PATH note
- 
+
 When you install on Windows without a venv, pip often drops ce.exe into your user Scripts folder, which Windows doesn't put on PATH by default:
- 
+
 ```
 C:\Users\<you>\AppData\Roaming\Python\Python310\Scripts
 ```
- 
+
 If `ce --help` fails after install, either use a venv (recommended) or add that folder to your User PATH:
- 
+
 ```powershell
 [Environment]::SetEnvironmentVariable(
   "Path",
@@ -91,10 +92,8 @@ If `ce --help` fails after install, either use a venv (recommended) or add that 
   "User"
 )
 ```
- 
-Then **close and reopen PowerShell** existing windows won't pick up the new PATH.
- 
 
+Then **close and reopen PowerShell** existing windows won't pick up the new PATH.
 
 ## Quick start
 
@@ -210,8 +209,8 @@ Verifies the JWT signatures and publishes each issuer to the IIR. Pass `--yes`/`
 | `VerificationMethod` | Yes         | Full verification method ID (e.g., `did:key:z6Mk...#z6Mk...`) |
 | `Algorithm`          | For did:key | `Ed25519`, `secp256k1`, `P-256`, or `X25519`                  |
 | `PrivateKey`         | Yes         | Multibase-encoded private key for signing                     |
-| `ValidFrom`          | No          | Date when the issuer becomes valid (MM/DD/YYYY)               |
-| `ValidUntil`         | No          | Date when the issuer expires (MM/DD/YYYY)                     |
+| `ValidFrom`          | No          | Date when the issuer becomes valid (YYYY-MM-DD)               |
+| `ValidUntil`         | No          | Date when the issuer expires (YYYY-MM-DD)                     |
 
 Example:
 

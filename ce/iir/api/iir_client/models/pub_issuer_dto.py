@@ -36,6 +36,8 @@ class PubIssuerDTO:
             logo_uri (str | Unset):
             valid_from (datetime.datetime | Unset):
             valid_until (datetime.datetime | Unset):
+            date_valid_from (datetime.datetime | Unset):
+            date_valid_until (datetime.datetime | Unset):
      """
 
     ctid: str | Unset = UNSET
@@ -48,6 +50,8 @@ class PubIssuerDTO:
     logo_uri: str | Unset = UNSET
     valid_from: datetime.datetime | Unset = UNSET
     valid_until: datetime.datetime | Unset = UNSET
+    date_valid_from: datetime.datetime | Unset = UNSET
+    date_valid_until: datetime.datetime | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
 
@@ -79,6 +83,14 @@ class PubIssuerDTO:
         if not isinstance(self.valid_until, Unset):
             valid_until = self.valid_until.isoformat()
 
+        date_valid_from: str | Unset = UNSET
+        if not isinstance(self.date_valid_from, Unset):
+            date_valid_from = self.date_valid_from.isoformat()
+
+        date_valid_until: str | Unset = UNSET
+        if not isinstance(self.date_valid_until, Unset):
+            date_valid_until = self.date_valid_until.isoformat()
+
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -104,6 +116,10 @@ class PubIssuerDTO:
             field_dict["ValidFrom"] = valid_from
         if valid_until is not UNSET:
             field_dict["ValidUntil"] = valid_until
+        if date_valid_from is not UNSET:
+            field_dict["DateValidFrom"] = date_valid_from
+        if date_valid_until is not UNSET:
+            field_dict["DateValidUntil"] = date_valid_until
 
         return field_dict
 
@@ -148,6 +164,26 @@ class PubIssuerDTO:
 
 
 
+        _date_valid_from = d.pop("DateValidFrom", UNSET)
+        date_valid_from: datetime.datetime | Unset
+        if isinstance(_date_valid_from,  Unset):
+            date_valid_from = UNSET
+        else:
+            date_valid_from = isoparse(_date_valid_from)
+
+
+
+
+        _date_valid_until = d.pop("DateValidUntil", UNSET)
+        date_valid_until: datetime.datetime | Unset
+        if isinstance(_date_valid_until,  Unset):
+            date_valid_until = UNSET
+        else:
+            date_valid_until = isoparse(_date_valid_until)
+
+
+
+
         pub_issuer_dto = cls(
             ctid=ctid,
             did=did,
@@ -159,6 +195,8 @@ class PubIssuerDTO:
             logo_uri=logo_uri,
             valid_from=valid_from,
             valid_until=valid_until,
+            date_valid_from=date_valid_from,
+            date_valid_until=date_valid_until,
         )
 
 
