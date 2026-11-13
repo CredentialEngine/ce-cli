@@ -19,6 +19,10 @@ class Environment(BaseModel):
     token_url: str = Field(description="Keycloak token endpoint.")
     scopes: str = Field(default="openid profile", description="Space-separated OIDC scopes.")
     publisher_base: str = Field(description="Publisher base URL (BFF for all API calls).")
+    publisher_api_base: str = Field(
+        default="",
+        description="Publisher API base URL for API publishing (ce publisher).",
+    )
     ssl_verify: bool = Field(default=True, description="Verify SSL certificates.")
 
 
@@ -37,6 +41,7 @@ DEFAULT_ENVIRONMENTS: dict[str, Environment] = {
         token_url="http://localhost:8080/realms/CE_Accounts/protocol/openid-connect/token",
         scopes="openid profile",
         publisher_base="https://localhost:44330",
+        publisher_api_base="http://localhost:8011",
         ssl_verify=False,
     ),
     "test": Environment(
@@ -46,6 +51,7 @@ DEFAULT_ENVIRONMENTS: dict[str, Environment] = {
         token_url="https://login.test.credentialengine.org/realms/CE-Test/protocol/openid-connect/token",
         scopes="openid profile",
         publisher_base="https://sandbox.credentialengine.org/publisher",
+        publisher_api_base="https://api.publisher.test.credentialengine.org",
         ssl_verify=True,
     ),
     "sandbox": Environment(
@@ -55,6 +61,7 @@ DEFAULT_ENVIRONMENTS: dict[str, Environment] = {
         token_url="https://login.sandbox.credentialengine.org/realms/CE-Sandbox/protocol/openid-connect/token",
         scopes="openid profile",
         publisher_base="https://sandbox.credentialengine.org/publisher",
+        publisher_api_base="https://api.publisher.sandbox.credentialengine.org",
         ssl_verify=True,
     ),
     "prod": Environment(
@@ -64,6 +71,7 @@ DEFAULT_ENVIRONMENTS: dict[str, Environment] = {
         token_url="https://login.credentialengine.org/realms/CE-Prod/protocol/openid-connect/token",
         scopes="openid profile",
         publisher_base="https://apps.credentialengine.org/publisher",
+        publisher_api_base="https://api.publisher.credentialengine.org",
         ssl_verify=True,
     ),
 }
