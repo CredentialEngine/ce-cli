@@ -116,6 +116,12 @@ ce whoami
 | `ce logout` | Sign out and revoke tokens                |
 | `ce whoami` | Show who you're signed in as              |
 
+Each environment has its own session (`tokens-<environment>.json` in the config folder), so signing in to one
+environment never signs you in to another; `ce login --env <name>` signs in to an environment other than the active
+one. The access token is renewed silently. When the sign-in service ends the session you are told "Your session has
+expired" and sign in again; when it cannot be reached your session is kept and the command says so. `ce logout`
+ends the session at the sign-in service as well as on this machine.
+
 ### Environments (`ce env`)
 
 Environments let you switch between `dev`, `sandbox`, and `prod` without touching env vars. Each environment maps a friendly name to an API URL (plus optional OIDC overrides).
