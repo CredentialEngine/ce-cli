@@ -3,48 +3,36 @@ from typing import Any, Optional, Union, cast
 
 import httpx
 
-from ...client import AuthenticatedClient, Client
-from ...types import Response, UNSET
 from ... import errors
-
+from ...client import AuthenticatedClient, Client
 from ...models.iteration_details_dto import IterationDetailsDto
 from ...models.upload_json_ld_to_project_body import UploadJsonLdToProjectBody
-from typing import cast
-
+from ...types import Response
 
 
 def _get_kwargs(
     project_id: int,
     *,
     body: UploadJsonLdToProjectBody,
-
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
-
-    
-
-    
-
     _kwargs: dict[str, Any] = {
         "method": "post",
-        "url": "/projects/{project_id}/iterations/upload-jsonld".format(project_id=project_id,),
+        "url": f"/projects/{project_id}/iterations/upload-jsonld",
     }
 
     _kwargs["files"] = body.to_multipart()
-
-
 
     _kwargs["headers"] = headers
     return _kwargs
 
 
-
-def _parse_response(*, client: Union[AuthenticatedClient, Client], response: httpx.Response) -> Optional[Union[IterationDetailsDto, str]]:
+def _parse_response(
+    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
+) -> Optional[Union[IterationDetailsDto, str]]:
     if response.status_code == 200:
         response_200 = IterationDetailsDto.from_dict(response.json())
-
-
 
         return response_200
 
@@ -74,7 +62,9 @@ def _parse_response(*, client: Union[AuthenticatedClient, Client], response: htt
         return None
 
 
-def _build_response(*, client: Union[AuthenticatedClient, Client], response: httpx.Response) -> Response[Union[IterationDetailsDto, str]]:
+def _build_response(
+    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
+) -> Response[Union[IterationDetailsDto, str]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -88,9 +78,8 @@ def sync_detailed(
     *,
     client: Union[AuthenticatedClient, Client],
     body: UploadJsonLdToProjectBody,
-
 ) -> Response[Union[IterationDetailsDto, str]]:
-    """ 
+    """
     Args:
         project_id (int):
         body (UploadJsonLdToProjectBody):
@@ -101,13 +90,11 @@ def sync_detailed(
 
     Returns:
         Response[Union[IterationDetailsDto, str]]
-     """
-
+    """
 
     kwargs = _get_kwargs(
         project_id=project_id,
-body=body,
-
+        body=body,
     )
 
     response = client.get_httpx_client().request(
@@ -116,14 +103,14 @@ body=body,
 
     return _build_response(client=client, response=response)
 
+
 def sync(
     project_id: int,
     *,
     client: Union[AuthenticatedClient, Client],
     body: UploadJsonLdToProjectBody,
-
 ) -> Optional[Union[IterationDetailsDto, str]]:
-    """ 
+    """
     Args:
         project_id (int):
         body (UploadJsonLdToProjectBody):
@@ -134,24 +121,22 @@ def sync(
 
     Returns:
         Union[IterationDetailsDto, str]
-     """
-
+    """
 
     return sync_detailed(
         project_id=project_id,
-client=client,
-body=body,
-
+        client=client,
+        body=body,
     ).parsed
+
 
 async def asyncio_detailed(
     project_id: int,
     *,
     client: Union[AuthenticatedClient, Client],
     body: UploadJsonLdToProjectBody,
-
 ) -> Response[Union[IterationDetailsDto, str]]:
-    """ 
+    """
     Args:
         project_id (int):
         body (UploadJsonLdToProjectBody):
@@ -162,29 +147,25 @@ async def asyncio_detailed(
 
     Returns:
         Response[Union[IterationDetailsDto, str]]
-     """
-
+    """
 
     kwargs = _get_kwargs(
         project_id=project_id,
-body=body,
-
+        body=body,
     )
 
-    response = await client.get_async_httpx_client().request(
-        **kwargs
-    )
+    response = await client.get_async_httpx_client().request(**kwargs)
 
     return _build_response(client=client, response=response)
+
 
 async def asyncio(
     project_id: int,
     *,
     client: Union[AuthenticatedClient, Client],
     body: UploadJsonLdToProjectBody,
-
 ) -> Optional[Union[IterationDetailsDto, str]]:
-    """ 
+    """
     Args:
         project_id (int):
         body (UploadJsonLdToProjectBody):
@@ -195,12 +176,12 @@ async def asyncio(
 
     Returns:
         Union[IterationDetailsDto, str]
-     """
+    """
 
-
-    return (await asyncio_detailed(
-        project_id=project_id,
-client=client,
-body=body,
-
-    )).parsed
+    return (
+        await asyncio_detailed(
+            project_id=project_id,
+            client=client,
+            body=body,
+        )
+    ).parsed

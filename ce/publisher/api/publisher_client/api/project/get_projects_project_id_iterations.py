@@ -1,45 +1,33 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union, cast
+from typing import Any, Optional, Union
 
 import httpx
 
-from ...client import AuthenticatedClient, Client
-from ...types import Response, UNSET
 from ... import errors
-
+from ...client import AuthenticatedClient, Client
 from ...models.iteration_summary_dto import IterationSummaryDto
-from typing import cast
-
+from ...types import Response
 
 
 def _get_kwargs(
     project_id: int,
-
 ) -> dict[str, Any]:
-    
-
-    
-
-    
-
     _kwargs: dict[str, Any] = {
         "method": "get",
-        "url": "/projects/{project_id}/iterations".format(project_id=project_id,),
+        "url": f"/projects/{project_id}/iterations",
     }
-
 
     return _kwargs
 
 
-
-def _parse_response(*, client: Union[AuthenticatedClient, Client], response: httpx.Response) -> Optional[list['IterationSummaryDto']]:
+def _parse_response(
+    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
+) -> Optional[list["IterationSummaryDto"]]:
     if response.status_code == 200:
         response_200 = []
         _response_200 = response.json()
-        for response_200_item_data in (_response_200):
+        for response_200_item_data in _response_200:
             response_200_item = IterationSummaryDto.from_dict(response_200_item_data)
-
-
 
             response_200.append(response_200_item)
 
@@ -51,7 +39,9 @@ def _parse_response(*, client: Union[AuthenticatedClient, Client], response: htt
         return None
 
 
-def _build_response(*, client: Union[AuthenticatedClient, Client], response: httpx.Response) -> Response[list['IterationSummaryDto']]:
+def _build_response(
+    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
+) -> Response[list["IterationSummaryDto"]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -64,9 +54,8 @@ def sync_detailed(
     project_id: int,
     *,
     client: Union[AuthenticatedClient, Client],
-
-) -> Response[list['IterationSummaryDto']]:
-    """ 
+) -> Response[list["IterationSummaryDto"]]:
+    """
     Args:
         project_id (int):
 
@@ -76,12 +65,10 @@ def sync_detailed(
 
     Returns:
         Response[list['IterationSummaryDto']]
-     """
-
+    """
 
     kwargs = _get_kwargs(
         project_id=project_id,
-
     )
 
     response = client.get_httpx_client().request(
@@ -90,13 +77,13 @@ def sync_detailed(
 
     return _build_response(client=client, response=response)
 
+
 def sync(
     project_id: int,
     *,
     client: Union[AuthenticatedClient, Client],
-
-) -> Optional[list['IterationSummaryDto']]:
-    """ 
+) -> Optional[list["IterationSummaryDto"]]:
+    """
     Args:
         project_id (int):
 
@@ -106,22 +93,20 @@ def sync(
 
     Returns:
         list['IterationSummaryDto']
-     """
-
+    """
 
     return sync_detailed(
         project_id=project_id,
-client=client,
-
+        client=client,
     ).parsed
+
 
 async def asyncio_detailed(
     project_id: int,
     *,
     client: Union[AuthenticatedClient, Client],
-
-) -> Response[list['IterationSummaryDto']]:
-    """ 
+) -> Response[list["IterationSummaryDto"]]:
+    """
     Args:
         project_id (int):
 
@@ -131,27 +116,23 @@ async def asyncio_detailed(
 
     Returns:
         Response[list['IterationSummaryDto']]
-     """
-
+    """
 
     kwargs = _get_kwargs(
         project_id=project_id,
-
     )
 
-    response = await client.get_async_httpx_client().request(
-        **kwargs
-    )
+    response = await client.get_async_httpx_client().request(**kwargs)
 
     return _build_response(client=client, response=response)
+
 
 async def asyncio(
     project_id: int,
     *,
     client: Union[AuthenticatedClient, Client],
-
-) -> Optional[list['IterationSummaryDto']]:
-    """ 
+) -> Optional[list["IterationSummaryDto"]]:
+    """
     Args:
         project_id (int):
 
@@ -161,11 +142,11 @@ async def asyncio(
 
     Returns:
         list['IterationSummaryDto']
-     """
+    """
 
-
-    return (await asyncio_detailed(
-        project_id=project_id,
-client=client,
-
-    )).parsed
+    return (
+        await asyncio_detailed(
+            project_id=project_id,
+            client=client,
+        )
+    ).parsed

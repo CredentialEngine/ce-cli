@@ -1,41 +1,29 @@
 from collections.abc import Mapping
-from typing import Any, TypeVar, Optional, BinaryIO, TextIO, TYPE_CHECKING, Generator
+from typing import Any, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
-from attrs import field as _attrs_field
 
 from ..types import UNSET, Unset
-
-from ..types import UNSET, Unset
-from typing import cast
-from typing import cast, Union
-from typing import Union
-
-
-
-
-
 
 T = TypeVar("T", bound="TemplatePropertyDto")
 
 
-
 @_attrs_define
 class TemplatePropertyDto:
-    """ 
-        Attributes:
-            key (Union[Unset, str]):
-            property_ (Union[Unset, str]):
-            definition (Union[Unset, str]):
-            specification (Union[Unset, str]):
-            link (Union[None, Unset, str]):
-            controlled_vocabulary (Union[None, Unset, str]):
-            allowed_values (Union[Unset, list[str]]):
-            multiple (Union[Unset, bool]):
-            required (Union[Unset, bool]):
-            sample (Union[Unset, str]):
-            order (Union[Unset, int]):
-     """
+    """
+    Attributes:
+        key (Union[Unset, str]):
+        property_ (Union[Unset, str]):
+        definition (Union[Unset, str]):
+        specification (Union[Unset, str]):
+        link (Union[None, Unset, str]):
+        controlled_vocabulary (Union[None, Unset, str]):
+        allowed_values (Union[Unset, list[str]]):
+        multiple (Union[Unset, bool]):
+        required (Union[Unset, bool]):
+        sample (Union[Unset, str]):
+        order (Union[Unset, int]):
+    """
 
     key: Union[Unset, str] = UNSET
     property_: Union[Unset, str] = UNSET
@@ -48,10 +36,6 @@ class TemplatePropertyDto:
     required: Union[Unset, bool] = UNSET
     sample: Union[Unset, str] = UNSET
     order: Union[Unset, int] = UNSET
-
-
-
-
 
     def to_dict(self) -> dict[str, Any]:
         key = self.key
@@ -78,8 +62,6 @@ class TemplatePropertyDto:
         if not isinstance(self.allowed_values, Unset):
             allowed_values = self.allowed_values
 
-
-
         multiple = self.multiple
 
         required = self.required
@@ -88,11 +70,9 @@ class TemplatePropertyDto:
 
         order = self.order
 
-
         field_dict: dict[str, Any] = {}
 
-        field_dict.update({
-        })
+        field_dict.update({})
         if key is not UNSET:
             field_dict["key"] = key
         if property_ is not UNSET:
@@ -118,8 +98,6 @@ class TemplatePropertyDto:
 
         return field_dict
 
-
-
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
@@ -140,7 +118,6 @@ class TemplatePropertyDto:
 
         link = _parse_link(d.pop("link", UNSET))
 
-
         def _parse_controlled_vocabulary(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
@@ -150,9 +127,7 @@ class TemplatePropertyDto:
 
         controlled_vocabulary = _parse_controlled_vocabulary(d.pop("controlledVocabulary", UNSET))
 
-
         allowed_values = cast(list[str], d.pop("allowedValues", UNSET))
-
 
         multiple = d.pop("multiple", UNSET)
 
@@ -177,4 +152,3 @@ class TemplatePropertyDto:
         )
 
         return template_property_dto
-

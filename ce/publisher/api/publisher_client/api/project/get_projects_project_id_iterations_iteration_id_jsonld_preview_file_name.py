@@ -1,47 +1,35 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union, cast
+from typing import Any, Optional, Union
 
 import httpx
 
-from ...client import AuthenticatedClient, Client
-from ...types import Response, UNSET
 from ... import errors
-
+from ...client import AuthenticatedClient, Client
 from ...models.json_ld_item_dto import JsonLdItemDto
-from typing import cast
-
+from ...types import Response
 
 
 def _get_kwargs(
     project_id: int,
     iteration_id: int,
     file_name: str,
-
 ) -> dict[str, Any]:
-    
-
-    
-
-    
-
     _kwargs: dict[str, Any] = {
         "method": "get",
-        "url": "/projects/{project_id}/iterations/{iteration_id}/jsonld-preview/{file_name}".format(project_id=project_id,iteration_id=iteration_id,file_name=file_name,),
+        "url": f"/projects/{project_id}/iterations/{iteration_id}/jsonld-preview/{file_name}",
     }
-
 
     return _kwargs
 
 
-
-def _parse_response(*, client: Union[AuthenticatedClient, Client], response: httpx.Response) -> Optional[list['JsonLdItemDto']]:
+def _parse_response(
+    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
+) -> Optional[list["JsonLdItemDto"]]:
     if response.status_code == 200:
         response_200 = []
         _response_200 = response.json()
-        for response_200_item_data in (_response_200):
+        for response_200_item_data in _response_200:
             response_200_item = JsonLdItemDto.from_dict(response_200_item_data)
-
-
 
             response_200.append(response_200_item)
 
@@ -53,7 +41,9 @@ def _parse_response(*, client: Union[AuthenticatedClient, Client], response: htt
         return None
 
 
-def _build_response(*, client: Union[AuthenticatedClient, Client], response: httpx.Response) -> Response[list['JsonLdItemDto']]:
+def _build_response(
+    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
+) -> Response[list["JsonLdItemDto"]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -68,9 +58,8 @@ def sync_detailed(
     file_name: str,
     *,
     client: Union[AuthenticatedClient, Client],
-
-) -> Response[list['JsonLdItemDto']]:
-    """ 
+) -> Response[list["JsonLdItemDto"]]:
+    """
     Args:
         project_id (int):
         iteration_id (int):
@@ -82,14 +71,12 @@ def sync_detailed(
 
     Returns:
         Response[list['JsonLdItemDto']]
-     """
-
+    """
 
     kwargs = _get_kwargs(
         project_id=project_id,
-iteration_id=iteration_id,
-file_name=file_name,
-
+        iteration_id=iteration_id,
+        file_name=file_name,
     )
 
     response = client.get_httpx_client().request(
@@ -98,15 +85,15 @@ file_name=file_name,
 
     return _build_response(client=client, response=response)
 
+
 def sync(
     project_id: int,
     iteration_id: int,
     file_name: str,
     *,
     client: Union[AuthenticatedClient, Client],
-
-) -> Optional[list['JsonLdItemDto']]:
-    """ 
+) -> Optional[list["JsonLdItemDto"]]:
+    """
     Args:
         project_id (int):
         iteration_id (int):
@@ -118,16 +105,15 @@ def sync(
 
     Returns:
         list['JsonLdItemDto']
-     """
-
+    """
 
     return sync_detailed(
         project_id=project_id,
-iteration_id=iteration_id,
-file_name=file_name,
-client=client,
-
+        iteration_id=iteration_id,
+        file_name=file_name,
+        client=client,
     ).parsed
+
 
 async def asyncio_detailed(
     project_id: int,
@@ -135,9 +121,8 @@ async def asyncio_detailed(
     file_name: str,
     *,
     client: Union[AuthenticatedClient, Client],
-
-) -> Response[list['JsonLdItemDto']]:
-    """ 
+) -> Response[list["JsonLdItemDto"]]:
+    """
     Args:
         project_id (int):
         iteration_id (int):
@@ -149,21 +134,18 @@ async def asyncio_detailed(
 
     Returns:
         Response[list['JsonLdItemDto']]
-     """
-
+    """
 
     kwargs = _get_kwargs(
         project_id=project_id,
-iteration_id=iteration_id,
-file_name=file_name,
-
+        iteration_id=iteration_id,
+        file_name=file_name,
     )
 
-    response = await client.get_async_httpx_client().request(
-        **kwargs
-    )
+    response = await client.get_async_httpx_client().request(**kwargs)
 
     return _build_response(client=client, response=response)
+
 
 async def asyncio(
     project_id: int,
@@ -171,9 +153,8 @@ async def asyncio(
     file_name: str,
     *,
     client: Union[AuthenticatedClient, Client],
-
-) -> Optional[list['JsonLdItemDto']]:
-    """ 
+) -> Optional[list["JsonLdItemDto"]]:
+    """
     Args:
         project_id (int):
         iteration_id (int):
@@ -185,13 +166,13 @@ async def asyncio(
 
     Returns:
         list['JsonLdItemDto']
-     """
+    """
 
-
-    return (await asyncio_detailed(
-        project_id=project_id,
-iteration_id=iteration_id,
-file_name=file_name,
-client=client,
-
-    )).parsed
+    return (
+        await asyncio_detailed(
+            project_id=project_id,
+            iteration_id=iteration_id,
+            file_name=file_name,
+            client=client,
+        )
+    ).parsed

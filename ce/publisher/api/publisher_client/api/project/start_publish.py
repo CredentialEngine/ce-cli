@@ -3,51 +3,37 @@ from typing import Any, Optional, Union, cast
 
 import httpx
 
-from ...client import AuthenticatedClient, Client
-from ...types import Response, UNSET
 from ... import errors
-
+from ...client import AuthenticatedClient, Client
 from ...models.i_action_result import IActionResult
-from ...types import UNSET, Unset
-from typing import cast
-from typing import Union
-
+from ...types import UNSET, Response, Unset
 
 
 def _get_kwargs(
     project_id: int,
     *,
     iteration_id: Union[Unset, int] = UNSET,
-
 ) -> dict[str, Any]:
-    
-
-    
-
     params: dict[str, Any] = {}
 
     params["iterationId"] = iteration_id
 
-
     params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
-
 
     _kwargs: dict[str, Any] = {
         "method": "post",
-        "url": "/projects/{project_id}/publish/start".format(project_id=project_id,),
+        "url": f"/projects/{project_id}/publish/start",
         "params": params,
     }
-
 
     return _kwargs
 
 
-
-def _parse_response(*, client: Union[AuthenticatedClient, Client], response: httpx.Response) -> Optional[Union[IActionResult, str]]:
+def _parse_response(
+    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
+) -> Optional[Union[IActionResult, str]]:
     if response.status_code == 200:
         response_200 = IActionResult.from_dict(response.json())
-
-
 
         return response_200
 
@@ -73,7 +59,9 @@ def _parse_response(*, client: Union[AuthenticatedClient, Client], response: htt
         return None
 
 
-def _build_response(*, client: Union[AuthenticatedClient, Client], response: httpx.Response) -> Response[Union[IActionResult, str]]:
+def _build_response(
+    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
+) -> Response[Union[IActionResult, str]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -87,9 +75,8 @@ def sync_detailed(
     *,
     client: Union[AuthenticatedClient, Client],
     iteration_id: Union[Unset, int] = UNSET,
-
 ) -> Response[Union[IActionResult, str]]:
-    """ 
+    """
     Args:
         project_id (int):
         iteration_id (Union[Unset, int]):
@@ -100,13 +87,11 @@ def sync_detailed(
 
     Returns:
         Response[Union[IActionResult, str]]
-     """
-
+    """
 
     kwargs = _get_kwargs(
         project_id=project_id,
-iteration_id=iteration_id,
-
+        iteration_id=iteration_id,
     )
 
     response = client.get_httpx_client().request(
@@ -115,14 +100,14 @@ iteration_id=iteration_id,
 
     return _build_response(client=client, response=response)
 
+
 def sync(
     project_id: int,
     *,
     client: Union[AuthenticatedClient, Client],
     iteration_id: Union[Unset, int] = UNSET,
-
 ) -> Optional[Union[IActionResult, str]]:
-    """ 
+    """
     Args:
         project_id (int):
         iteration_id (Union[Unset, int]):
@@ -133,24 +118,22 @@ def sync(
 
     Returns:
         Union[IActionResult, str]
-     """
-
+    """
 
     return sync_detailed(
         project_id=project_id,
-client=client,
-iteration_id=iteration_id,
-
+        client=client,
+        iteration_id=iteration_id,
     ).parsed
+
 
 async def asyncio_detailed(
     project_id: int,
     *,
     client: Union[AuthenticatedClient, Client],
     iteration_id: Union[Unset, int] = UNSET,
-
 ) -> Response[Union[IActionResult, str]]:
-    """ 
+    """
     Args:
         project_id (int):
         iteration_id (Union[Unset, int]):
@@ -161,29 +144,25 @@ async def asyncio_detailed(
 
     Returns:
         Response[Union[IActionResult, str]]
-     """
-
+    """
 
     kwargs = _get_kwargs(
         project_id=project_id,
-iteration_id=iteration_id,
-
+        iteration_id=iteration_id,
     )
 
-    response = await client.get_async_httpx_client().request(
-        **kwargs
-    )
+    response = await client.get_async_httpx_client().request(**kwargs)
 
     return _build_response(client=client, response=response)
+
 
 async def asyncio(
     project_id: int,
     *,
     client: Union[AuthenticatedClient, Client],
     iteration_id: Union[Unset, int] = UNSET,
-
 ) -> Optional[Union[IActionResult, str]]:
-    """ 
+    """
     Args:
         project_id (int):
         iteration_id (Union[Unset, int]):
@@ -194,12 +173,12 @@ async def asyncio(
 
     Returns:
         Union[IActionResult, str]
-     """
+    """
 
-
-    return (await asyncio_detailed(
-        project_id=project_id,
-client=client,
-iteration_id=iteration_id,
-
-    )).parsed
+    return (
+        await asyncio_detailed(
+            project_id=project_id,
+            client=client,
+            iteration_id=iteration_id,
+        )
+    ).parsed

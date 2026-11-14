@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class ProjectType(str, Enum):
     APIPUBLISHING = "ApiPublishing"
     BULKUPLOAD = "BulkUpload"

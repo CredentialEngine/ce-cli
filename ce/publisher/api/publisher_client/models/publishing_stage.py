@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class PublishingStage(str, Enum):
     CHANGESETAPPLICATION = "ChangesetApplication"
     CHANGESETGENERATION = "ChangesetGeneration"

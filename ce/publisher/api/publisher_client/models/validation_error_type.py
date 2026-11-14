@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class ValidationErrorType(str, Enum):
     CSVSTRUCTURE = "CsvStructure"
     CTIDREFERENCE = "CtidReference"
