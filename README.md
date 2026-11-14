@@ -229,6 +229,67 @@ ce-87654321-...,did:web:example.com,did:web:example.com#key-1,,z3u2en...,,
 
 `ValidFrom` and `ValidUntil` are optional.
 
+### Publisher — API publishing (`ce publisher`)
+
+Publish to the Credential Registry through a **project**: create it, add files, validate them, fix what validation
+finds, then complete it. The Publisher has three kinds of project; ce-cli works with two:
+
+- **Bulk upload (BU)**, the default and the standard project: **BU template CSVs**. The columns are the ones of the
+  Publisher's BU templates, for example the Credentials template. One class of file per `add`. A CSV you upload with
+  ce-cli is a BU project, the same project the Publisher UI makes.
+- **API publishing**, created with `--jsonld`: **JSON-LD only**, in the shape the CSV transform produces, an array of
+  graphs, each with `@context`, `@id` and `@graph`. CSVs are refused.
+- **Ruby Registry sync** is made by the Ruby Registry when it uploads a changeset. `ce publisher project list` shows
+  it; ce-cli adds no files to it, validates it or completes it.
+
+| Command | Description |
+| ------- | ----------- |
+| `ce publisher project create --name <name> [--jsonld]` | Create a project. A BU project is the default; `--jsonld` makes an API publishing project |
+| `ce publisher project add --project-id <id> --file <file or folder> [--type <template>]` | Add files, or replace the files of the same name. A BU project needs `--type`, the BU template the files follow: `credentials`, `learning-opportunities`, `assessments`, `jobs`, … Repeat `--file` for several; `--recursive` for subfolders |
+| `ce publisher project run validation --project-id <id>` | Validate the latest iteration, including the CTIDs it refers to. A BU project starts validating when files are added, so this waits for it (`--no-wait` to return at once) |
+| `ce publisher project show validation status --project-id <id>` | How many files passed and how many have errors (`--verbose` lists each one) |
+| `ce publisher project show validation errors --project-id <id>` | The errors to fix |
+| `ce publisher project show status --project-id <id>` | The project, its latest iteration and each publishing stage |
+| `ce publisher project show audit --project-id <id>` | Who did what, oldest first |
+| `ce publisher project complete --project-id <id>` | Approve the project and publish it (`--no-wait` to return at once). Run again to retry a failed publish |
+| `ce publisher project list` | Your projects |
+| `ce publisher project abandon --project-id <id>` | Abandon a project that was not published |
+
+Every `show` command takes `-o json`.
+
+```text
+ce publisher project create --name "Welding certificates"
+ce publisher project add --project-id 23 --file credentials.csv --type credentials
+ce publisher project run validation --project-id 23
+ce publisher project show validation errors --project-id 23
+ce publisher project add --project-id 23 --file fixed\credentials.csv --type credentials
+ce publisher project run validation --project-id 23
+ce publisher project complete --project-id 23
+ce publisher project show audit --project-id 23
+```
+
+How it behaves:
+
+- **Adding** a CSV to a BU project starts validation at once. Adding a JSON-LD file to an API publishing project only stores it; run validation when you have
+  added everything.
+- **Validation** checks the files and also looks up every CTID they refer to, with the same rules as the bulk
+  upload.
+- **A change after validation** starts a new iteration, which begins as a copy of the last one. A file with the same
+  name replaces the earlier one.
+- **Completing** needs a latest iteration that validated without errors. For a BU project it first transforms the
+  CSV files to JSON-LD and makes you a reviewer, so you can approve; then it approves and publishes. Each step is
+  recorded in the audit log.
+- **Only you** can change an API publishing project you created.
+- **Exit status** is 1 when a file was refused, validation found errors, or the project did not publish.
+
+The Publisher API address comes from the environment (`publisher_api_base`); override it with `--publisher-url` or
+`CE_PUBLISHER_API_URL`. Your account needs the Publisher user role and a tenant on its profile.
+
+The commands call the Publisher through a client generated from its Swagger document
+(`ce/publisher/api/publisher_client`). `generate.ps1` regenerates it. The legacy Registry Assistant request format is
+a Publisher feature flag that is off by default; ce-cli does not offer it, and a client generated while it is off has
+no call for it.
+
 ## Project structure
 
 ```
@@ -245,6 +306,7 @@ ce-cli/
     │   ├── config.py              # ce config set / get / list / reset
     │   ├── iir.py                 # ce iir challenge bulk-sign, ce iir issuer-did publish
     │   ├── iir_sign_challenge.py  # ce iir challenge sign
+    │   ├── publisher.py           # ce publisher project ... / format
     │   └── resource.py            # ce resource list / show / create / delete
     ├── config/
     │   ├── settings.py            # OIDCSettings, token I/O, paths
