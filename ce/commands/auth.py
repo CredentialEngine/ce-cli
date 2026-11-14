@@ -1,4 +1,4 @@
-"""Auth command group: ce account login, ce account logout, ce account show."""
+"""Auth commands: ce login, ce logout, ce whoami."""
 
 from __future__ import annotations
 
@@ -13,7 +13,12 @@ from ce.auth.device_flow import (
     KeycloakDeviceFlowClient,
     TokenExpiredError,
 )
-from ce.auth.token_manager import is_logged_in
+from ce.auth.token_manager import (
+    UNREACHABLE,
+    is_logged_in,
+    login_required_message,
+    resolve_access_token,
+)
 from ce.config.context import get_current_environment, load_cli_config, require_environment
 from ce.config.settings import delete_tokens, load_tokens, save_tokens
 
@@ -26,7 +31,7 @@ def auth_group() -> None:
     """Manage Credential Engine account and authentication."""
 
 
-# ce account login
+# ce login
 
 @click.command("login")
 @click.option("--env", "env_name", default=None, metavar="NAME",
@@ -53,7 +58,9 @@ def login(env_name: str | None) -> None:
             raise SystemExit(1)
         active_name, env = result
 
-    if is_logged_in():
+    # Reuse this environment's session rather than starting a second sign-in.
+    # An expired access token is renewed here; if it cannot be, sign-in goes ahead.
+    if is_logged_in(active_name):
         console.print(f"Already signed in to [bold]{active_name}[/bold] "
                       f"([dim]{env.label}[/dim]). Run [bold]ce account show[/bold] for details.")
         console.print("  To switch accounts, run [bold]ce account logout[/bold] first.")
@@ -103,7 +110,7 @@ def login(env_name: str | None) -> None:
         raise SystemExit(1)
     except TokenExpiredError:
         console.print()
-        err_console.print("The device code expired. Run [bold]ce account login[/bold] again.")
+        err_console.print("The device code expired. Run [bold]ce login[/bold] again.")
         raise SystemExit(1)
     except DeviceFlowError as exc:
         console.print()
@@ -111,7 +118,7 @@ def login(env_name: str | None) -> None:
         raise SystemExit(1)
 
     stored = KeycloakDeviceFlowClient.to_stored_tokens(token_resp)
-    save_tokens(stored)
+    save_tokens(stored, active_name)
 
     try:
         userinfo = client.get_userinfo(stored.access_token)
@@ -144,14 +151,17 @@ def logout(yes: bool) -> None:
     if not yes:
         click.confirm("  Sign out of Credential Engine?", abort=True)
 
-    try:
-        result = get_current_environment()
-        if result and tokens.refresh_token:
-            _, env = result
-            client = KeycloakDeviceFlowClient(env)
-            client.revoke_token(tokens.refresh_token, "refresh_token")
-    except Exception:
-        pass
+    result = get_current_environment()
+    if result and tokens.refresh_token:
+        _, env = result
+        try:
+            KeycloakDeviceFlowClient(env).revoke_token(tokens.refresh_token, "refresh_token")
+        except DeviceFlowError as exc:
+            err_console.print(
+                f"Warning: the session could not be ended at the sign-in service: {exc}",
+                highlight=False,
+                soft_wrap=True,
+            )
 
     delete_tokens()
     console.print("Signed out successfully.")
@@ -162,11 +172,9 @@ def logout(yes: bool) -> None:
 @click.command("show")
 def account_show() -> None:
     """Show the currently signed-in account."""
-    from ce.auth.token_manager import get_valid_access_token
-
     tokens = load_tokens()
     if tokens is None:
-        console.print("Not signed in. Run [bold]ce account login[/bold].")
+        console.print("Not signed in. Run [bold]ce login[/bold].")
         return
 
     result = get_current_environment()
@@ -175,10 +183,16 @@ def account_show() -> None:
         return
     active_name, env = result
 
-    token = get_valid_access_token()
+    session = resolve_access_token()
+    token = session.access_token
     if not token:
-        err_console.print("Session expired. Run [bold]ce account login[/bold] again.")
+        err_console.print(login_required_message(session), highlight=False, soft_wrap=True)
+        if session.reason == UNREACHABLE:
+            raise SystemExit(1)
         return
+
+    # The token may just have been renewed; show the saved one's expiry.
+    tokens = load_tokens() or tokens
 
     client = KeycloakDeviceFlowClient(env)
     try:
