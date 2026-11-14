@@ -1,30 +1,20 @@
 from http import HTTPStatus
-from typing import Any, cast
-from urllib.parse import quote
+from typing import Any
 
 import httpx2
 
-from ...client import AuthenticatedClient, Client
-from ...types import Response, UNSET, Unset
 from ... import errors
-
+from ...client import AuthenticatedClient, Client
 from ...models.create_challenges_request import CreateChallengesRequest
-from ...models.iir_api_create_challenges_response_200 import IIRApiCreateChallengesResponse200
-from typing import cast
-
+from ...models.iir_api_create_challenges_response_200_item import IirApiCreateChallengesResponse200Item
+from ...types import UNSET, Response
 
 
 def _get_kwargs(
     *,
-    body: CreateChallengesRequest | Unset = UNSET,
-
+    body: CreateChallengesRequest | CreateChallengesRequest | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
-
-
-    
-
-    
 
     _kwargs: dict[str, Any] = {
         "method": "post",
@@ -34,31 +24,37 @@ def _get_kwargs(
     if isinstance(body, CreateChallengesRequest):
         _kwargs["json"] = body.to_dict()
 
-
         headers["Content-Type"] = "application/json"
     if isinstance(body, CreateChallengesRequest):
         _kwargs["data"] = body.to_dict()
-
         headers["Content-Type"] = "application/x-www-form-urlencoded"
 
     _kwargs["headers"] = headers
     return _kwargs
 
-    
-def _parse_response(*, client: AuthenticatedClient | Client, response: httpx2.Response):
+
+def _parse_response(
+    *, client: AuthenticatedClient | Client, response: httpx2.Response
+) -> list[IirApiCreateChallengesResponse200Item] | None:
     if response.status_code == 200:
         response_200 = []
-        for item_data in response.json():
-            item = IIRApiCreateChallengesResponse200.from_dict(item_data)
-            response_200.append(item)
+        _response_200 = response.json()
+        for response_200_item_data in _response_200:
+            response_200_item = IirApiCreateChallengesResponse200Item.from_dict(response_200_item_data)
+
+            response_200.append(response_200_item)
+
         return response_200
 
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
-    return None
+    else:
+        return None
 
 
-def _build_response(*, client: AuthenticatedClient | Client, response: httpx2.Response) -> Response[IIRApiCreateChallengesResponse200]:
+def _build_response(
+    *, client: AuthenticatedClient | Client, response: httpx2.Response
+) -> Response[list[IirApiCreateChallengesResponse200Item]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -70,10 +66,9 @@ def _build_response(*, client: AuthenticatedClient | Client, response: httpx2.Re
 def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
-    body:    CreateChallengesRequest  |     CreateChallengesRequest  | Unset = UNSET,
-
-) -> Response[IIRApiCreateChallengesResponse200]:
-    """ 
+    body: CreateChallengesRequest | CreateChallengesRequest | Unset = UNSET,
+) -> Response[list[IirApiCreateChallengesResponse200Item]]:
+    """
     Args:
         body (CreateChallengesRequest):
         body (CreateChallengesRequest):
@@ -83,13 +78,11 @@ def sync_detailed(
         httpx2.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[IIRApiCreateChallengesResponse200]
-     """
-
+        Response[list[IirApiCreateChallengesResponse200Item]]
+    """
 
     kwargs = _get_kwargs(
         body=body,
-
     )
 
     response = client.get_httpx_client().request(
@@ -98,13 +91,13 @@ def sync_detailed(
 
     return _build_response(client=client, response=response)
 
+
 def sync(
     *,
     client: AuthenticatedClient | Client,
-    body:    CreateChallengesRequest  |     CreateChallengesRequest  | Unset = UNSET,
-
-) -> IIRApiCreateChallengesResponse200 | None:
-    """ 
+    body: CreateChallengesRequest | CreateChallengesRequest | Unset = UNSET,
+) -> list[IirApiCreateChallengesResponse200Item] | None:
+    """
     Args:
         body (CreateChallengesRequest):
         body (CreateChallengesRequest):
@@ -114,23 +107,21 @@ def sync(
         httpx2.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        IIRApiCreateChallengesResponse200
-     """
-
+        list[IirApiCreateChallengesResponse200Item]
+    """
 
     return sync_detailed(
         client=client,
-body=body,
-
+        body=body,
     ).parsed
+
 
 async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
-    body:    CreateChallengesRequest  |     CreateChallengesRequest  | Unset = UNSET,
-
-) -> Response[IIRApiCreateChallengesResponse200]:
-    """ 
+    body: CreateChallengesRequest | CreateChallengesRequest | Unset = UNSET,
+) -> Response[list[IirApiCreateChallengesResponse200Item]]:
+    """
     Args:
         body (CreateChallengesRequest):
         body (CreateChallengesRequest):
@@ -140,28 +131,24 @@ async def asyncio_detailed(
         httpx2.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[IIRApiCreateChallengesResponse200]
-     """
-
+        Response[list[IirApiCreateChallengesResponse200Item]]
+    """
 
     kwargs = _get_kwargs(
         body=body,
-
     )
 
-    response = await client.get_async_httpx_client().request(
-        **kwargs
-    )
+    response = await client.get_async_httpx_client().request(**kwargs)
 
     return _build_response(client=client, response=response)
+
 
 async def asyncio(
     *,
     client: AuthenticatedClient | Client,
-    body:    CreateChallengesRequest  |     CreateChallengesRequest  | Unset = UNSET,
-
-) -> IIRApiCreateChallengesResponse200 | None:
-    """ 
+    body: CreateChallengesRequest | CreateChallengesRequest | Unset = UNSET,
+) -> list[IirApiCreateChallengesResponse200Item] | None:
+    """
     Args:
         body (CreateChallengesRequest):
         body (CreateChallengesRequest):
@@ -171,12 +158,12 @@ async def asyncio(
         httpx2.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        IIRApiCreateChallengesResponse200
-     """
+        list[IirApiCreateChallengesResponse200Item]
+    """
 
-
-    return (await asyncio_detailed(
-        client=client,
-body=body,
-
-    )).parsed
+    return (
+        await asyncio_detailed(
+            client=client,
+            body=body,
+        )
+    ).parsed

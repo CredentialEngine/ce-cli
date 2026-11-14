@@ -1,34 +1,24 @@
 from http import HTTPStatus
-from typing import Any, cast
-from urllib.parse import quote
+from typing import Any
 
 import httpx2
 
-from ...client import AuthenticatedClient, Client
-from ...types import Response, UNSET
 from ... import errors
-
-from ...models.iir_api_federation_fetch_response_200 import IIRApiFederationFetchResponse200
-from typing import cast
-
+from ...client import AuthenticatedClient, Client
+from ...models.iir_api_federation_fetch_response_200 import IirApiFederationFetchResponse200
+from ...types import UNSET, Response
 
 
 def _get_kwargs(
     *,
     sub: str,
-
 ) -> dict[str, Any]:
-    
-
-    
 
     params: dict[str, Any] = {}
 
     params["sub"] = sub
 
-
     params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
-
 
     _kwargs: dict[str, Any] = {
         "method": "get",
@@ -36,16 +26,14 @@ def _get_kwargs(
         "params": params,
     }
 
-
     return _kwargs
 
 
-
-def _parse_response(*, client: AuthenticatedClient | Client, response: httpx2.Response) -> IIRApiFederationFetchResponse200 | None:
+def _parse_response(
+    *, client: AuthenticatedClient | Client, response: httpx2.Response
+) -> IirApiFederationFetchResponse200 | None:
     if response.status_code == 200:
-        response_200 = IIRApiFederationFetchResponse200.from_dict(response.json())
-
-
+        response_200 = IirApiFederationFetchResponse200.from_dict(response.json())
 
         return response_200
 
@@ -55,7 +43,9 @@ def _parse_response(*, client: AuthenticatedClient | Client, response: httpx2.Re
         return None
 
 
-def _build_response(*, client: AuthenticatedClient | Client, response: httpx2.Response) -> Response[IIRApiFederationFetchResponse200]:
+def _build_response(
+    *, client: AuthenticatedClient | Client, response: httpx2.Response
+) -> Response[IirApiFederationFetchResponse200]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -68,9 +58,8 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     sub: str,
-
-) -> Response[IIRApiFederationFetchResponse200]:
-    """ 
+) -> Response[IirApiFederationFetchResponse200]:
+    """
     Args:
         sub (str):
 
@@ -79,13 +68,11 @@ def sync_detailed(
         httpx2.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[IIRApiFederationFetchResponse200]
-     """
-
+        Response[IirApiFederationFetchResponse200]
+    """
 
     kwargs = _get_kwargs(
         sub=sub,
-
     )
 
     response = client.get_httpx_client().request(
@@ -94,13 +81,13 @@ def sync_detailed(
 
     return _build_response(client=client, response=response)
 
+
 def sync(
     *,
     client: AuthenticatedClient | Client,
     sub: str,
-
-) -> IIRApiFederationFetchResponse200 | None:
-    """ 
+) -> IirApiFederationFetchResponse200 | None:
+    """
     Args:
         sub (str):
 
@@ -109,23 +96,21 @@ def sync(
         httpx2.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        IIRApiFederationFetchResponse200
-     """
-
+        IirApiFederationFetchResponse200
+    """
 
     return sync_detailed(
         client=client,
-sub=sub,
-
+        sub=sub,
     ).parsed
+
 
 async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     sub: str,
-
-) -> Response[IIRApiFederationFetchResponse200]:
-    """ 
+) -> Response[IirApiFederationFetchResponse200]:
+    """
     Args:
         sub (str):
 
@@ -134,28 +119,24 @@ async def asyncio_detailed(
         httpx2.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[IIRApiFederationFetchResponse200]
-     """
-
+        Response[IirApiFederationFetchResponse200]
+    """
 
     kwargs = _get_kwargs(
         sub=sub,
-
     )
 
-    response = await client.get_async_httpx_client().request(
-        **kwargs
-    )
+    response = await client.get_async_httpx_client().request(**kwargs)
 
     return _build_response(client=client, response=response)
+
 
 async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     sub: str,
-
-) -> IIRApiFederationFetchResponse200 | None:
-    """ 
+) -> IirApiFederationFetchResponse200 | None:
+    """
     Args:
         sub (str):
 
@@ -164,12 +145,12 @@ async def asyncio(
         httpx2.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        IIRApiFederationFetchResponse200
-     """
+        IirApiFederationFetchResponse200
+    """
 
-
-    return (await asyncio_detailed(
-        client=client,
-sub=sub,
-
-    )).parsed
+    return (
+        await asyncio_detailed(
+            client=client,
+            sub=sub,
+        )
+    ).parsed

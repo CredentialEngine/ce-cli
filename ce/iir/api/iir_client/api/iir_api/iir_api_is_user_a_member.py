@@ -1,17 +1,14 @@
 from http import HTTPStatus
-from typing import Any, cast
+from typing import Any
 from urllib.parse import quote
+from uuid import UUID
 
 import httpx2
 
-from ...client import AuthenticatedClient, Client
-from ...types import Response, UNSET
 from ... import errors
-
-from ...models.iir_api_is_user_a_member_response_200 import IIRApiIsUserAMemberResponse200
-from typing import cast
-from uuid import UUID
-
+from ...client import AuthenticatedClient, Client
+from ...models.iir_api_is_user_a_member_response_200 import IirApiIsUserAMemberResponse200
+from ...types import UNSET, Response
 
 
 def _get_kwargs(
@@ -19,11 +16,7 @@ def _get_kwargs(
     *,
     task: str,
     ctid: str,
-
 ) -> dict[str, Any]:
-    
-
-    
 
     params: dict[str, Any] = {}
 
@@ -31,26 +24,24 @@ def _get_kwargs(
 
     params["ctid"] = ctid
 
-
     params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
-
 
     _kwargs: dict[str, Any] = {
         "method": "get",
-        "url": "/iir-api/isUserAMember/{user_id}".format(user_id=quote(str(user_id), safe=""),),
+        "url": "/iir-api/isUserAMember/{user_id}".format(
+            user_id=quote(str(user_id), safe=""),
+        ),
         "params": params,
     }
-
 
     return _kwargs
 
 
-
-def _parse_response(*, client: AuthenticatedClient | Client, response: httpx2.Response) -> IIRApiIsUserAMemberResponse200 | None:
+def _parse_response(
+    *, client: AuthenticatedClient | Client, response: httpx2.Response
+) -> IirApiIsUserAMemberResponse200 | None:
     if response.status_code == 200:
-        response_200 = IIRApiIsUserAMemberResponse200.from_dict(response.json())
-
-
+        response_200 = IirApiIsUserAMemberResponse200.from_dict(response.json())
 
         return response_200
 
@@ -60,7 +51,9 @@ def _parse_response(*, client: AuthenticatedClient | Client, response: httpx2.Re
         return None
 
 
-def _build_response(*, client: AuthenticatedClient | Client, response: httpx2.Response) -> Response[IIRApiIsUserAMemberResponse200]:
+def _build_response(
+    *, client: AuthenticatedClient | Client, response: httpx2.Response
+) -> Response[IirApiIsUserAMemberResponse200]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -75,9 +68,8 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     task: str,
     ctid: str,
-
-) -> Response[IIRApiIsUserAMemberResponse200]:
-    """ 
+) -> Response[IirApiIsUserAMemberResponse200]:
+    """
     Args:
         user_id (UUID):
         task (str):
@@ -88,15 +80,13 @@ def sync_detailed(
         httpx2.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[IIRApiIsUserAMemberResponse200]
-     """
-
+        Response[IirApiIsUserAMemberResponse200]
+    """
 
     kwargs = _get_kwargs(
         user_id=user_id,
-task=task,
-ctid=ctid,
-
+        task=task,
+        ctid=ctid,
     )
 
     response = client.get_httpx_client().request(
@@ -105,15 +95,15 @@ ctid=ctid,
 
     return _build_response(client=client, response=response)
 
+
 def sync(
     user_id: UUID,
     *,
     client: AuthenticatedClient | Client,
     task: str,
     ctid: str,
-
-) -> IIRApiIsUserAMemberResponse200 | None:
-    """ 
+) -> IirApiIsUserAMemberResponse200 | None:
+    """
     Args:
         user_id (UUID):
         task (str):
@@ -124,17 +114,16 @@ def sync(
         httpx2.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        IIRApiIsUserAMemberResponse200
-     """
-
+        IirApiIsUserAMemberResponse200
+    """
 
     return sync_detailed(
         user_id=user_id,
-client=client,
-task=task,
-ctid=ctid,
-
+        client=client,
+        task=task,
+        ctid=ctid,
     ).parsed
+
 
 async def asyncio_detailed(
     user_id: UUID,
@@ -142,9 +131,8 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     task: str,
     ctid: str,
-
-) -> Response[IIRApiIsUserAMemberResponse200]:
-    """ 
+) -> Response[IirApiIsUserAMemberResponse200]:
+    """
     Args:
         user_id (UUID):
         task (str):
@@ -155,22 +143,19 @@ async def asyncio_detailed(
         httpx2.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[IIRApiIsUserAMemberResponse200]
-     """
-
+        Response[IirApiIsUserAMemberResponse200]
+    """
 
     kwargs = _get_kwargs(
         user_id=user_id,
-task=task,
-ctid=ctid,
-
+        task=task,
+        ctid=ctid,
     )
 
-    response = await client.get_async_httpx_client().request(
-        **kwargs
-    )
+    response = await client.get_async_httpx_client().request(**kwargs)
 
     return _build_response(client=client, response=response)
+
 
 async def asyncio(
     user_id: UUID,
@@ -178,9 +163,8 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     task: str,
     ctid: str,
-
-) -> IIRApiIsUserAMemberResponse200 | None:
-    """ 
+) -> IirApiIsUserAMemberResponse200 | None:
+    """
     Args:
         user_id (UUID):
         task (str):
@@ -191,14 +175,14 @@ async def asyncio(
         httpx2.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        IIRApiIsUserAMemberResponse200
-     """
+        IirApiIsUserAMemberResponse200
+    """
 
-
-    return (await asyncio_detailed(
-        user_id=user_id,
-client=client,
-task=task,
-ctid=ctid,
-
-    )).parsed
+    return (
+        await asyncio_detailed(
+            user_id=user_id,
+            client=client,
+            task=task,
+            ctid=ctid,
+        )
+    ).parsed

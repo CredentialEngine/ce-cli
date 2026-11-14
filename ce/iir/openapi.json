@@ -350,22 +350,34 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object"
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object"
+                                    }
                                 }
                             },
                             "text/json": {
                                 "schema": {
-                                    "type": "object"
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object"
+                                    }
                                 }
                             },
                             "application/xml": {
                                 "schema": {
-                                    "type": "object"
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object"
+                                    }
                                 }
                             },
                             "text/xml": {
                                 "schema": {
-                                    "type": "object"
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object"
+                                    }
                                 }
                             }
                         }
