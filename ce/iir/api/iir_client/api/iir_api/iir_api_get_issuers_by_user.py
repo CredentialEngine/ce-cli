@@ -1,18 +1,14 @@
 from http import HTTPStatus
-from typing import Any, cast
+from typing import Any
 from urllib.parse import quote
-
-import httpx
-
-from ...client import AuthenticatedClient, Client
-from ...types import Response, UNSET
-from ... import errors
-
-from ...models.iir_api_get_issuers_by_user_response_200 import IIRApiGetIssuersByUserResponse200
-from ...types import UNSET, Unset
-from typing import cast
 from uuid import UUID
 
+import httpx2
+
+from ... import errors
+from ...client import AuthenticatedClient, Client
+from ...models.iir_api_get_issuers_by_user_response_200 import IirApiGetIssuersByUserResponse200
+from ...types import UNSET, Response, Unset
 
 
 def _get_kwargs(
@@ -22,11 +18,7 @@ def _get_kwargs(
     page_size: int | Unset = UNSET,
     keyword: str | Unset = UNSET,
     task: str | Unset = UNSET,
-
 ) -> dict[str, Any]:
-    
-
-    
 
     params: dict[str, Any] = {}
 
@@ -38,26 +30,24 @@ def _get_kwargs(
 
     params["task"] = task
 
-
     params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
-
 
     _kwargs: dict[str, Any] = {
         "method": "get",
-        "url": "/iir-api/users/{user_id}/issuers".format(user_id=quote(str(user_id), safe=""),),
+        "url": "/iir-api/users/{user_id}/issuers".format(
+            user_id=quote(str(user_id), safe=""),
+        ),
         "params": params,
     }
-
 
     return _kwargs
 
 
-
-def _parse_response(*, client: AuthenticatedClient | Client, response: httpx.Response) -> IIRApiGetIssuersByUserResponse200 | None:
+def _parse_response(
+    *, client: AuthenticatedClient | Client, response: httpx2.Response
+) -> IirApiGetIssuersByUserResponse200 | None:
     if response.status_code == 200:
-        response_200 = IIRApiGetIssuersByUserResponse200.from_dict(response.json())
-
-
+        response_200 = IirApiGetIssuersByUserResponse200.from_dict(response.json())
 
         return response_200
 
@@ -67,7 +57,9 @@ def _parse_response(*, client: AuthenticatedClient | Client, response: httpx.Res
         return None
 
 
-def _build_response(*, client: AuthenticatedClient | Client, response: httpx.Response) -> Response[IIRApiGetIssuersByUserResponse200]:
+def _build_response(
+    *, client: AuthenticatedClient | Client, response: httpx2.Response
+) -> Response[IirApiGetIssuersByUserResponse200]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -84,9 +76,8 @@ def sync_detailed(
     page_size: int | Unset = UNSET,
     keyword: str | Unset = UNSET,
     task: str | Unset = UNSET,
-
-) -> Response[IIRApiGetIssuersByUserResponse200]:
-    """ 
+) -> Response[IirApiGetIssuersByUserResponse200]:
+    """
     Args:
         user_id (UUID):
         page (int | Unset):
@@ -96,20 +87,18 @@ def sync_detailed(
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        httpx2.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[IIRApiGetIssuersByUserResponse200]
-     """
-
+        Response[IirApiGetIssuersByUserResponse200]
+    """
 
     kwargs = _get_kwargs(
         user_id=user_id,
-page=page,
-page_size=page_size,
-keyword=keyword,
-task=task,
-
+        page=page,
+        page_size=page_size,
+        keyword=keyword,
+        task=task,
     )
 
     response = client.get_httpx_client().request(
@@ -117,6 +106,7 @@ task=task,
     )
 
     return _build_response(client=client, response=response)
+
 
 def sync(
     user_id: UUID,
@@ -126,9 +116,8 @@ def sync(
     page_size: int | Unset = UNSET,
     keyword: str | Unset = UNSET,
     task: str | Unset = UNSET,
-
-) -> IIRApiGetIssuersByUserResponse200 | None:
-    """ 
+) -> IirApiGetIssuersByUserResponse200 | None:
+    """
     Args:
         user_id (UUID):
         page (int | Unset):
@@ -138,22 +127,21 @@ def sync(
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        httpx2.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        IIRApiGetIssuersByUserResponse200
-     """
-
+        IirApiGetIssuersByUserResponse200
+    """
 
     return sync_detailed(
         user_id=user_id,
-client=client,
-page=page,
-page_size=page_size,
-keyword=keyword,
-task=task,
-
+        client=client,
+        page=page,
+        page_size=page_size,
+        keyword=keyword,
+        task=task,
     ).parsed
+
 
 async def asyncio_detailed(
     user_id: UUID,
@@ -163,9 +151,8 @@ async def asyncio_detailed(
     page_size: int | Unset = UNSET,
     keyword: str | Unset = UNSET,
     task: str | Unset = UNSET,
-
-) -> Response[IIRApiGetIssuersByUserResponse200]:
-    """ 
+) -> Response[IirApiGetIssuersByUserResponse200]:
+    """
     Args:
         user_id (UUID):
         page (int | Unset):
@@ -175,27 +162,24 @@ async def asyncio_detailed(
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        httpx2.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[IIRApiGetIssuersByUserResponse200]
-     """
-
+        Response[IirApiGetIssuersByUserResponse200]
+    """
 
     kwargs = _get_kwargs(
         user_id=user_id,
-page=page,
-page_size=page_size,
-keyword=keyword,
-task=task,
-
+        page=page,
+        page_size=page_size,
+        keyword=keyword,
+        task=task,
     )
 
-    response = await client.get_async_httpx_client().request(
-        **kwargs
-    )
+    response = await client.get_async_httpx_client().request(**kwargs)
 
     return _build_response(client=client, response=response)
+
 
 async def asyncio(
     user_id: UUID,
@@ -205,9 +189,8 @@ async def asyncio(
     page_size: int | Unset = UNSET,
     keyword: str | Unset = UNSET,
     task: str | Unset = UNSET,
-
-) -> IIRApiGetIssuersByUserResponse200 | None:
-    """ 
+) -> IirApiGetIssuersByUserResponse200 | None:
+    """
     Args:
         user_id (UUID):
         page (int | Unset):
@@ -217,19 +200,19 @@ async def asyncio(
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        httpx2.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        IIRApiGetIssuersByUserResponse200
-     """
+        IirApiGetIssuersByUserResponse200
+    """
 
-
-    return (await asyncio_detailed(
-        user_id=user_id,
-client=client,
-page=page,
-page_size=page_size,
-keyword=keyword,
-task=task,
-
-    )).parsed
+    return (
+        await asyncio_detailed(
+            user_id=user_id,
+            client=client,
+            page=page,
+            page_size=page_size,
+            keyword=keyword,
+            task=task,
+        )
+    ).parsed

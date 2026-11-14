@@ -1,30 +1,20 @@
 from http import HTTPStatus
-from typing import Any, cast
-from urllib.parse import quote
+from typing import Any
 
-import httpx
+import httpx2
 
-from ...client import AuthenticatedClient, Client
-from ...types import Response, UNSET
 from ... import errors
-
-from ...models.iir_api_update_issuer_response_200 import IIRApiUpdateIssuerResponse200
+from ...client import AuthenticatedClient, Client
+from ...models.iir_api_update_issuer_response_200 import IirApiUpdateIssuerResponse200
 from ...models.pub_issuer_dto import PubIssuerDTO
-from typing import cast
-
+from ...types import UNSET, Response
 
 
 def _get_kwargs(
     *,
-    body:    PubIssuerDTO  |     PubIssuerDTO  | Unset = UNSET,
-
+    body: PubIssuerDTO | PubIssuerDTO | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
-
-
-    
-
-    
 
     _kwargs: dict[str, Any] = {
         "method": "put",
@@ -34,23 +24,20 @@ def _get_kwargs(
     if isinstance(body, PubIssuerDTO):
         _kwargs["json"] = body.to_dict()
 
-
         headers["Content-Type"] = "application/json"
     if isinstance(body, PubIssuerDTO):
         _kwargs["data"] = body.to_dict()
-
         headers["Content-Type"] = "application/x-www-form-urlencoded"
 
     _kwargs["headers"] = headers
     return _kwargs
 
 
-
-def _parse_response(*, client: AuthenticatedClient | Client, response: httpx.Response) -> IIRApiUpdateIssuerResponse200 | None:
+def _parse_response(
+    *, client: AuthenticatedClient | Client, response: httpx2.Response
+) -> IirApiUpdateIssuerResponse200 | None:
     if response.status_code == 200:
-        response_200 = IIRApiUpdateIssuerResponse200.from_dict(response.json())
-
-
+        response_200 = IirApiUpdateIssuerResponse200.from_dict(response.json())
 
         return response_200
 
@@ -60,7 +47,9 @@ def _parse_response(*, client: AuthenticatedClient | Client, response: httpx.Res
         return None
 
 
-def _build_response(*, client: AuthenticatedClient | Client, response: httpx.Response) -> Response[IIRApiUpdateIssuerResponse200]:
+def _build_response(
+    *, client: AuthenticatedClient | Client, response: httpx2.Response
+) -> Response[IirApiUpdateIssuerResponse200]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -72,26 +61,23 @@ def _build_response(*, client: AuthenticatedClient | Client, response: httpx.Res
 def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
-    body:    PubIssuerDTO  |     PubIssuerDTO  | Unset = UNSET,
-
-) -> Response[IIRApiUpdateIssuerResponse200]:
-    """ 
+    body: PubIssuerDTO | PubIssuerDTO | Unset = UNSET,
+) -> Response[IirApiUpdateIssuerResponse200]:
+    """
     Args:
         body (PubIssuerDTO):
         body (PubIssuerDTO):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        httpx2.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[IIRApiUpdateIssuerResponse200]
-     """
-
+        Response[IirApiUpdateIssuerResponse200]
+    """
 
     kwargs = _get_kwargs(
         body=body,
-
     )
 
     response = client.get_httpx_client().request(
@@ -100,85 +86,79 @@ def sync_detailed(
 
     return _build_response(client=client, response=response)
 
+
 def sync(
     *,
     client: AuthenticatedClient | Client,
-    body:    PubIssuerDTO  |     PubIssuerDTO  | Unset = UNSET,
-
-) -> IIRApiUpdateIssuerResponse200 | None:
-    """ 
+    body: PubIssuerDTO | PubIssuerDTO | Unset = UNSET,
+) -> IirApiUpdateIssuerResponse200 | None:
+    """
     Args:
         body (PubIssuerDTO):
         body (PubIssuerDTO):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        httpx2.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        IIRApiUpdateIssuerResponse200
-     """
-
+        IirApiUpdateIssuerResponse200
+    """
 
     return sync_detailed(
         client=client,
-body=body,
-
+        body=body,
     ).parsed
+
 
 async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
-    body:    PubIssuerDTO  |     PubIssuerDTO  | Unset = UNSET,
-
-) -> Response[IIRApiUpdateIssuerResponse200]:
-    """ 
+    body: PubIssuerDTO | PubIssuerDTO | Unset = UNSET,
+) -> Response[IirApiUpdateIssuerResponse200]:
+    """
     Args:
         body (PubIssuerDTO):
         body (PubIssuerDTO):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        httpx2.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[IIRApiUpdateIssuerResponse200]
-     """
-
+        Response[IirApiUpdateIssuerResponse200]
+    """
 
     kwargs = _get_kwargs(
         body=body,
-
     )
 
-    response = await client.get_async_httpx_client().request(
-        **kwargs
-    )
+    response = await client.get_async_httpx_client().request(**kwargs)
 
     return _build_response(client=client, response=response)
+
 
 async def asyncio(
     *,
     client: AuthenticatedClient | Client,
-    body:    PubIssuerDTO  |     PubIssuerDTO  | Unset = UNSET,
-
-) -> IIRApiUpdateIssuerResponse200 | None:
-    """ 
+    body: PubIssuerDTO | PubIssuerDTO | Unset = UNSET,
+) -> IirApiUpdateIssuerResponse200 | None:
+    """
     Args:
         body (PubIssuerDTO):
         body (PubIssuerDTO):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        httpx2.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        IIRApiUpdateIssuerResponse200
-     """
+        IirApiUpdateIssuerResponse200
+    """
 
-
-    return (await asyncio_detailed(
-        client=client,
-body=body,
-
-    )).parsed
+    return (
+        await asyncio_detailed(
+            client=client,
+            body=body,
+        )
+    ).parsed
