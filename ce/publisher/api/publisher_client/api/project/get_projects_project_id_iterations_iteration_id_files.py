@@ -1,46 +1,34 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union, cast
+from typing import Any, Optional, Union
 
 import httpx
 
-from ...client import AuthenticatedClient, Client
-from ...types import Response, UNSET
 from ... import errors
-
+from ...client import AuthenticatedClient, Client
 from ...models.iteration_file_dto import IterationFileDto
-from typing import cast
-
+from ...types import Response
 
 
 def _get_kwargs(
     project_id: int,
     iteration_id: int,
-
 ) -> dict[str, Any]:
-    
-
-    
-
-    
-
     _kwargs: dict[str, Any] = {
         "method": "get",
-        "url": "/projects/{project_id}/iterations/{iteration_id}/files".format(project_id=project_id,iteration_id=iteration_id,),
+        "url": f"/projects/{project_id}/iterations/{iteration_id}/files",
     }
-
 
     return _kwargs
 
 
-
-def _parse_response(*, client: Union[AuthenticatedClient, Client], response: httpx.Response) -> Optional[list['IterationFileDto']]:
+def _parse_response(
+    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
+) -> Optional[list["IterationFileDto"]]:
     if response.status_code == 200:
         response_200 = []
         _response_200 = response.json()
-        for response_200_item_data in (_response_200):
+        for response_200_item_data in _response_200:
             response_200_item = IterationFileDto.from_dict(response_200_item_data)
-
-
 
             response_200.append(response_200_item)
 
@@ -52,7 +40,9 @@ def _parse_response(*, client: Union[AuthenticatedClient, Client], response: htt
         return None
 
 
-def _build_response(*, client: Union[AuthenticatedClient, Client], response: httpx.Response) -> Response[list['IterationFileDto']]:
+def _build_response(
+    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
+) -> Response[list["IterationFileDto"]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -66,9 +56,8 @@ def sync_detailed(
     iteration_id: int,
     *,
     client: Union[AuthenticatedClient, Client],
-
-) -> Response[list['IterationFileDto']]:
-    """ 
+) -> Response[list["IterationFileDto"]]:
+    """
     Args:
         project_id (int):
         iteration_id (int):
@@ -79,13 +68,11 @@ def sync_detailed(
 
     Returns:
         Response[list['IterationFileDto']]
-     """
-
+    """
 
     kwargs = _get_kwargs(
         project_id=project_id,
-iteration_id=iteration_id,
-
+        iteration_id=iteration_id,
     )
 
     response = client.get_httpx_client().request(
@@ -94,14 +81,14 @@ iteration_id=iteration_id,
 
     return _build_response(client=client, response=response)
 
+
 def sync(
     project_id: int,
     iteration_id: int,
     *,
     client: Union[AuthenticatedClient, Client],
-
-) -> Optional[list['IterationFileDto']]:
-    """ 
+) -> Optional[list["IterationFileDto"]]:
+    """
     Args:
         project_id (int):
         iteration_id (int):
@@ -112,24 +99,22 @@ def sync(
 
     Returns:
         list['IterationFileDto']
-     """
-
+    """
 
     return sync_detailed(
         project_id=project_id,
-iteration_id=iteration_id,
-client=client,
-
+        iteration_id=iteration_id,
+        client=client,
     ).parsed
+
 
 async def asyncio_detailed(
     project_id: int,
     iteration_id: int,
     *,
     client: Union[AuthenticatedClient, Client],
-
-) -> Response[list['IterationFileDto']]:
-    """ 
+) -> Response[list["IterationFileDto"]]:
+    """
     Args:
         project_id (int):
         iteration_id (int):
@@ -140,29 +125,25 @@ async def asyncio_detailed(
 
     Returns:
         Response[list['IterationFileDto']]
-     """
-
+    """
 
     kwargs = _get_kwargs(
         project_id=project_id,
-iteration_id=iteration_id,
-
+        iteration_id=iteration_id,
     )
 
-    response = await client.get_async_httpx_client().request(
-        **kwargs
-    )
+    response = await client.get_async_httpx_client().request(**kwargs)
 
     return _build_response(client=client, response=response)
+
 
 async def asyncio(
     project_id: int,
     iteration_id: int,
     *,
     client: Union[AuthenticatedClient, Client],
-
-) -> Optional[list['IterationFileDto']]:
-    """ 
+) -> Optional[list["IterationFileDto"]]:
+    """
     Args:
         project_id (int):
         iteration_id (int):
@@ -173,12 +154,12 @@ async def asyncio(
 
     Returns:
         list['IterationFileDto']
-     """
+    """
 
-
-    return (await asyncio_detailed(
-        project_id=project_id,
-iteration_id=iteration_id,
-client=client,
-
-    )).parsed
+    return (
+        await asyncio_detailed(
+            project_id=project_id,
+            iteration_id=iteration_id,
+            client=client,
+        )
+    ).parsed

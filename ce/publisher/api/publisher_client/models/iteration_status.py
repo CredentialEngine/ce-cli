@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class IterationStatus(str, Enum):
     CREATED = "Created"
     TRANSFORMED = "Transformed"

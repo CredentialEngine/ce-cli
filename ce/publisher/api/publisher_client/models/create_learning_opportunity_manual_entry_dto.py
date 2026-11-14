@@ -1,66 +1,56 @@
 from collections.abc import Mapping
-from typing import Any, TypeVar, Optional, BinaryIO, TextIO, TYPE_CHECKING, Generator
+from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
-from attrs import field as _attrs_field
 
 from ..types import UNSET, Unset
-
-from ..types import UNSET, Unset
-from typing import cast
-from typing import cast, Union
-from typing import Union
 
 if TYPE_CHECKING:
-  from ..models.manual_entry_credit_value_dto import ManualEntryCreditValueDto
-  from ..models.manual_entry_identifier_dto import ManualEntryIdentifierDto
-  from ..models.manual_entry_duration_dto import ManualEntryDurationDto
-  from ..models.manual_entry_jurisdiction_dto import ManualEntryJurisdictionDto
-
-
-
+    from ..models.manual_entry_credit_value_dto import ManualEntryCreditValueDto
+    from ..models.manual_entry_duration_dto import ManualEntryDurationDto
+    from ..models.manual_entry_identifier_dto import ManualEntryIdentifierDto
+    from ..models.manual_entry_jurisdiction_dto import ManualEntryJurisdictionDto
 
 
 T = TypeVar("T", bound="CreateLearningOpportunityManualEntryDto")
 
 
-
 @_attrs_define
 class CreateLearningOpportunityManualEntryDto:
-    """ 
-        Attributes:
-            primary_organization (str):
-            learning_type (str):
-            name (str):
-            description (str):
-            subject_webpage (str):
-            life_cycle_status_type (str):
-            language (str):
-            offered_by_primary_organization (Union[Unset, bool]):
-            external_identifier (Union[None, Unset, str]):
-            available_online_at (Union[None, Unset, str]):
-            availability_listing (Union[None, Unset, str]):
-            in_catalog (Union[None, Unset, str]):
-            is_non_credit (Union[None, Unset, bool]):
-            is_registered_apprenticeship (Union[None, Unset, bool]):
-            coded_notation (Union[None, Unset, str]):
-            identifiers (Union[Unset, list['ManualEntryIdentifierDto']]):
-            version_identifiers (Union[Unset, list['ManualEntryIdentifierDto']]):
-            alternate_names (Union[Unset, list[str]]):
-            subjects (Union[Unset, list[str]]):
-            keywords (Union[Unset, list[str]]):
-            audience_level_types (Union[Unset, list[str]]):
-            audience_types (Union[Unset, list[str]]):
-            delivery_types (Union[Unset, list[str]]):
-            delivery_type_description (Union[None, Unset, str]):
-            learning_method_types (Union[Unset, list[str]]):
-            learning_method_description (Union[None, Unset, str]):
-            estimated_duration (Union[Unset, ManualEntryDurationDto]):
-            jurisdictions (Union[Unset, list['ManualEntryJurisdictionDto']]):
-            credit_value (Union[Unset, ManualEntryCreditValueDto]):
-            date_effective (Union[None, Unset, str]):
-            expiration_date (Union[None, Unset, str]):
-     """
+    """
+    Attributes:
+        primary_organization (str):
+        learning_type (str):
+        name (str):
+        description (str):
+        subject_webpage (str):
+        life_cycle_status_type (str):
+        language (str):
+        offered_by_primary_organization (Union[Unset, bool]):
+        external_identifier (Union[None, Unset, str]):
+        available_online_at (Union[None, Unset, str]):
+        availability_listing (Union[None, Unset, str]):
+        in_catalog (Union[None, Unset, str]):
+        is_non_credit (Union[None, Unset, bool]):
+        is_registered_apprenticeship (Union[None, Unset, bool]):
+        coded_notation (Union[None, Unset, str]):
+        identifiers (Union[Unset, list['ManualEntryIdentifierDto']]):
+        version_identifiers (Union[Unset, list['ManualEntryIdentifierDto']]):
+        alternate_names (Union[Unset, list[str]]):
+        subjects (Union[Unset, list[str]]):
+        keywords (Union[Unset, list[str]]):
+        audience_level_types (Union[Unset, list[str]]):
+        audience_types (Union[Unset, list[str]]):
+        delivery_types (Union[Unset, list[str]]):
+        delivery_type_description (Union[None, Unset, str]):
+        learning_method_types (Union[Unset, list[str]]):
+        learning_method_description (Union[None, Unset, str]):
+        estimated_duration (Union[Unset, ManualEntryDurationDto]):
+        jurisdictions (Union[Unset, list['ManualEntryJurisdictionDto']]):
+        credit_value (Union[Unset, ManualEntryCreditValueDto]):
+        date_effective (Union[None, Unset, str]):
+        expiration_date (Union[None, Unset, str]):
+    """
 
     primary_organization: str
     learning_type: str
@@ -77,8 +67,8 @@ class CreateLearningOpportunityManualEntryDto:
     is_non_credit: Union[None, Unset, bool] = UNSET
     is_registered_apprenticeship: Union[None, Unset, bool] = UNSET
     coded_notation: Union[None, Unset, str] = UNSET
-    identifiers: Union[Unset, list['ManualEntryIdentifierDto']] = UNSET
-    version_identifiers: Union[Unset, list['ManualEntryIdentifierDto']] = UNSET
+    identifiers: Union[Unset, list["ManualEntryIdentifierDto"]] = UNSET
+    version_identifiers: Union[Unset, list["ManualEntryIdentifierDto"]] = UNSET
     alternate_names: Union[Unset, list[str]] = UNSET
     subjects: Union[Unset, list[str]] = UNSET
     keywords: Union[Unset, list[str]] = UNSET
@@ -88,21 +78,13 @@ class CreateLearningOpportunityManualEntryDto:
     delivery_type_description: Union[None, Unset, str] = UNSET
     learning_method_types: Union[Unset, list[str]] = UNSET
     learning_method_description: Union[None, Unset, str] = UNSET
-    estimated_duration: Union[Unset, 'ManualEntryDurationDto'] = UNSET
-    jurisdictions: Union[Unset, list['ManualEntryJurisdictionDto']] = UNSET
-    credit_value: Union[Unset, 'ManualEntryCreditValueDto'] = UNSET
+    estimated_duration: Union[Unset, "ManualEntryDurationDto"] = UNSET
+    jurisdictions: Union[Unset, list["ManualEntryJurisdictionDto"]] = UNSET
+    credit_value: Union[Unset, "ManualEntryCreditValueDto"] = UNSET
     date_effective: Union[None, Unset, str] = UNSET
     expiration_date: Union[None, Unset, str] = UNSET
 
-
-
-
-
     def to_dict(self) -> dict[str, Any]:
-        from ..models.manual_entry_credit_value_dto import ManualEntryCreditValueDto
-        from ..models.manual_entry_identifier_dto import ManualEntryIdentifierDto
-        from ..models.manual_entry_duration_dto import ManualEntryDurationDto
-        from ..models.manual_entry_jurisdiction_dto import ManualEntryJurisdictionDto
         primary_organization = self.primary_organization
 
         learning_type = self.learning_type
@@ -168,8 +150,6 @@ class CreateLearningOpportunityManualEntryDto:
                 identifiers_item = identifiers_item_data.to_dict()
                 identifiers.append(identifiers_item)
 
-
-
         version_identifiers: Union[Unset, list[dict[str, Any]]] = UNSET
         if not isinstance(self.version_identifiers, Unset):
             version_identifiers = []
@@ -177,43 +157,29 @@ class CreateLearningOpportunityManualEntryDto:
                 version_identifiers_item = version_identifiers_item_data.to_dict()
                 version_identifiers.append(version_identifiers_item)
 
-
-
         alternate_names: Union[Unset, list[str]] = UNSET
         if not isinstance(self.alternate_names, Unset):
             alternate_names = self.alternate_names
-
-
 
         subjects: Union[Unset, list[str]] = UNSET
         if not isinstance(self.subjects, Unset):
             subjects = self.subjects
 
-
-
         keywords: Union[Unset, list[str]] = UNSET
         if not isinstance(self.keywords, Unset):
             keywords = self.keywords
-
-
 
         audience_level_types: Union[Unset, list[str]] = UNSET
         if not isinstance(self.audience_level_types, Unset):
             audience_level_types = self.audience_level_types
 
-
-
         audience_types: Union[Unset, list[str]] = UNSET
         if not isinstance(self.audience_types, Unset):
             audience_types = self.audience_types
 
-
-
         delivery_types: Union[Unset, list[str]] = UNSET
         if not isinstance(self.delivery_types, Unset):
             delivery_types = self.delivery_types
-
-
 
         delivery_type_description: Union[None, Unset, str]
         if isinstance(self.delivery_type_description, Unset):
@@ -224,8 +190,6 @@ class CreateLearningOpportunityManualEntryDto:
         learning_method_types: Union[Unset, list[str]] = UNSET
         if not isinstance(self.learning_method_types, Unset):
             learning_method_types = self.learning_method_types
-
-
 
         learning_method_description: Union[None, Unset, str]
         if isinstance(self.learning_method_description, Unset):
@@ -244,8 +208,6 @@ class CreateLearningOpportunityManualEntryDto:
                 jurisdictions_item = jurisdictions_item_data.to_dict()
                 jurisdictions.append(jurisdictions_item)
 
-
-
         credit_value: Union[Unset, dict[str, Any]] = UNSET
         if not isinstance(self.credit_value, Unset):
             credit_value = self.credit_value.to_dict()
@@ -262,18 +224,19 @@ class CreateLearningOpportunityManualEntryDto:
         else:
             expiration_date = self.expiration_date
 
-
         field_dict: dict[str, Any] = {}
 
-        field_dict.update({
-            "primaryOrganization": primary_organization,
-            "learningType": learning_type,
-            "name": name,
-            "description": description,
-            "subjectWebpage": subject_webpage,
-            "lifeCycleStatusType": life_cycle_status_type,
-            "language": language,
-        })
+        field_dict.update(
+            {
+                "primaryOrganization": primary_organization,
+                "learningType": learning_type,
+                "name": name,
+                "description": description,
+                "subjectWebpage": subject_webpage,
+                "lifeCycleStatusType": life_cycle_status_type,
+                "language": language,
+            }
+        )
         if offered_by_primary_organization is not UNSET:
             field_dict["offeredByPrimaryOrganization"] = offered_by_primary_organization
         if external_identifier is not UNSET:
@@ -325,14 +288,13 @@ class CreateLearningOpportunityManualEntryDto:
 
         return field_dict
 
-
-
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.manual_entry_credit_value_dto import ManualEntryCreditValueDto
-        from ..models.manual_entry_identifier_dto import ManualEntryIdentifierDto
         from ..models.manual_entry_duration_dto import ManualEntryDurationDto
+        from ..models.manual_entry_identifier_dto import ManualEntryIdentifierDto
         from ..models.manual_entry_jurisdiction_dto import ManualEntryJurisdictionDto
+
         d = dict(src_dict)
         primary_organization = d.pop("primaryOrganization")
 
@@ -359,7 +321,6 @@ class CreateLearningOpportunityManualEntryDto:
 
         external_identifier = _parse_external_identifier(d.pop("externalIdentifier", UNSET))
 
-
         def _parse_available_online_at(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
@@ -368,7 +329,6 @@ class CreateLearningOpportunityManualEntryDto:
             return cast(Union[None, Unset, str], data)
 
         available_online_at = _parse_available_online_at(d.pop("availableOnlineAt", UNSET))
-
 
         def _parse_availability_listing(data: object) -> Union[None, Unset, str]:
             if data is None:
@@ -379,7 +339,6 @@ class CreateLearningOpportunityManualEntryDto:
 
         availability_listing = _parse_availability_listing(d.pop("availabilityListing", UNSET))
 
-
         def _parse_in_catalog(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
@@ -388,7 +347,6 @@ class CreateLearningOpportunityManualEntryDto:
             return cast(Union[None, Unset, str], data)
 
         in_catalog = _parse_in_catalog(d.pop("inCatalog", UNSET))
-
 
         def _parse_is_non_credit(data: object) -> Union[None, Unset, bool]:
             if data is None:
@@ -399,7 +357,6 @@ class CreateLearningOpportunityManualEntryDto:
 
         is_non_credit = _parse_is_non_credit(d.pop("isNonCredit", UNSET))
 
-
         def _parse_is_registered_apprenticeship(data: object) -> Union[None, Unset, bool]:
             if data is None:
                 return data
@@ -408,7 +365,6 @@ class CreateLearningOpportunityManualEntryDto:
             return cast(Union[None, Unset, bool], data)
 
         is_registered_apprenticeship = _parse_is_registered_apprenticeship(d.pop("isRegisteredApprenticeship", UNSET))
-
 
         def _parse_coded_notation(data: object) -> Union[None, Unset, str]:
             if data is None:
@@ -419,44 +375,31 @@ class CreateLearningOpportunityManualEntryDto:
 
         coded_notation = _parse_coded_notation(d.pop("codedNotation", UNSET))
 
-
         identifiers = []
         _identifiers = d.pop("identifiers", UNSET)
-        for identifiers_item_data in (_identifiers or []):
+        for identifiers_item_data in _identifiers or []:
             identifiers_item = ManualEntryIdentifierDto.from_dict(identifiers_item_data)
-
-
 
             identifiers.append(identifiers_item)
 
-
         version_identifiers = []
         _version_identifiers = d.pop("versionIdentifiers", UNSET)
-        for version_identifiers_item_data in (_version_identifiers or []):
+        for version_identifiers_item_data in _version_identifiers or []:
             version_identifiers_item = ManualEntryIdentifierDto.from_dict(version_identifiers_item_data)
-
-
 
             version_identifiers.append(version_identifiers_item)
 
-
         alternate_names = cast(list[str], d.pop("alternateNames", UNSET))
-
 
         subjects = cast(list[str], d.pop("subjects", UNSET))
 
-
         keywords = cast(list[str], d.pop("keywords", UNSET))
-
 
         audience_level_types = cast(list[str], d.pop("audienceLevelTypes", UNSET))
 
-
         audience_types = cast(list[str], d.pop("audienceTypes", UNSET))
 
-
         delivery_types = cast(list[str], d.pop("deliveryTypes", UNSET))
-
 
         def _parse_delivery_type_description(data: object) -> Union[None, Unset, str]:
             if data is None:
@@ -467,9 +410,7 @@ class CreateLearningOpportunityManualEntryDto:
 
         delivery_type_description = _parse_delivery_type_description(d.pop("deliveryTypeDescription", UNSET))
 
-
         learning_method_types = cast(list[str], d.pop("learningMethodTypes", UNSET))
-
 
         def _parse_learning_method_description(data: object) -> Union[None, Unset, str]:
             if data is None:
@@ -480,36 +421,26 @@ class CreateLearningOpportunityManualEntryDto:
 
         learning_method_description = _parse_learning_method_description(d.pop("learningMethodDescription", UNSET))
 
-
         _estimated_duration = d.pop("estimatedDuration", UNSET)
         estimated_duration: Union[Unset, ManualEntryDurationDto]
-        if isinstance(_estimated_duration,  Unset):
+        if isinstance(_estimated_duration, Unset):
             estimated_duration = UNSET
         else:
             estimated_duration = ManualEntryDurationDto.from_dict(_estimated_duration)
 
-
-
-
         jurisdictions = []
         _jurisdictions = d.pop("jurisdictions", UNSET)
-        for jurisdictions_item_data in (_jurisdictions or []):
+        for jurisdictions_item_data in _jurisdictions or []:
             jurisdictions_item = ManualEntryJurisdictionDto.from_dict(jurisdictions_item_data)
-
-
 
             jurisdictions.append(jurisdictions_item)
 
-
         _credit_value = d.pop("creditValue", UNSET)
         credit_value: Union[Unset, ManualEntryCreditValueDto]
-        if isinstance(_credit_value,  Unset):
+        if isinstance(_credit_value, Unset):
             credit_value = UNSET
         else:
             credit_value = ManualEntryCreditValueDto.from_dict(_credit_value)
-
-
-
 
         def _parse_date_effective(data: object) -> Union[None, Unset, str]:
             if data is None:
@@ -520,7 +451,6 @@ class CreateLearningOpportunityManualEntryDto:
 
         date_effective = _parse_date_effective(d.pop("dateEffective", UNSET))
 
-
         def _parse_expiration_date(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
@@ -529,7 +459,6 @@ class CreateLearningOpportunityManualEntryDto:
             return cast(Union[None, Unset, str], data)
 
         expiration_date = _parse_expiration_date(d.pop("expirationDate", UNSET))
-
 
         create_learning_opportunity_manual_entry_dto = cls(
             primary_organization=primary_organization,
@@ -566,4 +495,3 @@ class CreateLearningOpportunityManualEntryDto:
         )
 
         return create_learning_opportunity_manual_entry_dto
-

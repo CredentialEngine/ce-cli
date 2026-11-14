@@ -1,41 +1,29 @@
+import datetime
 from collections.abc import Mapping
-from typing import Any, TypeVar, Optional, BinaryIO, TextIO, TYPE_CHECKING, Generator
+from typing import Any, TypeVar, Union, cast
+from uuid import UUID
 
 from attrs import define as _attrs_define
-from attrs import field as _attrs_field
-
-from ..types import UNSET, Unset
+from dateutil.parser import isoparse
 
 from ..models.publishing_stage import PublishingStage
 from ..types import UNSET, Unset
-from dateutil.parser import isoparse
-from typing import cast
-from typing import cast, Union
-from typing import Union
-from uuid import UUID
-import datetime
-
-
-
-
-
 
 T = TypeVar("T", bound="PublishingJobDto")
 
 
-
 @_attrs_define
 class PublishingJobDto:
-    """ 
-        Attributes:
-            job_id (UUID):
-            iteration_id (int):
-            stage (PublishingStage):
-            status (str):
-            updated_at (datetime.datetime):
-            workflow_name (Union[None, Unset, str]):
-            error_message (Union[None, Unset, str]):
-     """
+    """
+    Attributes:
+        job_id (UUID):
+        iteration_id (int):
+        stage (PublishingStage):
+        status (str):
+        updated_at (datetime.datetime):
+        workflow_name (Union[None, Unset, str]):
+        error_message (Union[None, Unset, str]):
+    """
 
     job_id: UUID
     iteration_id: int
@@ -44,10 +32,6 @@ class PublishingJobDto:
     updated_at: datetime.datetime
     workflow_name: Union[None, Unset, str] = UNSET
     error_message: Union[None, Unset, str] = UNSET
-
-
-
-
 
     def to_dict(self) -> dict[str, Any]:
         job_id = str(self.job_id)
@@ -72,16 +56,17 @@ class PublishingJobDto:
         else:
             error_message = self.error_message
 
-
         field_dict: dict[str, Any] = {}
 
-        field_dict.update({
-            "jobId": job_id,
-            "iterationId": iteration_id,
-            "stage": stage,
-            "status": status,
-            "updatedAt": updated_at,
-        })
+        field_dict.update(
+            {
+                "jobId": job_id,
+                "iterationId": iteration_id,
+                "stage": stage,
+                "status": status,
+                "updatedAt": updated_at,
+            }
+        )
         if workflow_name is not UNSET:
             field_dict["workflowName"] = workflow_name
         if error_message is not UNSET:
@@ -89,29 +74,18 @@ class PublishingJobDto:
 
         return field_dict
 
-
-
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
         job_id = UUID(d.pop("jobId"))
 
-
-
-
         iteration_id = d.pop("iterationId")
 
         stage = PublishingStage(d.pop("stage"))
 
-
-
-
         status = d.pop("status")
 
         updated_at = isoparse(d.pop("updatedAt"))
-
-
-
 
         def _parse_workflow_name(data: object) -> Union[None, Unset, str]:
             if data is None:
@@ -122,7 +96,6 @@ class PublishingJobDto:
 
         workflow_name = _parse_workflow_name(d.pop("workflowName", UNSET))
 
-
         def _parse_error_message(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
@@ -131,7 +104,6 @@ class PublishingJobDto:
             return cast(Union[None, Unset, str], data)
 
         error_message = _parse_error_message(d.pop("errorMessage", UNSET))
-
 
         publishing_job_dto = cls(
             job_id=job_id,
@@ -144,4 +116,3 @@ class PublishingJobDto:
         )
 
         return publishing_job_dto
-

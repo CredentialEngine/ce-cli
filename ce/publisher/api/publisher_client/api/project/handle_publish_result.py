@@ -3,36 +3,26 @@ from typing import Any, Optional, Union, cast
 
 import httpx
 
-from ...client import AuthenticatedClient, Client
-from ...types import Response, UNSET
 from ... import errors
-
+from ...client import AuthenticatedClient, Client
 from ...models.job_result_dto import JobResultDto
 from ...models.problem_details import ProblemDetails
-from typing import cast
-
+from ...types import Response
 
 
 def _get_kwargs(
     project_id: int,
     *,
     body: JobResultDto,
-
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
-
-    
-
-    
-
     _kwargs: dict[str, Any] = {
         "method": "post",
-        "url": "/projects/{project_id}/publish/result".format(project_id=project_id,),
+        "url": f"/projects/{project_id}/publish/result",
     }
 
     _kwargs["json"] = body.to_dict()
-
 
     headers["Content-Type"] = "application/json"
 
@@ -40,16 +30,15 @@ def _get_kwargs(
     return _kwargs
 
 
-
-def _parse_response(*, client: Union[AuthenticatedClient, Client], response: httpx.Response) -> Optional[Union[Any, ProblemDetails]]:
+def _parse_response(
+    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
+) -> Optional[Union[Any, ProblemDetails]]:
     if response.status_code == 200:
         response_200 = cast(Any, None)
         return response_200
 
     if response.status_code == 400:
         response_400 = ProblemDetails.from_dict(response.json())
-
-
 
         return response_400
 
@@ -59,7 +48,9 @@ def _parse_response(*, client: Union[AuthenticatedClient, Client], response: htt
         return None
 
 
-def _build_response(*, client: Union[AuthenticatedClient, Client], response: httpx.Response) -> Response[Union[Any, ProblemDetails]]:
+def _build_response(
+    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
+) -> Response[Union[Any, ProblemDetails]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -73,9 +64,8 @@ def sync_detailed(
     *,
     client: Union[AuthenticatedClient, Client],
     body: JobResultDto,
-
 ) -> Response[Union[Any, ProblemDetails]]:
-    """ 
+    """
     Args:
         project_id (int):
         body (JobResultDto):
@@ -86,13 +76,11 @@ def sync_detailed(
 
     Returns:
         Response[Union[Any, ProblemDetails]]
-     """
-
+    """
 
     kwargs = _get_kwargs(
         project_id=project_id,
-body=body,
-
+        body=body,
     )
 
     response = client.get_httpx_client().request(
@@ -101,14 +89,14 @@ body=body,
 
     return _build_response(client=client, response=response)
 
+
 def sync(
     project_id: int,
     *,
     client: Union[AuthenticatedClient, Client],
     body: JobResultDto,
-
 ) -> Optional[Union[Any, ProblemDetails]]:
-    """ 
+    """
     Args:
         project_id (int):
         body (JobResultDto):
@@ -119,24 +107,22 @@ def sync(
 
     Returns:
         Union[Any, ProblemDetails]
-     """
-
+    """
 
     return sync_detailed(
         project_id=project_id,
-client=client,
-body=body,
-
+        client=client,
+        body=body,
     ).parsed
+
 
 async def asyncio_detailed(
     project_id: int,
     *,
     client: Union[AuthenticatedClient, Client],
     body: JobResultDto,
-
 ) -> Response[Union[Any, ProblemDetails]]:
-    """ 
+    """
     Args:
         project_id (int):
         body (JobResultDto):
@@ -147,29 +133,25 @@ async def asyncio_detailed(
 
     Returns:
         Response[Union[Any, ProblemDetails]]
-     """
-
+    """
 
     kwargs = _get_kwargs(
         project_id=project_id,
-body=body,
-
+        body=body,
     )
 
-    response = await client.get_async_httpx_client().request(
-        **kwargs
-    )
+    response = await client.get_async_httpx_client().request(**kwargs)
 
     return _build_response(client=client, response=response)
+
 
 async def asyncio(
     project_id: int,
     *,
     client: Union[AuthenticatedClient, Client],
     body: JobResultDto,
-
 ) -> Optional[Union[Any, ProblemDetails]]:
-    """ 
+    """
     Args:
         project_id (int):
         body (JobResultDto):
@@ -180,12 +162,12 @@ async def asyncio(
 
     Returns:
         Union[Any, ProblemDetails]
-     """
+    """
 
-
-    return (await asyncio_detailed(
-        project_id=project_id,
-client=client,
-body=body,
-
-    )).parsed
+    return (
+        await asyncio_detailed(
+            project_id=project_id,
+            client=client,
+            body=body,
+        )
+    ).parsed

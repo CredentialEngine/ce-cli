@@ -1,44 +1,29 @@
 from collections.abc import Mapping
-from typing import Any, TypeVar, Optional, BinaryIO, TextIO, TYPE_CHECKING, Generator
+from typing import Any, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
-from attrs import field as _attrs_field
 
 from ..types import UNSET, Unset
-
-from ..types import UNSET, Unset
-from typing import cast, Union
-from typing import Union
-
-
-
-
-
 
 T = TypeVar("T", bound="JsonLdItemDto")
 
 
-
 @_attrs_define
 class JsonLdItemDto:
-    """ 
-        Attributes:
-            id (Union[None, Unset, str]):
-            name (Union[None, Unset, str]):
-            type_ (Union[None, Unset, str]):
-            ctid (Union[None, Unset, str]):
-            json_ld (Union[Unset, Any]):
-     """
+    """
+    Attributes:
+        id (Union[None, Unset, str]):
+        name (Union[None, Unset, str]):
+        type_ (Union[None, Unset, str]):
+        ctid (Union[None, Unset, str]):
+        json_ld (Union[Unset, Any]):
+    """
 
     id: Union[None, Unset, str] = UNSET
     name: Union[None, Unset, str] = UNSET
     type_: Union[None, Unset, str] = UNSET
     ctid: Union[None, Unset, str] = UNSET
     json_ld: Union[Unset, Any] = UNSET
-
-
-
-
 
     def to_dict(self) -> dict[str, Any]:
         id: Union[None, Unset, str]
@@ -67,11 +52,9 @@ class JsonLdItemDto:
 
         json_ld = self.json_ld
 
-
         field_dict: dict[str, Any] = {}
 
-        field_dict.update({
-        })
+        field_dict.update({})
         if id is not UNSET:
             field_dict["id"] = id
         if name is not UNSET:
@@ -85,11 +68,10 @@ class JsonLdItemDto:
 
         return field_dict
 
-
-
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
+
         def _parse_id(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
@@ -98,7 +80,6 @@ class JsonLdItemDto:
             return cast(Union[None, Unset, str], data)
 
         id = _parse_id(d.pop("id", UNSET))
-
 
         def _parse_name(data: object) -> Union[None, Unset, str]:
             if data is None:
@@ -109,7 +90,6 @@ class JsonLdItemDto:
 
         name = _parse_name(d.pop("name", UNSET))
 
-
         def _parse_type_(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
@@ -119,7 +99,6 @@ class JsonLdItemDto:
 
         type_ = _parse_type_(d.pop("type", UNSET))
 
-
         def _parse_ctid(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
@@ -128,7 +107,6 @@ class JsonLdItemDto:
             return cast(Union[None, Unset, str], data)
 
         ctid = _parse_ctid(d.pop("ctid", UNSET))
-
 
         json_ld = d.pop("jsonLd", UNSET)
 
@@ -141,4 +119,3 @@ class JsonLdItemDto:
         )
 
         return json_ld_item_dto
-

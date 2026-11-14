@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class ProjectPublishStatus(str, Enum):
     NOTPUBLISHED = "NotPublished"
     PUBLISHED = "Published"

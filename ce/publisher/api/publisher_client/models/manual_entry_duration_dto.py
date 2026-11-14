@@ -1,44 +1,29 @@
 from collections.abc import Mapping
-from typing import Any, TypeVar, Optional, BinaryIO, TextIO, TYPE_CHECKING, Generator
+from typing import Any, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
-from attrs import field as _attrs_field
 
 from ..types import UNSET, Unset
-
-from ..types import UNSET, Unset
-from typing import cast, Union
-from typing import Union
-
-
-
-
-
 
 T = TypeVar("T", bound="ManualEntryDurationDto")
 
 
-
 @_attrs_define
 class ManualEntryDurationDto:
-    """ 
-        Attributes:
-            exact_value (Union[None, Unset, float]):
-            minimum_value (Union[None, Unset, float]):
-            maximum_value (Union[None, Unset, float]):
-            unit (Union[None, Unset, str]):
-            description (Union[None, Unset, str]):
-     """
+    """
+    Attributes:
+        exact_value (Union[None, Unset, float]):
+        minimum_value (Union[None, Unset, float]):
+        maximum_value (Union[None, Unset, float]):
+        unit (Union[None, Unset, str]):
+        description (Union[None, Unset, str]):
+    """
 
     exact_value: Union[None, Unset, float] = UNSET
     minimum_value: Union[None, Unset, float] = UNSET
     maximum_value: Union[None, Unset, float] = UNSET
     unit: Union[None, Unset, str] = UNSET
     description: Union[None, Unset, str] = UNSET
-
-
-
-
 
     def to_dict(self) -> dict[str, Any]:
         exact_value: Union[None, Unset, float]
@@ -71,11 +56,9 @@ class ManualEntryDurationDto:
         else:
             description = self.description
 
-
         field_dict: dict[str, Any] = {}
 
-        field_dict.update({
-        })
+        field_dict.update({})
         if exact_value is not UNSET:
             field_dict["exactValue"] = exact_value
         if minimum_value is not UNSET:
@@ -89,11 +72,10 @@ class ManualEntryDurationDto:
 
         return field_dict
 
-
-
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
+
         def _parse_exact_value(data: object) -> Union[None, Unset, float]:
             if data is None:
                 return data
@@ -102,7 +84,6 @@ class ManualEntryDurationDto:
             return cast(Union[None, Unset, float], data)
 
         exact_value = _parse_exact_value(d.pop("exactValue", UNSET))
-
 
         def _parse_minimum_value(data: object) -> Union[None, Unset, float]:
             if data is None:
@@ -113,7 +94,6 @@ class ManualEntryDurationDto:
 
         minimum_value = _parse_minimum_value(d.pop("minimumValue", UNSET))
 
-
         def _parse_maximum_value(data: object) -> Union[None, Unset, float]:
             if data is None:
                 return data
@@ -122,7 +102,6 @@ class ManualEntryDurationDto:
             return cast(Union[None, Unset, float], data)
 
         maximum_value = _parse_maximum_value(d.pop("maximumValue", UNSET))
-
 
         def _parse_unit(data: object) -> Union[None, Unset, str]:
             if data is None:
@@ -133,7 +112,6 @@ class ManualEntryDurationDto:
 
         unit = _parse_unit(d.pop("unit", UNSET))
 
-
         def _parse_description(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
@@ -142,7 +120,6 @@ class ManualEntryDurationDto:
             return cast(Union[None, Unset, str], data)
 
         description = _parse_description(d.pop("description", UNSET))
-
 
         manual_entry_duration_dto = cls(
             exact_value=exact_value,
@@ -153,4 +130,3 @@ class ManualEntryDurationDto:
         )
 
         return manual_entry_duration_dto
-

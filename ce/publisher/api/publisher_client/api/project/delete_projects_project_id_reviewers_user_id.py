@@ -1,35 +1,24 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union, cast
+from typing import Any, Optional, Union
+from uuid import UUID
 
 import httpx
 
-from ...client import AuthenticatedClient, Client
-from ...types import Response, UNSET
 from ... import errors
-
-from uuid import UUID
-
+from ...client import AuthenticatedClient, Client
+from ...types import Response
 
 
 def _get_kwargs(
     project_id: int,
     user_id: UUID,
-
 ) -> dict[str, Any]:
-    
-
-    
-
-    
-
     _kwargs: dict[str, Any] = {
         "method": "delete",
-        "url": "/projects/{project_id}/reviewers/{user_id}".format(project_id=project_id,user_id=user_id,),
+        "url": f"/projects/{project_id}/reviewers/{user_id}",
     }
 
-
     return _kwargs
-
 
 
 def _parse_response(*, client: Union[AuthenticatedClient, Client], response: httpx.Response) -> Optional[Any]:
@@ -56,9 +45,8 @@ def sync_detailed(
     user_id: UUID,
     *,
     client: Union[AuthenticatedClient, Client],
-
 ) -> Response[Any]:
-    """ 
+    """
     Args:
         project_id (int):
         user_id (UUID):
@@ -69,13 +57,11 @@ def sync_detailed(
 
     Returns:
         Response[Any]
-     """
-
+    """
 
     kwargs = _get_kwargs(
         project_id=project_id,
-user_id=user_id,
-
+        user_id=user_id,
     )
 
     response = client.get_httpx_client().request(
@@ -90,9 +76,8 @@ async def asyncio_detailed(
     user_id: UUID,
     *,
     client: Union[AuthenticatedClient, Client],
-
 ) -> Response[Any]:
-    """ 
+    """
     Args:
         project_id (int):
         user_id (UUID):
@@ -103,18 +88,13 @@ async def asyncio_detailed(
 
     Returns:
         Response[Any]
-     """
-
+    """
 
     kwargs = _get_kwargs(
         project_id=project_id,
-user_id=user_id,
-
+        user_id=user_id,
     )
 
-    response = await client.get_async_httpx_client().request(
-        **kwargs
-    )
+    response = await client.get_async_httpx_client().request(**kwargs)
 
     return _build_response(client=client, response=response)
-

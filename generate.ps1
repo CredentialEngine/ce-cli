@@ -15,6 +15,8 @@ Get-Content generate.log
 #   Invoke-WebRequest http://localhost:8011/swagger/v1/swagger.json -OutFile ce/publisher/swagger.json
 # prepare_openapi.py keeps application/json where the Publisher also offers text/plain, so answers are read as JSON.
 # Generate with openapi-python-client 0.26 or older: later versions write code for httpx2, which ce-cli does not use.
+# Ruff must be on PATH (pip install ruff): the generator runs it to drop unused imports and format the files. Without it
+# the output keeps hundreds of unused imports, which the code-quality check flags.
 python ce/publisher/prepare_openapi.py ce/publisher/swagger.json ce/publisher/openapi.json
 
 python -m openapi_python_client generate `
