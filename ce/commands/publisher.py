@@ -3,10 +3,15 @@
     ce publisher project create --name NAME [--jsonld]
     ce publisher project add --project-id N --file FILE --type credentials
     ce publisher project run validation --project-id N
-    ce publisher project show validation status|errors --project-id N
-    ce publisher project show status|audit --project-id N
+    ce publisher project show validation status --project-id N
+    ce publisher project show validation errors --project-id N
+    ce publisher project show status --project-id N
+    ce publisher project show audit --project-id N
     ce publisher project complete --project-id N
-    ce publisher project list | abandon
+    ce publisher project list
+    ce publisher project abandon --project-id N
+
+This is the developer's overview. The text `ce publisher --help` shows comes from the command docstrings below.
 """
 
 from __future__ import annotations
