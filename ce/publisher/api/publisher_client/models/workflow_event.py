@@ -1,35 +1,24 @@
 from collections.abc import Mapping
-from typing import Any, TypeVar, Optional, BinaryIO, TextIO, TYPE_CHECKING, Generator
+from typing import Any, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
-from attrs import field as _attrs_field
 
 from ..types import UNSET, Unset
-
-from ..types import UNSET, Unset
-from typing import cast, Union
-from typing import Union
-
-
-
-
-
 
 T = TypeVar("T", bound="WorkflowEvent")
 
 
-
 @_attrs_define
 class WorkflowEvent:
-    """ 
-        Attributes:
-            workflow_name (str):
-            status (str):
-            tenant (str):
-            export_id (Union[None, Unset, str]):
-            result_folder (Union[None, Unset, str]):
-            error (Union[None, Unset, str]):
-     """
+    """
+    Attributes:
+        workflow_name (str):
+        status (str):
+        tenant (str):
+        export_id (Union[None, Unset, str]):
+        result_folder (Union[None, Unset, str]):
+        error (Union[None, Unset, str]):
+    """
 
     workflow_name: str
     status: str
@@ -37,10 +26,6 @@ class WorkflowEvent:
     export_id: Union[None, Unset, str] = UNSET
     result_folder: Union[None, Unset, str] = UNSET
     error: Union[None, Unset, str] = UNSET
-
-
-
-
 
     def to_dict(self) -> dict[str, Any]:
         workflow_name = self.workflow_name
@@ -67,14 +52,15 @@ class WorkflowEvent:
         else:
             error = self.error
 
-
         field_dict: dict[str, Any] = {}
 
-        field_dict.update({
-            "workflowName": workflow_name,
-            "status": status,
-            "tenant": tenant,
-        })
+        field_dict.update(
+            {
+                "workflowName": workflow_name,
+                "status": status,
+                "tenant": tenant,
+            }
+        )
         if export_id is not UNSET:
             field_dict["exportId"] = export_id
         if result_folder is not UNSET:
@@ -83,8 +69,6 @@ class WorkflowEvent:
             field_dict["error"] = error
 
         return field_dict
-
-
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
@@ -104,7 +88,6 @@ class WorkflowEvent:
 
         export_id = _parse_export_id(d.pop("exportId", UNSET))
 
-
         def _parse_result_folder(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
@@ -114,7 +97,6 @@ class WorkflowEvent:
 
         result_folder = _parse_result_folder(d.pop("resultFolder", UNSET))
 
-
         def _parse_error(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
@@ -123,7 +105,6 @@ class WorkflowEvent:
             return cast(Union[None, Unset, str], data)
 
         error = _parse_error(d.pop("error", UNSET))
-
 
         workflow_event = cls(
             workflow_name=workflow_name,
@@ -135,4 +116,3 @@ class WorkflowEvent:
         )
 
         return workflow_event
-

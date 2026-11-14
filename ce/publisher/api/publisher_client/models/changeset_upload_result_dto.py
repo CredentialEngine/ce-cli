@@ -1,45 +1,34 @@
+import datetime
 from collections.abc import Mapping
-from typing import Any, TypeVar, Optional, BinaryIO, TextIO, TYPE_CHECKING, Generator
+from typing import Any, TypeVar, Union
 
 from attrs import define as _attrs_define
-from attrs import field as _attrs_field
-
-from ..types import UNSET, Unset
-
-from ..types import UNSET, Unset
 from dateutil.parser import isoparse
-from typing import cast
-from typing import Union
-import datetime
 
-
-
-
-
+from ..types import UNSET, Unset
 
 T = TypeVar("T", bound="ChangesetUploadResultDto")
 
 
-
 @_attrs_define
 class ChangesetUploadResultDto:
-    """ 
-        Attributes:
-            community (str):
-            tenant (str):
-            source_key (str):
-            container_name (str):
-            blob_path (str):
-            file_name (str):
-            changeset_uri (str):
-            target_data_uri (str):
-            archive_target_uri (str):
-            workflow_name (str):
-            size_bytes (Union[Unset, int]):
-            archive_file_count (Union[Unset, int]):
-            archive_uncompressed_bytes (Union[Unset, int]):
-            received_at_utc (Union[Unset, datetime.datetime]):
-     """
+    """
+    Attributes:
+        community (str):
+        tenant (str):
+        source_key (str):
+        container_name (str):
+        blob_path (str):
+        file_name (str):
+        changeset_uri (str):
+        target_data_uri (str):
+        archive_target_uri (str):
+        workflow_name (str):
+        size_bytes (Union[Unset, int]):
+        archive_file_count (Union[Unset, int]):
+        archive_uncompressed_bytes (Union[Unset, int]):
+        received_at_utc (Union[Unset, datetime.datetime]):
+    """
 
     community: str
     tenant: str
@@ -55,10 +44,6 @@ class ChangesetUploadResultDto:
     archive_file_count: Union[Unset, int] = UNSET
     archive_uncompressed_bytes: Union[Unset, int] = UNSET
     received_at_utc: Union[Unset, datetime.datetime] = UNSET
-
-
-
-
 
     def to_dict(self) -> dict[str, Any]:
         community = self.community
@@ -91,21 +76,22 @@ class ChangesetUploadResultDto:
         if not isinstance(self.received_at_utc, Unset):
             received_at_utc = self.received_at_utc.isoformat()
 
-
         field_dict: dict[str, Any] = {}
 
-        field_dict.update({
-            "community": community,
-            "tenant": tenant,
-            "sourceKey": source_key,
-            "containerName": container_name,
-            "blobPath": blob_path,
-            "fileName": file_name,
-            "changesetUri": changeset_uri,
-            "targetDataUri": target_data_uri,
-            "archiveTargetUri": archive_target_uri,
-            "workflowName": workflow_name,
-        })
+        field_dict.update(
+            {
+                "community": community,
+                "tenant": tenant,
+                "sourceKey": source_key,
+                "containerName": container_name,
+                "blobPath": blob_path,
+                "fileName": file_name,
+                "changesetUri": changeset_uri,
+                "targetDataUri": target_data_uri,
+                "archiveTargetUri": archive_target_uri,
+                "workflowName": workflow_name,
+            }
+        )
         if size_bytes is not UNSET:
             field_dict["sizeBytes"] = size_bytes
         if archive_file_count is not UNSET:
@@ -116,8 +102,6 @@ class ChangesetUploadResultDto:
             field_dict["receivedAtUtc"] = received_at_utc
 
         return field_dict
-
-
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
@@ -150,13 +134,10 @@ class ChangesetUploadResultDto:
 
         _received_at_utc = d.pop("receivedAtUtc", UNSET)
         received_at_utc: Union[Unset, datetime.datetime]
-        if isinstance(_received_at_utc,  Unset):
+        if isinstance(_received_at_utc, Unset):
             received_at_utc = UNSET
         else:
             received_at_utc = isoparse(_received_at_utc)
-
-
-
 
         changeset_upload_result_dto = cls(
             community=community,
@@ -176,4 +157,3 @@ class ChangesetUploadResultDto:
         )
 
         return changeset_upload_result_dto
-

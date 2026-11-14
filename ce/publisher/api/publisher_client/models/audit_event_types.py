@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class AuditEventTypes(str, Enum):
     COMPLETIONFAILED = "CompletionFailed"
     ITERATIONFILESADDED = "IterationFilesAdded"

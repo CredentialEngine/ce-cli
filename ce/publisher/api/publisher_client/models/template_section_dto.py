@@ -1,47 +1,33 @@
 from collections.abc import Mapping
-from typing import Any, TypeVar, Optional, BinaryIO, TextIO, TYPE_CHECKING, Generator
+from typing import TYPE_CHECKING, Any, TypeVar, Union
 
 from attrs import define as _attrs_define
-from attrs import field as _attrs_field
 
 from ..types import UNSET, Unset
-
-from ..types import UNSET, Unset
-from typing import cast
-from typing import Union
 
 if TYPE_CHECKING:
-  from ..models.template_property_dto import TemplatePropertyDto
-
-
-
+    from ..models.template_property_dto import TemplatePropertyDto
 
 
 T = TypeVar("T", bound="TemplateSectionDto")
 
 
-
 @_attrs_define
 class TemplateSectionDto:
-    """ 
-        Attributes:
-            id (Union[Unset, str]):
-            title (Union[Unset, str]):
-            order (Union[Unset, int]):
-            properties (Union[Unset, list['TemplatePropertyDto']]):
-     """
+    """
+    Attributes:
+        id (Union[Unset, str]):
+        title (Union[Unset, str]):
+        order (Union[Unset, int]):
+        properties (Union[Unset, list['TemplatePropertyDto']]):
+    """
 
     id: Union[Unset, str] = UNSET
     title: Union[Unset, str] = UNSET
     order: Union[Unset, int] = UNSET
-    properties: Union[Unset, list['TemplatePropertyDto']] = UNSET
-
-
-
-
+    properties: Union[Unset, list["TemplatePropertyDto"]] = UNSET
 
     def to_dict(self) -> dict[str, Any]:
-        from ..models.template_property_dto import TemplatePropertyDto
         id = self.id
 
         title = self.title
@@ -55,13 +41,9 @@ class TemplateSectionDto:
                 properties_item = properties_item_data.to_dict()
                 properties.append(properties_item)
 
-
-
-
         field_dict: dict[str, Any] = {}
 
-        field_dict.update({
-        })
+        field_dict.update({})
         if id is not UNSET:
             field_dict["id"] = id
         if title is not UNSET:
@@ -73,11 +55,10 @@ class TemplateSectionDto:
 
         return field_dict
 
-
-
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         from ..models.template_property_dto import TemplatePropertyDto
+
         d = dict(src_dict)
         id = d.pop("id", UNSET)
 
@@ -87,13 +68,10 @@ class TemplateSectionDto:
 
         properties = []
         _properties = d.pop("properties", UNSET)
-        for properties_item_data in (_properties or []):
+        for properties_item_data in _properties or []:
             properties_item = TemplatePropertyDto.from_dict(properties_item_data)
 
-
-
             properties.append(properties_item)
-
 
         template_section_dto = cls(
             id=id,
@@ -103,4 +81,3 @@ class TemplateSectionDto:
         )
 
         return template_section_dto
-

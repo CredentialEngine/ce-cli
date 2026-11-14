@@ -1,34 +1,24 @@
 from collections.abc import Mapping
-from typing import Any, TypeVar, Optional, BinaryIO, TextIO, TYPE_CHECKING, Generator
+from typing import Any, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
 from ..types import UNSET, Unset
 
-from ..types import UNSET, Unset
-from typing import cast, Union
-from typing import Union
-
-
-
-
-
-
 T = TypeVar("T", bound="ProblemDetails")
-
 
 
 @_attrs_define
 class ProblemDetails:
-    """ 
-        Attributes:
-            type_ (Union[None, Unset, str]):
-            title (Union[None, Unset, str]):
-            status (Union[None, Unset, int]):
-            detail (Union[None, Unset, str]):
-            instance (Union[None, Unset, str]):
-     """
+    """
+    Attributes:
+        type_ (Union[None, Unset, str]):
+        title (Union[None, Unset, str]):
+        status (Union[None, Unset, int]):
+        detail (Union[None, Unset, str]):
+        instance (Union[None, Unset, str]):
+    """
 
     type_: Union[None, Unset, str] = UNSET
     title: Union[None, Unset, str] = UNSET
@@ -36,10 +26,6 @@ class ProblemDetails:
     detail: Union[None, Unset, str] = UNSET
     instance: Union[None, Unset, str] = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
-
-
-
-
 
     def to_dict(self) -> dict[str, Any]:
         type_: Union[None, Unset, str]
@@ -72,11 +58,9 @@ class ProblemDetails:
         else:
             instance = self.instance
 
-
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
-        field_dict.update({
-        })
+        field_dict.update({})
         if type_ is not UNSET:
             field_dict["type"] = type_
         if title is not UNSET:
@@ -90,11 +74,10 @@ class ProblemDetails:
 
         return field_dict
 
-
-
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
+
         def _parse_type_(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
@@ -103,7 +86,6 @@ class ProblemDetails:
             return cast(Union[None, Unset, str], data)
 
         type_ = _parse_type_(d.pop("type", UNSET))
-
 
         def _parse_title(data: object) -> Union[None, Unset, str]:
             if data is None:
@@ -114,7 +96,6 @@ class ProblemDetails:
 
         title = _parse_title(d.pop("title", UNSET))
 
-
         def _parse_status(data: object) -> Union[None, Unset, int]:
             if data is None:
                 return data
@@ -123,7 +104,6 @@ class ProblemDetails:
             return cast(Union[None, Unset, int], data)
 
         status = _parse_status(d.pop("status", UNSET))
-
 
         def _parse_detail(data: object) -> Union[None, Unset, str]:
             if data is None:
@@ -134,7 +114,6 @@ class ProblemDetails:
 
         detail = _parse_detail(d.pop("detail", UNSET))
 
-
         def _parse_instance(data: object) -> Union[None, Unset, str]:
             if data is None:
                 return data
@@ -144,7 +123,6 @@ class ProblemDetails:
 
         instance = _parse_instance(d.pop("instance", UNSET))
 
-
         problem_details = cls(
             type_=type_,
             title=title,
@@ -152,7 +130,6 @@ class ProblemDetails:
             detail=detail,
             instance=instance,
         )
-
 
         problem_details.additional_properties = d
         return problem_details
