@@ -4,7 +4,7 @@ A command-line tool for managing Credential Engine platform resources.
 
 ## Requirements
  
-- Python 3.10 or later
+- Python 3.11 or later
 - `pip`
 ## Installation
  
@@ -253,7 +253,7 @@ ce-cli/
     │   ├── csv_processor.py       # Bulk DID upload (bulk-sign + publish)
     │   └── did_ops.py             # DID validation, challenges, JWT signing
     └── utils/
-        ├── http.py                # Authenticated httpx wrapper + APIError
+        ├── http.py                # Authenticated httpx2 wrapper + APIError
         ├── output.py              # table/json/yaml/tsv renderer + @output_option
         └── errors.py              # @handle_api_errors decorator
 ```

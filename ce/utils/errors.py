@@ -15,7 +15,7 @@ err_console = Console(stderr=True)
 
 
 def handle_api_errors(f: Callable) -> Callable:
-    """Decorator: catch APIError / httpx errors and print a friendly message."""
+    """Decorator: catch APIError / httpx2 errors and print a friendly message."""
 
     @functools.wraps(f)
     def wrapper(*args, **kwargs): 
