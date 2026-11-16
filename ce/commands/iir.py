@@ -91,7 +91,7 @@ def bulk_sign(csv_path: str, output_path: str | None, errors_path: str | None) -
 
     \b
     Input CSV columns (optional):
-      ValidFrom, ValidUntil  (format: MM/DD/YYYY)
+      ValidFrom, ValidUntil  (format: YYYY-MM-DD)
 
     \b
     Produces two files:
