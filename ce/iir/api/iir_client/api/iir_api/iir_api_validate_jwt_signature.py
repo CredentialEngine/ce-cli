@@ -7,12 +7,12 @@ from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.iir_api_validate_jwt_signature_response_200 import IirApiValidateJwtSignatureResponse200
 from ...models.validate_jwt_request import ValidateJwtRequest
-from ...types import UNSET, Response
+from ...types import Response
 
 
 def _get_kwargs(
     *,
-    body: ValidateJwtRequest | ValidateJwtRequest | Unset = UNSET,
+    body: ValidateJwtRequest,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
@@ -21,13 +21,8 @@ def _get_kwargs(
         "url": "/iir-api/validateJwt",
     }
 
-    if isinstance(body, ValidateJwtRequest):
-        _kwargs["json"] = body.to_dict()
-
-        headers["Content-Type"] = "application/json"
-    if isinstance(body, ValidateJwtRequest):
-        _kwargs["data"] = body.to_dict()
-        headers["Content-Type"] = "application/x-www-form-urlencoded"
+    _kwargs["data"] = body.to_dict()
+    headers["Content-Type"] = "application/x-www-form-urlencoded"
 
     _kwargs["headers"] = headers
     return _kwargs
@@ -61,11 +56,10 @@ def _build_response(
 def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
-    body: ValidateJwtRequest | ValidateJwtRequest | Unset = UNSET,
+    body: ValidateJwtRequest,
 ) -> Response[IirApiValidateJwtSignatureResponse200]:
     """
     Args:
-        body (ValidateJwtRequest):
         body (ValidateJwtRequest):
 
     Raises:
@@ -90,11 +84,10 @@ def sync_detailed(
 def sync(
     *,
     client: AuthenticatedClient | Client,
-    body: ValidateJwtRequest | ValidateJwtRequest | Unset = UNSET,
+    body: ValidateJwtRequest,
 ) -> IirApiValidateJwtSignatureResponse200 | None:
     """
     Args:
-        body (ValidateJwtRequest):
         body (ValidateJwtRequest):
 
     Raises:
@@ -114,11 +107,10 @@ def sync(
 async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
-    body: ValidateJwtRequest | ValidateJwtRequest | Unset = UNSET,
+    body: ValidateJwtRequest,
 ) -> Response[IirApiValidateJwtSignatureResponse200]:
     """
     Args:
-        body (ValidateJwtRequest):
         body (ValidateJwtRequest):
 
     Raises:
@@ -141,11 +133,10 @@ async def asyncio_detailed(
 async def asyncio(
     *,
     client: AuthenticatedClient | Client,
-    body: ValidateJwtRequest | ValidateJwtRequest | Unset = UNSET,
+    body: ValidateJwtRequest,
 ) -> IirApiValidateJwtSignatureResponse200 | None:
     """
     Args:
-        body (ValidateJwtRequest):
         body (ValidateJwtRequest):
 
     Raises:

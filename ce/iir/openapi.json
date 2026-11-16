@@ -316,26 +316,6 @@
                 "operationId": "IIRApi_CreateChallenges",
                 "requestBody": {
                     "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/CreateChallengesRequest"
-                            }
-                        },
-                        "text/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/CreateChallengesRequest"
-                            }
-                        },
-                        "application/xml": {
-                            "schema": {
-                                "$ref": "#/components/schemas/CreateChallengesRequest"
-                            }
-                        },
-                        "text/xml": {
-                            "schema": {
-                                "$ref": "#/components/schemas/CreateChallengesRequest"
-                            }
-                        },
                         "application/x-www-form-urlencoded": {
                             "schema": {
                                 "$ref": "#/components/schemas/CreateChallengesRequest"
@@ -393,26 +373,6 @@
                 "operationId": "IIRApi_ValidateJwtSignature",
                 "requestBody": {
                     "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/ValidateJwtRequest"
-                            }
-                        },
-                        "text/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/ValidateJwtRequest"
-                            }
-                        },
-                        "application/xml": {
-                            "schema": {
-                                "$ref": "#/components/schemas/ValidateJwtRequest"
-                            }
-                        },
-                        "text/xml": {
-                            "schema": {
-                                "$ref": "#/components/schemas/ValidateJwtRequest"
-                            }
-                        },
                         "application/x-www-form-urlencoded": {
                             "schema": {
                                 "$ref": "#/components/schemas/ValidateJwtRequest"
@@ -458,26 +418,6 @@
                 "operationId": "IIRApi_SaveChallengeToken",
                 "requestBody": {
                     "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/SaveChallengeTokenRequest"
-                            }
-                        },
-                        "text/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/SaveChallengeTokenRequest"
-                            }
-                        },
-                        "application/xml": {
-                            "schema": {
-                                "$ref": "#/components/schemas/SaveChallengeTokenRequest"
-                            }
-                        },
-                        "text/xml": {
-                            "schema": {
-                                "$ref": "#/components/schemas/SaveChallengeTokenRequest"
-                            }
-                        },
                         "application/x-www-form-urlencoded": {
                             "schema": {
                                 "$ref": "#/components/schemas/SaveChallengeTokenRequest"
@@ -842,26 +782,6 @@
         "requestBodies": {
             "PubIssuerDTO": {
                 "content": {
-                    "application/json": {
-                        "schema": {
-                            "$ref": "#/components/schemas/PubIssuerDTO"
-                        }
-                    },
-                    "text/json": {
-                        "schema": {
-                            "$ref": "#/components/schemas/PubIssuerDTO"
-                        }
-                    },
-                    "application/xml": {
-                        "schema": {
-                            "$ref": "#/components/schemas/PubIssuerDTO"
-                        }
-                    },
-                    "text/xml": {
-                        "schema": {
-                            "$ref": "#/components/schemas/PubIssuerDTO"
-                        }
-                    },
                     "application/x-www-form-urlencoded": {
                         "schema": {
                             "$ref": "#/components/schemas/PubIssuerDTO"

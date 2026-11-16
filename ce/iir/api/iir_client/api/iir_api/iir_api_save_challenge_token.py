@@ -7,12 +7,12 @@ from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.iir_api_save_challenge_token_response_200 import IirApiSaveChallengeTokenResponse200
 from ...models.save_challenge_token_request import SaveChallengeTokenRequest
-from ...types import UNSET, Response
+from ...types import Response
 
 
 def _get_kwargs(
     *,
-    body: SaveChallengeTokenRequest | SaveChallengeTokenRequest | Unset = UNSET,
+    body: SaveChallengeTokenRequest,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
@@ -21,13 +21,8 @@ def _get_kwargs(
         "url": "/iir-api/saveChallengeToken",
     }
 
-    if isinstance(body, SaveChallengeTokenRequest):
-        _kwargs["json"] = body.to_dict()
-
-        headers["Content-Type"] = "application/json"
-    if isinstance(body, SaveChallengeTokenRequest):
-        _kwargs["data"] = body.to_dict()
-        headers["Content-Type"] = "application/x-www-form-urlencoded"
+    _kwargs["data"] = body.to_dict()
+    headers["Content-Type"] = "application/x-www-form-urlencoded"
 
     _kwargs["headers"] = headers
     return _kwargs
@@ -61,11 +56,10 @@ def _build_response(
 def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
-    body: SaveChallengeTokenRequest | SaveChallengeTokenRequest | Unset = UNSET,
+    body: SaveChallengeTokenRequest,
 ) -> Response[IirApiSaveChallengeTokenResponse200]:
     """
     Args:
-        body (SaveChallengeTokenRequest):
         body (SaveChallengeTokenRequest):
 
     Raises:
@@ -90,11 +84,10 @@ def sync_detailed(
 def sync(
     *,
     client: AuthenticatedClient | Client,
-    body: SaveChallengeTokenRequest | SaveChallengeTokenRequest | Unset = UNSET,
+    body: SaveChallengeTokenRequest,
 ) -> IirApiSaveChallengeTokenResponse200 | None:
     """
     Args:
-        body (SaveChallengeTokenRequest):
         body (SaveChallengeTokenRequest):
 
     Raises:
@@ -114,11 +107,10 @@ def sync(
 async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
-    body: SaveChallengeTokenRequest | SaveChallengeTokenRequest | Unset = UNSET,
+    body: SaveChallengeTokenRequest,
 ) -> Response[IirApiSaveChallengeTokenResponse200]:
     """
     Args:
-        body (SaveChallengeTokenRequest):
         body (SaveChallengeTokenRequest):
 
     Raises:
@@ -141,11 +133,10 @@ async def asyncio_detailed(
 async def asyncio(
     *,
     client: AuthenticatedClient | Client,
-    body: SaveChallengeTokenRequest | SaveChallengeTokenRequest | Unset = UNSET,
+    body: SaveChallengeTokenRequest,
 ) -> IirApiSaveChallengeTokenResponse200 | None:
     """
     Args:
-        body (SaveChallengeTokenRequest):
         body (SaveChallengeTokenRequest):
 
     Raises:

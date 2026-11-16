@@ -7,12 +7,12 @@ from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.iir_api_submit_to_iir_response_200 import IirApiSubmitToIirResponse200
 from ...models.pub_issuer_dto import PubIssuerDTO
-from ...types import UNSET, Response
+from ...types import Response
 
 
 def _get_kwargs(
     *,
-    body: PubIssuerDTO | PubIssuerDTO | Unset = UNSET,
+    body: PubIssuerDTO,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
@@ -21,13 +21,8 @@ def _get_kwargs(
         "url": "/iir-api/submitToIIR",
     }
 
-    if isinstance(body, PubIssuerDTO):
-        _kwargs["json"] = body.to_dict()
-
-        headers["Content-Type"] = "application/json"
-    if isinstance(body, PubIssuerDTO):
-        _kwargs["data"] = body.to_dict()
-        headers["Content-Type"] = "application/x-www-form-urlencoded"
+    _kwargs["data"] = body.to_dict()
+    headers["Content-Type"] = "application/x-www-form-urlencoded"
 
     _kwargs["headers"] = headers
     return _kwargs
@@ -61,11 +56,10 @@ def _build_response(
 def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
-    body: PubIssuerDTO | PubIssuerDTO | Unset = UNSET,
+    body: PubIssuerDTO,
 ) -> Response[IirApiSubmitToIirResponse200]:
     """
     Args:
-        body (PubIssuerDTO):
         body (PubIssuerDTO):
 
     Raises:
@@ -90,11 +84,10 @@ def sync_detailed(
 def sync(
     *,
     client: AuthenticatedClient | Client,
-    body: PubIssuerDTO | PubIssuerDTO | Unset = UNSET,
+    body: PubIssuerDTO,
 ) -> IirApiSubmitToIirResponse200 | None:
     """
     Args:
-        body (PubIssuerDTO):
         body (PubIssuerDTO):
 
     Raises:
@@ -114,11 +107,10 @@ def sync(
 async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
-    body: PubIssuerDTO | PubIssuerDTO | Unset = UNSET,
+    body: PubIssuerDTO,
 ) -> Response[IirApiSubmitToIirResponse200]:
     """
     Args:
-        body (PubIssuerDTO):
         body (PubIssuerDTO):
 
     Raises:
@@ -141,11 +133,10 @@ async def asyncio_detailed(
 async def asyncio(
     *,
     client: AuthenticatedClient | Client,
-    body: PubIssuerDTO | PubIssuerDTO | Unset = UNSET,
+    body: PubIssuerDTO,
 ) -> IirApiSubmitToIirResponse200 | None:
     """
     Args:
-        body (PubIssuerDTO):
         body (PubIssuerDTO):
 
     Raises:

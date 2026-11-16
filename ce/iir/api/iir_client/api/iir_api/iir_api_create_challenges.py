@@ -7,12 +7,12 @@ from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.create_challenges_request import CreateChallengesRequest
 from ...models.iir_api_create_challenges_response_200_item import IirApiCreateChallengesResponse200Item
-from ...types import UNSET, Response
+from ...types import Response
 
 
 def _get_kwargs(
     *,
-    body: CreateChallengesRequest | CreateChallengesRequest | Unset = UNSET,
+    body: CreateChallengesRequest,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
@@ -21,13 +21,8 @@ def _get_kwargs(
         "url": "/iir-api/createChallenges",
     }
 
-    if isinstance(body, CreateChallengesRequest):
-        _kwargs["json"] = body.to_dict()
-
-        headers["Content-Type"] = "application/json"
-    if isinstance(body, CreateChallengesRequest):
-        _kwargs["data"] = body.to_dict()
-        headers["Content-Type"] = "application/x-www-form-urlencoded"
+    _kwargs["data"] = body.to_dict()
+    headers["Content-Type"] = "application/x-www-form-urlencoded"
 
     _kwargs["headers"] = headers
     return _kwargs
@@ -66,11 +61,10 @@ def _build_response(
 def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
-    body: CreateChallengesRequest | CreateChallengesRequest | Unset = UNSET,
+    body: CreateChallengesRequest,
 ) -> Response[list[IirApiCreateChallengesResponse200Item]]:
     """
     Args:
-        body (CreateChallengesRequest):
         body (CreateChallengesRequest):
 
     Raises:
@@ -95,11 +89,10 @@ def sync_detailed(
 def sync(
     *,
     client: AuthenticatedClient | Client,
-    body: CreateChallengesRequest | CreateChallengesRequest | Unset = UNSET,
+    body: CreateChallengesRequest,
 ) -> list[IirApiCreateChallengesResponse200Item] | None:
     """
     Args:
-        body (CreateChallengesRequest):
         body (CreateChallengesRequest):
 
     Raises:
@@ -119,11 +112,10 @@ def sync(
 async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
-    body: CreateChallengesRequest | CreateChallengesRequest | Unset = UNSET,
+    body: CreateChallengesRequest,
 ) -> Response[list[IirApiCreateChallengesResponse200Item]]:
     """
     Args:
-        body (CreateChallengesRequest):
         body (CreateChallengesRequest):
 
     Raises:
@@ -146,11 +138,10 @@ async def asyncio_detailed(
 async def asyncio(
     *,
     client: AuthenticatedClient | Client,
-    body: CreateChallengesRequest | CreateChallengesRequest | Unset = UNSET,
+    body: CreateChallengesRequest,
 ) -> list[IirApiCreateChallengesResponse200Item] | None:
     """
     Args:
-        body (CreateChallengesRequest):
         body (CreateChallengesRequest):
 
     Raises:
