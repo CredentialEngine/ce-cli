@@ -31,11 +31,11 @@ def version_command(check: bool) -> None:
 
 def _check_for_update() -> None:
     """Query PyPI for the latest published version of ce-cli."""
-    import httpx
+    import httpx2
 
     try:
         with console.status("[dim]Checking for updates…[/dim]"):
-            resp = httpx.get(
+            resp = httpx2.get(
                 "https://pypi.org/pypi/ce-cli/json",
                 timeout=5,
                 follow_redirects=True,

@@ -1,42 +1,32 @@
 from __future__ import annotations
 
+import datetime
 from collections.abc import Mapping
-from typing import Any, TypeVar, BinaryIO, TextIO, TYPE_CHECKING, Generator
+from typing import Any, TypeVar
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
 from ..types import UNSET, Unset
 
-from ..types import UNSET, Unset
-from dateutil.parser import isoparse
-from typing import cast
-import datetime
-
-
-
-
-
-
 T = TypeVar("T", bound="PubIssuerDTO")
-
 
 
 @_attrs_define
 class PubIssuerDTO:
-    """ 
-        Attributes:
-            ctid (str | Unset):
-            did (str | Unset):
-            name (str | Unset):
-            legal_name (str | Unset):
-            credential_registry_uri (str | Unset):
-            subject_web_page (str | Unset):
-            logo_base_64 (str | Unset):
-            logo_uri (str | Unset):
-            valid_from (datetime.datetime | Unset):
-            valid_until (datetime.datetime | Unset):
-     """
+    """
+    Attributes:
+        ctid (str | Unset):
+        did (str | Unset):
+        name (str | Unset):
+        legal_name (str | Unset):
+        credential_registry_uri (str | Unset):
+        subject_web_page (str | Unset):
+        logo_base_64 (str | Unset):
+        logo_uri (str | Unset):
+        valid_from (datetime.datetime | Unset):
+        valid_until (datetime.datetime | Unset):
+    """
 
     ctid: str | Unset = UNSET
     did: str | Unset = UNSET
@@ -49,10 +39,6 @@ class PubIssuerDTO:
     valid_from: datetime.datetime | Unset = UNSET
     valid_until: datetime.datetime | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
-
-
-
-
 
     def to_dict(self) -> dict[str, Any]:
         ctid = self.ctid
@@ -79,11 +65,9 @@ class PubIssuerDTO:
         if not isinstance(self.valid_until, Unset):
             valid_until = self.valid_until.isoformat()
 
-
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
-        field_dict.update({
-        })
+        field_dict.update({})
         if ctid is not UNSET:
             field_dict["CTID"] = ctid
         if did is not UNSET:
@@ -107,8 +91,6 @@ class PubIssuerDTO:
 
         return field_dict
 
-
-
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
@@ -130,23 +112,17 @@ class PubIssuerDTO:
 
         _valid_from = d.pop("ValidFrom", UNSET)
         valid_from: datetime.datetime | Unset
-        if isinstance(_valid_from,  Unset):
+        if isinstance(_valid_from, Unset):
             valid_from = UNSET
         else:
-            valid_from = isoparse(_valid_from)
-
-
-
+            valid_from = datetime.datetime.fromisoformat(_valid_from)
 
         _valid_until = d.pop("ValidUntil", UNSET)
         valid_until: datetime.datetime | Unset
-        if isinstance(_valid_until,  Unset):
+        if isinstance(_valid_until, Unset):
             valid_until = UNSET
         else:
-            valid_until = isoparse(_valid_until)
-
-
-
+            valid_until = datetime.datetime.fromisoformat(_valid_until)
 
         pub_issuer_dto = cls(
             ctid=ctid,
@@ -160,7 +136,6 @@ class PubIssuerDTO:
             valid_from=valid_from,
             valid_until=valid_until,
         )
-
 
         pub_issuer_dto.additional_properties = d
         return pub_issuer_dto

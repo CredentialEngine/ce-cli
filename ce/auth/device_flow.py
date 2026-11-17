@@ -2,14 +2,18 @@
 
 from __future__ import annotations
 
-import base64
-import hashlib
-import secrets
 import time
 from dataclasses import dataclass
 from typing import Any, Optional
 
-import httpx
+import httpx2
+from authlib.common.security import generate_token
+from authlib.integrations.base_client.errors import OAuthError
+from authlib.integrations.httpx_client import OAuth2Client
+from authlib.oauth2.rfc6749.errors import OAuth2Error
+from authlib.oauth2.rfc7636 import create_s256_code_challenge
+
+DEVICE_CODE_GRANT = "urn:ietf:params:oauth:grant-type:device_code"
 
 
 @dataclass
@@ -57,10 +61,8 @@ class RefreshRejectedError(DeviceFlowError):
 
 def create_pkce_pair() -> tuple[str, str]:
     """Return a new PKCE code verifier and its S256 challenge (RFC 7636)."""
-    verifier = secrets.token_urlsafe(48)
-    digest = hashlib.sha256(verifier.encode("ascii")).digest()
-    challenge = base64.urlsafe_b64encode(digest).rstrip(b"=").decode("ascii")
-    return verifier, challenge
+    verifier = generate_token(64)
+    return verifier, create_s256_code_challenge(verifier)
 
 
 class KeycloakDeviceFlowClient:
@@ -69,10 +71,19 @@ class KeycloakDeviceFlowClient:
     def __init__(
         self,
         env: "ce.config.context.Environment",
-        transport: Optional[httpx.BaseTransport] = None,
+        transport: Optional[httpx2.BaseTransport] = None,
     ) -> None:
         self._env = env
-        self._http = httpx.Client(
+        self._http = httpx2.Client(
+            timeout=30,
+            verify=env.ssl_verify,
+            transport=transport,
+        )
+        # Token grants (the device code and the refresh) go through Authlib, which sends the
+        # form, reads the answer and decodes OAuth errors. ce-cli is a public client: no secret.
+        self._oauth = OAuth2Client(
+            client_id=env.client_id,
+            token_endpoint_auth_method="none",
             timeout=30,
             verify=env.ssl_verify,
             transport=transport,
@@ -118,62 +129,62 @@ class KeycloakDeviceFlowClient:
         deadline = time.monotonic() + expires_in
         poll_interval = interval
 
-        data = {
-            "grant_type": "urn:ietf:params:oauth:grant-type:device_code",
-            "device_code": device_code,
-            "client_id": self._env.client_id,
-        }
+        extra: dict[str, str] = {}
         if self._device_pkce is not None:
             pkce_device_code, verifier = self._device_pkce
             if pkce_device_code != device_code:
                 raise DeviceFlowError("Device code does not match the pending PKCE session.")
-            data["code_verifier"] = verifier
+            extra["code_verifier"] = verifier
 
         while time.monotonic() < deadline:
             time.sleep(poll_interval)
-            resp = self._post(self._env.token_url, data, "Token request")
-            body = self._json(resp, "Token request")
 
-            if resp.is_success:
-                self._device_pkce = None
-                return self._parse_token_response(body)
+            try:
+                body = self._oauth.fetch_token(
+                    self._env.token_url,
+                    grant_type=DEVICE_CODE_GRANT,
+                    device_code=device_code,
+                    **extra,
+                )
+            except (OAuthError, OAuth2Error) as exc:
+                error = exc.error
+                if error == "authorization_pending":
+                    if on_pending:
+                        on_pending()
+                    continue
+                if error == "slow_down":
+                    poll_interval += 5
+                    if on_pending:
+                        on_pending()
+                    continue
+                if error == "access_denied":
+                    raise AccessDeniedError("Authorization was denied by the user.") from exc
+                if error in ("expired_token", "device_code_expired"):
+                    raise TokenExpiredError("The device code has expired. Please try again.") from exc
+                raise DeviceFlowError(f"Unexpected error from token endpoint: {error}") from exc
+            except httpx2.HTTPError as exc:
+                raise DeviceFlowError(f"Token request failed: {exc}") from exc
+            except ValueError as exc:
+                raise DeviceFlowError(f"Token request failed: the answer was not JSON ({exc}).") from exc
 
-            error = body.get("error", "unknown_error")
-
-            if error == "authorization_pending":
-                if on_pending:
-                    on_pending()
-                continue
-            if error == "slow_down":
-                poll_interval += 5
-                if on_pending:
-                    on_pending()
-                continue
-            if error == "access_denied":
-                raise AccessDeniedError("Authorization was denied by the user.")
-            if error in ("expired_token", "device_code_expired"):
-                raise TokenExpiredError("The device code has expired. Please try again.")
-            raise DeviceFlowError(f"Unexpected error from token endpoint: {error}")
+            self._device_pkce = None
+            return self._parse_token_response(body)
 
         raise TokenExpiredError("Timed out waiting for user authorization.")
 
     def refresh_access_token(self, refresh_token: str) -> TokenResponse:
-        resp = self._post(
-            self._env.token_url,
-            {
-                "grant_type": "refresh_token",
-                "refresh_token": refresh_token,
-                "client_id": self._env.client_id,
-            },
-            "Token refresh",
-        )
+        try:
+            body = self._oauth.refresh_token(self._env.token_url, refresh_token=refresh_token)
+        except (OAuthError, OAuth2Error) as exc:
+            # invalid_grant and the like: the refresh token expired or the session was ended.
+            raise RefreshRejectedError(
+                f"Token refresh was refused: {exc.description or exc.error}"
+            ) from exc
+        except httpx2.HTTPError as exc:
+            raise DeviceFlowError(f"Token refresh failed: {exc}") from exc
+        except ValueError as exc:
+            raise DeviceFlowError(f"Token refresh failed: the answer was not JSON ({exc}).") from exc
 
-        if resp.status_code in (400, 401):
-            # invalid_grant: the refresh token expired or the session was ended.
-            raise RefreshRejectedError(f"Token refresh was refused: {self._error_detail(resp)}")
-
-        self._raise_for_status(resp)
-        body = self._json(resp, "Token refresh")
         tokens = self._parse_token_response(body)
         if tokens.refresh_token is None:
             tokens.refresh_token = refresh_token
@@ -187,7 +198,7 @@ class KeycloakDeviceFlowClient:
                 userinfo_url,
                 headers={"Authorization": f"Bearer {access_token}"},
             )
-        except httpx.HTTPError as exc:
+        except httpx2.HTTPError as exc:
             raise DeviceFlowError(f"Account request failed: {exc}") from exc
         self._raise_for_status(resp)
         return self._json(resp, "Account request")
@@ -210,15 +221,15 @@ class KeycloakDeviceFlowClient:
         )
         self._raise_for_status(resp)
 
-    def _post(self, url: str, data: dict[str, str], what: str) -> httpx.Response:
+    def _post(self, url: str, data: dict[str, str], what: str) -> httpx2.Response:
         """POST a form, turning a transport failure into a DeviceFlowError."""
         try:
             return self._http.post(url, data=data)
-        except httpx.HTTPError as exc:
+        except httpx2.HTTPError as exc:
             raise DeviceFlowError(f"{what} failed: {exc}") from exc
 
     @staticmethod
-    def _json(resp: httpx.Response, what: str) -> dict[str, Any]:
+    def _json(resp: httpx2.Response, what: str) -> dict[str, Any]:
         """The response body as a JSON object, or a DeviceFlowError (a proxy's HTML error page, for example)."""
         try:
             body = resp.json()
@@ -242,7 +253,7 @@ class KeycloakDeviceFlowClient:
         )
 
     @staticmethod
-    def _error_detail(resp: httpx.Response) -> str:
+    def _error_detail(resp: httpx2.Response) -> str:
         try:
             body = resp.json()
         except ValueError:
@@ -252,7 +263,7 @@ class KeycloakDeviceFlowClient:
         return resp.text
 
     @staticmethod
-    def _raise_for_status(resp: httpx.Response) -> None:
+    def _raise_for_status(resp: httpx2.Response) -> None:
         if resp.is_error:
             detail = KeycloakDeviceFlowClient._error_detail(resp)
             raise DeviceFlowError(f"HTTP {resp.status_code} from {resp.url}: {detail}")

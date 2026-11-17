@@ -15,7 +15,7 @@ from typing import Any, Callable
 from urllib.parse import parse_qs
 
 import click
-import httpx
+import httpx2
 import pytest
 from click.testing import CliRunner
 
@@ -51,13 +51,13 @@ class FakeKeycloak:
     """Keycloak's device, token, revoke and userinfo endpoints in memory."""
 
     def __init__(self) -> None:
-        self.requests: list[httpx.Request] = []
-        self.token_answers: list[httpx.Response | Exception] = [httpx.Response(200, json=TOKEN_BODY)]
-        self.device_answer: httpx.Response | Exception = httpx.Response(200, json=DEVICE_BODY)
-        self.revoke_answer: httpx.Response | Exception = httpx.Response(200)
+        self.requests: list[httpx2.Request] = []
+        self.token_answers: list[httpx2.Response | Exception] = [httpx2.Response(200, json=TOKEN_BODY)]
+        self.device_answer: httpx2.Response | Exception = httpx2.Response(200, json=DEVICE_BODY)
+        self.revoke_answer: httpx2.Response | Exception = httpx2.Response(200)
         self.userinfo: dict[str, Any] = {"name": "Pat Tester", "email": "pat@example.org", "sub": "user-1"}
 
-    def handler(self, request: httpx.Request) -> httpx.Response:
+    def handler(self, request: httpx2.Request) -> httpx2.Response:
         self.requests.append(request)
         path = request.url.path
 
@@ -68,16 +68,16 @@ class FakeKeycloak:
         elif path.endswith("/revoke"):
             answer = self.revoke_answer
         elif path.endswith("/userinfo"):
-            answer = httpx.Response(200, json=self.userinfo)
+            answer = httpx2.Response(200, json=self.userinfo)
         else:
-            answer = httpx.Response(404)
+            answer = httpx2.Response(404)
 
         if isinstance(answer, Exception):
             raise answer
         return answer
 
     def client(self) -> KeycloakDeviceFlowClient:
-        return KeycloakDeviceFlowClient(DEV, transport=httpx.MockTransport(self.handler))
+        return KeycloakDeviceFlowClient(DEV, transport=httpx2.MockTransport(self.handler))
 
     def forms(self, suffix: str) -> list[dict[str, str]]:
         """The form fields of every request to an endpoint."""
@@ -88,21 +88,22 @@ class FakeKeycloak:
         ]
 
 
-def oauth_error(error: str, status: int = 400) -> httpx.Response:
-    return httpx.Response(status, json={"error": error, "error_description": f"{error} happened"})
+def oauth_error(error: str, status: int = 400) -> httpx2.Response:
+    return httpx2.Response(status, json={"error": error, "error_description": f"{error} happened"})
 
 
 @pytest.fixture
 def keycloak(monkeypatch: pytest.MonkeyPatch) -> FakeKeycloak:
     """A fake Keycloak that every KeycloakDeviceFlowClient talks to; polling does not sleep."""
     fake = FakeKeycloak()
-    real_client = httpx.Client
+    real_init = KeycloakDeviceFlowClient.__init__
 
-    def client_with_fake_transport(**kwargs: Any) -> httpx.Client:
-        kwargs["transport"] = httpx.MockTransport(fake.handler)
-        return real_client(**kwargs)
+    def init_with_fake_transport(self: KeycloakDeviceFlowClient, env: Any, transport: Any = None) -> None:
+        real_init(self, env, transport=httpx2.MockTransport(fake.handler))
 
-    monkeypatch.setattr("ce.auth.device_flow.httpx.Client", client_with_fake_transport)
+    # Authlib's OAuth2Client is itself an httpx2.Client, so the fake goes in through the constructor, not by
+    # replacing httpx2.Client.
+    monkeypatch.setattr(KeycloakDeviceFlowClient, "__init__", init_with_fake_transport)
     monkeypatch.setattr("ce.auth.device_flow.time.sleep", lambda _seconds: None)
     return fake
 
@@ -174,7 +175,7 @@ def test_request_device_code_reports_an_http_error(keycloak: FakeKeycloak) -> No
 
 
 def test_request_device_code_wraps_a_transport_error(keycloak: FakeKeycloak) -> None:
-    keycloak.device_answer = httpx.ConnectError("connection refused")
+    keycloak.device_answer = httpx2.ConnectError("connection refused")
 
     with pytest.raises(DeviceFlowError, match="Device authorization request failed"):
         keycloak.client().request_device_code()
@@ -189,7 +190,7 @@ def test_poll_returns_the_tokens_on_the_first_success(keycloak: FakeKeycloak) ->
 
 
 def test_poll_keeps_waiting_while_authorization_is_pending(keycloak: FakeKeycloak) -> None:
-    keycloak.token_answers = [oauth_error("authorization_pending"), httpx.Response(200, json=TOKEN_BODY)]
+    keycloak.token_answers = [oauth_error("authorization_pending"), httpx2.Response(200, json=TOKEN_BODY)]
     pending: list[int] = []
 
     tokens = keycloak.client().poll_for_token(
@@ -201,7 +202,7 @@ def test_poll_keeps_waiting_while_authorization_is_pending(keycloak: FakeKeycloa
 
 
 def test_poll_slows_down_when_asked(keycloak: FakeKeycloak, monkeypatch: pytest.MonkeyPatch) -> None:
-    keycloak.token_answers = [oauth_error("slow_down"), httpx.Response(200, json=TOKEN_BODY)]
+    keycloak.token_answers = [oauth_error("slow_down"), httpx2.Response(200, json=TOKEN_BODY)]
     waits: list[float] = []
     monkeypatch.setattr("ce.auth.device_flow.time.sleep", waits.append)
 
@@ -234,21 +235,28 @@ def test_poll_times_out(keycloak: FakeKeycloak) -> None:
 
 
 def test_poll_wraps_a_transport_error(keycloak: FakeKeycloak) -> None:
-    keycloak.token_answers = [httpx.ConnectError("connection refused")]
+    keycloak.token_answers = [httpx2.ConnectError("connection refused")]
 
     with pytest.raises(DeviceFlowError, match="Token request failed"):
         keycloak.client().poll_for_token("device-1", interval=0, expires_in=60)
 
 
-def test_poll_wraps_an_answer_that_is_not_json(keycloak: FakeKeycloak) -> None:
-    keycloak.token_answers = [httpx.Response(502, text="<html>Bad gateway</html>")]
+def test_poll_wraps_a_proxys_error_page(keycloak: FakeKeycloak) -> None:
+    keycloak.token_answers = [httpx2.Response(502, text="<html>Bad gateway</html>")]
+
+    with pytest.raises(DeviceFlowError, match="Token request failed.*502"):
+        keycloak.client().poll_for_token("device-1", interval=0, expires_in=60)
+
+
+def test_poll_wraps_an_ok_answer_that_is_not_json(keycloak: FakeKeycloak) -> None:
+    keycloak.token_answers = [httpx2.Response(200, text="<html>Welcome</html>")]
 
     with pytest.raises(DeviceFlowError, match="was not JSON"):
         keycloak.client().poll_for_token("device-1", interval=0, expires_in=60)
 
 
 def test_refresh_keeps_the_old_refresh_token_when_none_comes_back(keycloak: FakeKeycloak) -> None:
-    keycloak.token_answers = [httpx.Response(200, json={"access_token": "access-2", "expires_in": 300})]
+    keycloak.token_answers = [httpx2.Response(200, json={"access_token": "access-2", "expires_in": 300})]
 
     tokens = keycloak.client().refresh_access_token("refresh-0")
 
@@ -263,10 +271,10 @@ def test_refresh_refused_by_keycloak_is_a_rejection(keycloak: FakeKeycloak) -> N
 
 
 @pytest.mark.parametrize(
-    "answer", [httpx.ConnectError("connection refused"), httpx.Response(503, text="unavailable")]
+    "answer", [httpx2.ConnectError("connection refused"), httpx2.Response(503, text="unavailable")]
 )
 def test_refresh_that_could_not_be_tried_is_not_a_rejection(
-    keycloak: FakeKeycloak, answer: httpx.Response | Exception
+    keycloak: FakeKeycloak, answer: httpx2.Response | Exception
 ) -> None:
     keycloak.token_answers = [answer]
 
@@ -287,8 +295,8 @@ def test_revoke_posts_the_token_to_the_revocation_endpoint(keycloak: FakeKeycloa
     }
 
 
-@pytest.mark.parametrize("answer", [httpx.Response(400, json={"error": "invalid_request"}), httpx.ConnectError("down")])
-def test_revoke_reports_a_failure(keycloak: FakeKeycloak, answer: httpx.Response | Exception) -> None:
+@pytest.mark.parametrize("answer", [httpx2.Response(400, json={"error": "invalid_request"}), httpx2.ConnectError("down")])
+def test_revoke_reports_a_failure(keycloak: FakeKeycloak, answer: httpx2.Response | Exception) -> None:
     keycloak.revoke_answer = answer
 
     with pytest.raises(DeviceFlowError):
@@ -389,7 +397,7 @@ def test_a_renewal_that_could_not_reach_keycloak_keeps_the_saved_session(
     config_dir: Path, keycloak: FakeKeycloak
 ) -> None:
     settings.save_tokens(stored(expires_in=-10), "dev")
-    keycloak.token_answers = [httpx.ConnectError("connection refused")]
+    keycloak.token_answers = [httpx2.ConnectError("connection refused")]
 
     result = token_manager.resolve_access_token()
 
@@ -417,13 +425,13 @@ def test_a_session_for_one_environment_does_not_count_for_another(config_dir: Pa
     [
         (None, click.UsageError, "You are not logged in"),
         (oauth_error("invalid_grant"), click.UsageError, "Your session has expired"),
-        (httpx.ConnectError("connection refused"), click.ClickException, "You are still signed in"),
+        (httpx2.ConnectError("connection refused"), click.ClickException, "You are still signed in"),
     ],
 )
 def test_require_login_says_why_there_is_no_token(
     config_dir: Path,
     keycloak: FakeKeycloak,
-    answer: httpx.Response | Exception | None,
+    answer: httpx2.Response | Exception | None,
     exception: type[click.ClickException],
     message: str,
 ) -> None:
@@ -485,7 +493,7 @@ def test_login_to_another_environment_does_not_reuse_the_active_ones_session(
 
 def test_an_expired_session_permits_a_new_login(config_dir: Path, keycloak: FakeKeycloak) -> None:
     settings.save_tokens(stored(expires_in=-10), "dev")
-    keycloak.token_answers = [oauth_error("invalid_grant"), httpx.Response(200, json=TOKEN_BODY)]
+    keycloak.token_answers = [oauth_error("invalid_grant"), httpx2.Response(200, json=TOKEN_BODY)]
 
     result = run(login)
 
@@ -495,7 +503,7 @@ def test_an_expired_session_permits_a_new_login(config_dir: Path, keycloak: Fake
 
 
 def test_login_shows_a_device_code_error(config_dir: Path, keycloak: FakeKeycloak) -> None:
-    keycloak.device_answer = httpx.ConnectError("connection refused")
+    keycloak.device_answer = httpx2.ConnectError("connection refused")
 
     result = run(login)
 
@@ -504,13 +512,13 @@ def test_login_shows_a_device_code_error(config_dir: Path, keycloak: FakeKeycloa
 
 
 def test_login_shows_a_polling_error_instead_of_a_traceback(config_dir: Path, keycloak: FakeKeycloak) -> None:
-    keycloak.token_answers = [httpx.ConnectError("connection refused")]
+    keycloak.token_answers = [httpx2.ConnectError("connection refused")]
 
     result = run(login)
 
     assert result.exit_code == 1
     assert "Token request failed" in result.output
-    assert not isinstance(result.exception, httpx.HTTPError)
+    assert not isinstance(result.exception, httpx2.HTTPError)
     assert settings.load_tokens("dev") is None
 
 
@@ -528,7 +536,7 @@ def test_logout_revokes_the_refresh_token_and_clears_the_session(config_dir: Pat
 
 def test_logout_still_clears_the_session_when_revoking_fails(config_dir: Path, keycloak: FakeKeycloak) -> None:
     settings.save_tokens(stored(), "dev")
-    keycloak.revoke_answer = httpx.ConnectError("connection refused")
+    keycloak.revoke_answer = httpx2.ConnectError("connection refused")
 
     result = run(logout, "--yes")
 
@@ -592,7 +600,7 @@ def test_whoami_says_when_the_session_has_expired(config_dir: Path, keycloak: Fa
 
 def test_whoami_exits_1_when_keycloak_cannot_be_reached(config_dir: Path, keycloak: FakeKeycloak) -> None:
     settings.save_tokens(stored(expires_in=-10), "dev")
-    keycloak.token_answers = [httpx.ConnectError("connection refused")]
+    keycloak.token_answers = [httpx2.ConnectError("connection refused")]
 
     result = run(account_show)
 

@@ -2,7 +2,7 @@
 
 ## Requirements
 
-- Python 3.10 or later
+- Python 3.11 or later
 - `pip`
 
 ## Install from a release

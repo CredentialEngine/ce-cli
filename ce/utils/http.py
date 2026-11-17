@@ -4,7 +4,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from typing import Any, Generator
 
-import httpx
+import httpx2
 
 from ce.auth.token_manager import require_login
 from ce.utils.logging import get_logger
@@ -20,10 +20,10 @@ class APIError(Exception):
 
 
 class CEHTTPClient:
-    """Thin wrapper around httpx.Client with auth, debug tracing, and error handling."""
+    """Thin wrapper around httpx2.Client with auth, debug tracing, and error handling."""
 
     def __init__(self, base_url: str, access_token: str, timeout: float = 30.0) -> None:
-        self._client = httpx.Client(
+        self._client = httpx2.Client(
             base_url=base_url,
             headers={
                 "Authorization": f"Bearer {access_token}",
@@ -35,22 +35,22 @@ class CEHTTPClient:
         )
         self._base_url = base_url
 
-    def get(self, path: str, **kwargs: Any) -> httpx.Response:
+    def get(self, path: str, **kwargs: Any) -> httpx2.Response:
         return self._request("GET", path, **kwargs)
 
-    def post(self, path: str, **kwargs: Any) -> httpx.Response:
+    def post(self, path: str, **kwargs: Any) -> httpx2.Response:
         return self._request("POST", path, **kwargs)
 
-    def put(self, path: str, **kwargs: Any) -> httpx.Response:
+    def put(self, path: str, **kwargs: Any) -> httpx2.Response:
         return self._request("PUT", path, **kwargs)
 
-    def patch(self, path: str, **kwargs: Any) -> httpx.Response:
+    def patch(self, path: str, **kwargs: Any) -> httpx2.Response:
         return self._request("PATCH", path, **kwargs)
 
-    def delete(self, path: str, **kwargs: Any) -> httpx.Response:
+    def delete(self, path: str, **kwargs: Any) -> httpx2.Response:
         return self._request("DELETE", path, **kwargs)
 
-    def _request(self, method: str, path: str, **kwargs: Any) -> httpx.Response:
+    def _request(self, method: str, path: str, **kwargs: Any) -> httpx2.Response:
         url = f"{self._base_url}{path}"
         start = log.http_request(method, url)
         resp = self._client.request(method, path, **kwargs)
@@ -59,7 +59,7 @@ class CEHTTPClient:
         return resp
 
     @staticmethod
-    def _raise_for_status(resp: httpx.Response) -> None:
+    def _raise_for_status(resp: httpx2.Response) -> None:
         if resp.is_success:
             return
         try:

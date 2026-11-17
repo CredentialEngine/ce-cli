@@ -1,34 +1,24 @@
 from http import HTTPStatus
-from typing import Any, cast
-from urllib.parse import quote
+from typing import Any
 
-import httpx
+import httpx2
 
-from ...client import AuthenticatedClient, Client
-from ...types import Response, UNSET
 from ... import errors
-
-from ...models.iir_api_validate_web_response_200 import IIRApiValidateWebResponse200
-from typing import cast
-
+from ...client import AuthenticatedClient, Client
+from ...models.iir_api_validate_web_response_200 import IirApiValidateWebResponse200
+from ...types import UNSET, Response
 
 
 def _get_kwargs(
     *,
     did: str,
-
 ) -> dict[str, Any]:
-    
-
-    
 
     params: dict[str, Any] = {}
 
     params["did"] = did
 
-
     params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
-
 
     _kwargs: dict[str, Any] = {
         "method": "get",
@@ -36,16 +26,14 @@ def _get_kwargs(
         "params": params,
     }
 
-
     return _kwargs
 
 
-
-def _parse_response(*, client: AuthenticatedClient | Client, response: httpx.Response) -> IIRApiValidateWebResponse200 | None:
+def _parse_response(
+    *, client: AuthenticatedClient | Client, response: httpx2.Response
+) -> IirApiValidateWebResponse200 | None:
     if response.status_code == 200:
-        response_200 = IIRApiValidateWebResponse200.from_dict(response.json())
-
-
+        response_200 = IirApiValidateWebResponse200.from_dict(response.json())
 
         return response_200
 
@@ -55,7 +43,9 @@ def _parse_response(*, client: AuthenticatedClient | Client, response: httpx.Res
         return None
 
 
-def _build_response(*, client: AuthenticatedClient | Client, response: httpx.Response) -> Response[IIRApiValidateWebResponse200]:
+def _build_response(
+    *, client: AuthenticatedClient | Client, response: httpx2.Response
+) -> Response[IirApiValidateWebResponse200]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -68,24 +58,21 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     did: str,
-
-) -> Response[IIRApiValidateWebResponse200]:
-    """ 
+) -> Response[IirApiValidateWebResponse200]:
+    """
     Args:
         did (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        httpx2.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[IIRApiValidateWebResponse200]
-     """
-
+        Response[IirApiValidateWebResponse200]
+    """
 
     kwargs = _get_kwargs(
         did=did,
-
     )
 
     response = client.get_httpx_client().request(
@@ -94,82 +81,76 @@ def sync_detailed(
 
     return _build_response(client=client, response=response)
 
+
 def sync(
     *,
     client: AuthenticatedClient | Client,
     did: str,
-
-) -> IIRApiValidateWebResponse200 | None:
-    """ 
+) -> IirApiValidateWebResponse200 | None:
+    """
     Args:
         did (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        httpx2.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        IIRApiValidateWebResponse200
-     """
-
+        IirApiValidateWebResponse200
+    """
 
     return sync_detailed(
         client=client,
-did=did,
-
+        did=did,
     ).parsed
+
 
 async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     did: str,
-
-) -> Response[IIRApiValidateWebResponse200]:
-    """ 
+) -> Response[IirApiValidateWebResponse200]:
+    """
     Args:
         did (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        httpx2.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[IIRApiValidateWebResponse200]
-     """
-
+        Response[IirApiValidateWebResponse200]
+    """
 
     kwargs = _get_kwargs(
         did=did,
-
     )
 
-    response = await client.get_async_httpx_client().request(
-        **kwargs
-    )
+    response = await client.get_async_httpx_client().request(**kwargs)
 
     return _build_response(client=client, response=response)
+
 
 async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     did: str,
-
-) -> IIRApiValidateWebResponse200 | None:
-    """ 
+) -> IirApiValidateWebResponse200 | None:
+    """
     Args:
         did (str):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
-        httpx.TimeoutException: If the request takes longer than Client.timeout.
+        httpx2.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        IIRApiValidateWebResponse200
-     """
+        IirApiValidateWebResponse200
+    """
 
-
-    return (await asyncio_detailed(
-        client=client,
-did=did,
-
-    )).parsed
+    return (
+        await asyncio_detailed(
+            client=client,
+            did=did,
+        )
+    ).parsed
