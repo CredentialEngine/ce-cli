@@ -7,12 +7,13 @@ Run with:
 from __future__ import annotations
 
 import base64
+import importlib.util
 import json
 from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, patch
 
-import httpx
+import httpx2
 import pytest
 from click.testing import CliRunner
 
@@ -24,7 +25,18 @@ from ce.publisher.client import (
     resolve_publisher_url,
     project_kind_label,
 )
-from ce.publisher.prepare_openapi import keep_json_content
+
+
+def _load_keep_json_content():
+    """prepare_openapi.py sits beside the SDK's swagger.json, outside the ce package."""
+    path = Path(__file__).resolve().parents[1] / "src" / "sdks" / "publisher-api" / "prepare_openapi.py"
+    spec = importlib.util.spec_from_file_location("publisher_prepare_openapi", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.keep_json_content
+
+
+keep_json_content = _load_keep_json_content()
 
 pytestmark = pytest.mark.unit
 
@@ -47,7 +59,7 @@ class FakePublisher:
     """A Publisher API in memory, answering the calls ce publisher makes."""
 
     def __init__(self) -> None:
-        self.requests: list[httpx.Request] = []
+        self.requests: list[httpx2.Request] = []
         self.project: dict[str, Any] = {
             "projectId": 7,
             "name": "Welding",
@@ -67,49 +79,49 @@ class FakePublisher:
              "description": "Created project 'Welding'"},
         ]
 
-    def handler(self, request: httpx.Request) -> httpx.Response:
+    def handler(self, request: httpx2.Request) -> httpx2.Response:
         self.requests.append(request)
         path, method = request.url.path, request.method
 
         if path == "/projects" and method == "POST":
-            return httpx.Response(200, json={"projectId": 7})
+            return httpx2.Response(200, json={"projectId": 7})
         if path == "/projects":
-            return httpx.Response(200, json=[self.project])
+            return httpx2.Response(200, json=[self.project])
         if path == "/projects/7":
-            return httpx.Response(200, json=self.project)
+            return httpx2.Response(200, json=self.project)
         if path == "/projects/7/iterations":
-            return httpx.Response(200, json=self.iterations)
+            return httpx2.Response(200, json=self.iterations)
         if path == "/projects/7/iterations/1/files":
-            return httpx.Response(200, json=self.files)
+            return httpx2.Response(200, json=self.files)
         if path.endswith("/validationResults"):
-            return httpx.Response(200, json=self.findings)
+            return httpx2.Response(200, json=self.findings)
         if path == "/projects/7/audit":
-            return httpx.Response(200, json=self.audit)
+            return httpx2.Response(200, json=self.audit)
         if path in ("/projects/7/iterations/upload", "/projects/7/iterations/upload-jsonld"):
-            return httpx.Response(200, json={"iterationId": 2, "status": "Created"})
+            return httpx2.Response(200, json={"iterationId": 2, "status": "Created"})
         if path == "/projects/7/iterations/1/validation/start":
             self.iterations[0]["status"] = "Validating"
-            return httpx.Response(200)
+            return httpx2.Response(200)
         if path == "/projects/7/iterations/1/transform":
             self.iterations[0]["status"] = "Transformed"
-            return httpx.Response(200)
+            return httpx2.Response(200)
         if path == "/projects/7/reviewers" and method == "POST":
             self.project["reviewers"].append({"userId": json.loads(request.content)["userId"]})
-            return httpx.Response(204)
+            return httpx2.Response(204)
         if path == "/projects/7/approve":
             self.project["status"] = "Approved"
-            return httpx.Response(200)
+            return httpx2.Response(200)
         if path == "/projects/7/publish/start":
             self.project["status"] = "Completed"
             self.project["publishStatus"] = "Published"
-            return httpx.Response(200)
+            return httpx2.Response(200)
         if path == "/projects/7/abandon":
-            return httpx.Response(200)
-        return httpx.Response(404, json={"title": "Not Found"})
+            return httpx2.Response(200)
+        return httpx2.Response(404, json={"title": "Not Found"})
 
     def client(self, base_url: str = "http://publisher", token: str = "", **_: Any) -> PublisherClient:
         return PublisherClient(
-            base_url, token or make_token(), transport=httpx.MockTransport(self.handler)
+            base_url, token or make_token(), transport=httpx2.MockTransport(self.handler)
         )
 
     def paths(self) -> list[str]:
@@ -212,7 +224,7 @@ def test_a_ruby_registry_sync_project_takes_no_work_from_ce_cli(
     publisher.project["projectType"] = "RubyRegistrySync"
 
     added = run(cli, "project", "add", "--project-id", "7", "--file", str(csv_file(tmp_path)), "--type", "credentials")
-    validated = run(cli, "project", "run", "validation", "--project-id", "7")
+    validated = run(cli, "project", "validation", "run", "--project-id", "7")
     completed = run(cli, "project", "complete", "--project-id", "7")
 
     assert added.exit_code == 1 and "Ruby Registry sync" in added.output
@@ -532,10 +544,10 @@ def test_upload_jsonld_sends_the_files(publisher: FakePublisher, tmp_path: Path)
 
 
 def test_a_refused_upload_raises_with_the_reason(publisher: FakePublisher, tmp_path: Path) -> None:
-    def refuse(request: httpx.Request) -> httpx.Response:
-        return httpx.Response(403, json="Only the project's author can change an API publishing project.")
+    def refuse(request: httpx2.Request) -> httpx2.Response:
+        return httpx2.Response(403, json="Only the project's author can change an API publishing project.")
 
-    client = PublisherClient("http://publisher", make_token(), transport=httpx.MockTransport(refuse))
+    client = PublisherClient("http://publisher", make_token(), transport=httpx2.MockTransport(refuse))
 
     with pytest.raises(PublisherApiError, match="Only the project's author") as error:
         client.upload_jsonld(7, [jsonld_file(tmp_path)])
@@ -669,7 +681,7 @@ def test_add_refuses_csv_files_and_a_template_for_a_json_ld_project(
 def test_run_validation_waits_for_a_csv_project_that_has_started_validating(
     cli: CliRunner, publisher: FakePublisher
 ) -> None:
-    result = run(cli, "project", "run", "validation", "--project-id", "7")
+    result = run(cli, "project", "validation", "run", "--project-id", "7")
 
     assert result.exit_code == 0, result.output
     assert not any(path.endswith("/validation/start") for path in publisher.paths())
@@ -684,7 +696,7 @@ def test_run_validation_says_a_csv_project_started_validating_when_the_files_wer
 ) -> None:
     publisher.iterations = [{"iterationId": 1, "status": "Validating"}]
 
-    result = run(cli, "project", "run", "validation", "--project-id", "7", "--no-wait")
+    result = run(cli, "project", "validation", "run", "--project-id", "7", "--no-wait")
 
     assert "started when the files were added" in " ".join(result.output.split())
     assert not any(path.endswith("/validation/start") for path in publisher.paths())
@@ -695,7 +707,7 @@ def test_run_validation_does_not_start_a_second_run_for_a_validated_json_ld_iter
 ) -> None:
     publisher.project["projectType"] = "ApiPublishing"
 
-    result = run(cli, "project", "run", "validation", "--project-id", "7")
+    result = run(cli, "project", "validation", "run", "--project-id", "7")
 
     output = " ".join(result.output.split())
     assert "has already been validated" in output
@@ -709,7 +721,7 @@ def test_run_validation_starts_a_json_ld_iteration_that_has_not_started(
     publisher.project["projectType"] = "ApiPublishing"
     publisher.iterations = [{"iterationId": 1, "status": "Created"}]
 
-    def finish_after_start(request: httpx.Request) -> httpx.Response:
+    def finish_after_start(request: httpx2.Request) -> httpx2.Response:
         response = FakePublisher.handler(publisher, request)
         if request.url.path.endswith("/validation/start"):
             publisher.iterations[0]["status"] = "Validated"
@@ -717,7 +729,7 @@ def test_run_validation_starts_a_json_ld_iteration_that_has_not_started(
 
     publisher.handler = finish_after_start  # type: ignore[method-assign]
 
-    result = run(cli, "project", "run", "validation", "--project-id", "7")
+    result = run(cli, "project", "validation", "run", "--project-id", "7")
 
     assert "POST /projects/7/iterations/1/validation/start" in publisher.paths()
     assert "Started validation of iteration 1." in result.output
@@ -727,7 +739,7 @@ def test_run_validation_starts_a_json_ld_iteration_that_has_not_started(
 def test_run_validation_exits_1_when_it_finds_errors(cli: CliRunner, publisher: FakePublisher) -> None:
     publisher.findings = {"jobs.csv": {"CtidReference": [finding("Missing.")]}}
 
-    result = run(cli, "project", "run", "validation", "--project-id", "7")
+    result = run(cli, "project", "validation", "run", "--project-id", "7")
 
     assert result.exit_code == 1
     assert "1 succeeded, 1 with errors." in result.output
@@ -736,7 +748,7 @@ def test_run_validation_exits_1_when_it_finds_errors(cli: CliRunner, publisher: 
 def test_run_validation_no_wait_returns_while_it_is_running(cli: CliRunner, publisher: FakePublisher) -> None:
     publisher.iterations = [{"iterationId": 1, "status": "Validating"}]
 
-    result = run(cli, "project", "run", "validation", "--project-id", "7", "--no-wait")
+    result = run(cli, "project", "validation", "run", "--project-id", "7", "--no-wait")
 
     assert result.exit_code == 0, result.output
     assert "is being validated" in result.output
@@ -745,7 +757,7 @@ def test_run_validation_no_wait_returns_while_it_is_running(cli: CliRunner, publ
 def test_run_validation_needs_files(cli: CliRunner, publisher: FakePublisher) -> None:
     publisher.iterations = []
 
-    result = run(cli, "project", "run", "validation", "--project-id", "7")
+    result = run(cli, "project", "validation", "run", "--project-id", "7")
 
     assert result.exit_code == 1
     assert "no files yet" in result.output
@@ -754,9 +766,9 @@ def test_run_validation_needs_files(cli: CliRunner, publisher: FakePublisher) ->
 def test_show_validation_status_as_json(cli: CliRunner, publisher: FakePublisher) -> None:
     publisher.findings = {"jobs.csv": {"CtidReference": [finding()]}}
 
-    plain = run(cli, "project", "show", "validation", "status", "--project-id", "7", "-o", "json")
+    plain = run(cli, "project", "validation", "status", "show", "--project-id", "7", "-o", "json")
     verbose = run(
-        cli, "project", "show", "validation", "status", "--project-id", "7", "-o", "json", "--verbose"
+        cli, "project", "validation", "status", "show", "--project-id", "7", "-o", "json", "--verbose"
     )
 
     summary = json.loads(plain.output)
@@ -768,17 +780,17 @@ def test_show_validation_status_as_json(cli: CliRunner, publisher: FakePublisher
 def test_show_validation_status_verbose_lists_each_file(cli: CliRunner, publisher: FakePublisher) -> None:
     publisher.findings = {"jobs.csv": {"CtidReference": [finding("Missing.")]}}
 
-    result = run(cli, "project", "show", "validation", "status", "--project-id", "7", "--verbose")
+    result = run(cli, "project", "validation", "status", "show", "--project-id", "7", "--verbose")
 
-    assert "✗ jobs.csv" in result.output
-    assert "✓ credentials.csv" in result.output
+    assert "  FAIL  jobs.csv" in result.output
+    assert "  ok    credentials.csv" in result.output
     assert "      row 3: Offered By: error: Missing." in result.output
 
 
 def test_show_validation_status_says_when_validation_has_not_run(cli: CliRunner, publisher: FakePublisher) -> None:
     publisher.iterations = [{"iterationId": 1, "status": "Created"}]
 
-    result = run(cli, "project", "show", "validation", "status", "--project-id", "7")
+    result = run(cli, "project", "validation", "status", "show", "--project-id", "7")
 
     assert "Validation has not been run on it yet." in result.output
 
@@ -788,8 +800,8 @@ def test_show_validation_errors_lists_only_blocking_findings(cli: CliRunner, pub
         "jobs.csv": {"CtidReference": [finding("Missing.")], "SpellCheck": [finding("Typo.", "Name")]}
     }
 
-    text = run(cli, "project", "show", "validation", "errors", "--project-id", "7")
-    as_json = run(cli, "project", "show", "validation", "errors", "--project-id", "7", "-o", "json")
+    text = run(cli, "project", "validation", "errors", "show", "--project-id", "7")
+    as_json = run(cli, "project", "validation", "errors", "show", "--project-id", "7", "-o", "json")
 
     assert "jobs.csv:3: Offered By: error: Missing." in text.output
     assert "Typo." not in text.output
@@ -798,7 +810,7 @@ def test_show_validation_errors_lists_only_blocking_findings(cli: CliRunner, pub
 
 
 def test_show_audit_prints_the_log_oldest_first(cli: CliRunner, publisher: FakePublisher) -> None:
-    result = run(cli, "project", "show", "audit", "--project-id", "7")
+    result = run(cli, "project", "audit", "show", "--project-id", "7")
 
     lines = [line for line in result.output.splitlines() if line.strip()]
     assert lines[0].startswith("2026-11-12 10:00:00 UTC  ProjectCreated")
@@ -808,7 +820,7 @@ def test_show_audit_prints_the_log_oldest_first(cli: CliRunner, publisher: FakeP
 def test_show_status_as_json(cli: CliRunner, publisher: FakePublisher) -> None:
     publisher.project.update({"status": "Completed", "publishStatus": "Published"})
 
-    result = run(cli, "project", "show", "status", "--project-id", "7", "-o", "json")
+    result = run(cli, "project", "status", "show", "--project-id", "7", "-o", "json")
 
     status = json.loads(result.output)
     assert status["status"] == "Completed"
@@ -841,13 +853,13 @@ def test_complete_exits_1_when_publishing_fails(cli: CliRunner, publisher: FakeP
     publisher.project.update({"status": "Approved", "publishStatus": "PublishFailed"})
     publisher.iterations = [{"iterationId": 1, "status": "Transformed"}]
 
-    def keep_failed(request: httpx.Request) -> httpx.Response:
+    def keep_failed(request: httpx2.Request) -> httpx2.Response:
         publisher.requests.append(request)
         if request.url.path == "/projects/7":
-            return httpx.Response(200, json=publisher.project)
+            return httpx2.Response(200, json=publisher.project)
         if request.url.path == "/projects/7/iterations":
-            return httpx.Response(200, json=publisher.iterations)
-        return httpx.Response(200)
+            return httpx2.Response(200, json=publisher.iterations)
+        return httpx2.Response(200)
 
     publisher.handler = keep_failed  # type: ignore[method-assign]
 
@@ -867,12 +879,12 @@ def test_abandon_asks_first(cli: CliRunner, publisher: FakePublisher) -> None:
 
 
 def test_a_403_shows_the_reason_the_publisher_gave(cli: CliRunner, publisher: FakePublisher) -> None:
-    def forbidden(request: httpx.Request) -> httpx.Response:
-        return httpx.Response(403, json="Only the project's author can change or complete it.")
+    def forbidden(request: httpx2.Request) -> httpx2.Response:
+        return httpx2.Response(403, json="Only the project's author can change or complete it.")
 
     publisher.handler = forbidden  # type: ignore[method-assign]
 
-    result = run(cli, "project", "run", "validation", "--project-id", "7")
+    result = run(cli, "project", "validation", "run", "--project-id", "7")
 
     assert result.exit_code == 1
     assert "Only the project's author can change or complete it." in result.output
@@ -882,12 +894,12 @@ def test_a_403_shows_the_reason_the_publisher_gave(cli: CliRunner, publisher: Fa
 def test_a_403_without_a_reason_says_the_publisher_user_role_may_be_missing(
     cli: CliRunner, publisher: FakePublisher
 ) -> None:
-    def forbidden(request: httpx.Request) -> httpx.Response:
-        return httpx.Response(403)
+    def forbidden(request: httpx2.Request) -> httpx2.Response:
+        return httpx2.Response(403)
 
     publisher.handler = forbidden  # type: ignore[method-assign]
 
-    result = run(cli, "project", "run", "validation", "--project-id", "7")
+    result = run(cli, "project", "validation", "run", "--project-id", "7")
 
     assert result.exit_code == 1
     assert "Your account needs the Publisher user role." in result.output
@@ -898,9 +910,9 @@ def test_a_403_from_the_publish_permission_check_is_not_blamed_on_the_author_rul
 ) -> None:
     reason = "Cannot check who may publish these resources, because they name no owner (ceterms:ownedBy): ce-1."
 
-    def refused(request: httpx.Request) -> httpx.Response:
+    def refused(request: httpx2.Request) -> httpx2.Response:
         if request.url.path.endswith("/publish/start"):
-            return httpx.Response(403, json=reason)
+            return httpx2.Response(403, json=reason)
         return FakePublisher.handler(publisher, request)
 
     publisher.handler = refused  # type: ignore[method-assign]

@@ -1,7 +1,7 @@
 """Output formatting utilities.
 
 Mirrors az's --output / -o flag:
-  table   - human-friendly Rich table (default)
+  table   - plain aligned columns (default)
   json    - pretty-printed JSON
   yaml    - YAML (requires pyyaml)
   tsv     - tab-separated values, script-friendly
@@ -14,10 +14,10 @@ import json
 from typing import Any, Sequence
 
 import click
-from rich.console import Console
-from rich.table import Table, box
 
-console = Console()
+from ce.utils.display import new_console, plain_table
+
+console = new_console()
 
 OutputFormat = str   # "table" | "json" | "yaml" | "tsv" | "none"
 
@@ -46,9 +46,7 @@ def print_output(
 
 
 def _print_json(data: Any) -> None:
-    from rich.syntax import Syntax
-    text = json.dumps(data, indent=2, default=str)
-    console.print(Syntax(text, "json", theme="ansi_dark", background_color="default"))
+    click.echo(json.dumps(data, indent=2, default=str))
 
 
 def _print_yaml(data: Any) -> None:
@@ -57,9 +55,7 @@ def _print_yaml(data: Any) -> None:
     except ImportError:
         click.echo(json.dumps(data, indent=2, default=str))
         return
-    from rich.syntax import Syntax
-    text = yaml.dump(data, default_flow_style=False, allow_unicode=True)
-    console.print(Syntax(text, "yaml", theme="ansi_dark", background_color="default"))
+    click.echo(yaml.dump(data, default_flow_style=False, allow_unicode=True), nl=False)
 
 
 def _print_tsv(data: Any, columns: Sequence[str] | None) -> None:
@@ -78,24 +74,18 @@ def _print_table(
 ) -> None:
     rows = _to_rows(data)
     if not rows:
-        console.print("[dim]No results.[/dim]")
+        console.print("No results.")
         return
 
     cols = list(columns) if columns else list(rows[0].keys())
 
-    table = Table(
-        title=title,
-        box=box.SIMPLE_HEAD,
-        show_lines=False,
-        header_style="bold",
-        border_style="dim",
-    )
-    for col in cols:
-        table.add_column(col.replace("_", " ").title())
+    table = plain_table([col.replace("_", " ").title() for col in cols])
 
     for row in rows:
-        table.add_row(*[str(row.get(c, "—")) for c in cols])
+        table.add_row(*[str(row.get(c, "-")) for c in cols])
 
+    if title:
+        console.print(title)
     console.print()
     console.print(table)
     console.print()

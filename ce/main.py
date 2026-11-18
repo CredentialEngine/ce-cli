@@ -7,7 +7,7 @@ except ImportError:
     pass
 
 import click
-from rich.console import Console
+from ce.utils.display import new_console
 
 from ce import __version__
 from ce.commands.auth import account_show, login, logout
@@ -16,7 +16,7 @@ from ce.commands.iir import iir_group
 from ce.commands.publisher import publisher_group
 from ce.commands.version import version_command
 
-console = Console()
+console = new_console()
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 

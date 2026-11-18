@@ -18,10 +18,10 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import (
     Ed25519PrivateKey,
     Ed25519PublicKey,
 )
-from rich.console import Console
+from ce.utils.display import new_console
 
-console = Console()
-err_console = Console(stderr=True)
+console = new_console()
+err_console = new_console(stderr=True)
 
 
 
@@ -226,7 +226,7 @@ def _assert_signature_verifiable(token: str, kid: str) -> None:
         raise click.ClickException(f"JWT verification error: {e}") from e
 
     err_console.print(
-        "[green]Signature verification: OK[/green] (matches DID public key)"
+        "Signature verification: OK (matches DID public key)"
     )
 
 

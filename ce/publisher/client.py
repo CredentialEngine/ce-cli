@@ -1,7 +1,7 @@
 """Client for the Publisher API calls that API publishing uses.
 
 Requests are built by the client generated from the Publisher's Swagger
-document (ce/publisher/api/publisher_client; see generate.ps1). The answers
+document (src/sdks/publisher-api; see its README). The answers
 are read here: the Publisher declares several of them as IActionResult or
 sends no body, which the generated parsers cannot read. The two file uploads
 are built here too, because the Publisher takes the CSV classifications as
@@ -17,10 +17,10 @@ from types import ModuleType
 from typing import Any
 from uuid import UUID
 
-import httpx
+import httpx2
 
-from ce.publisher.api.publisher_client import AuthenticatedClient
-from ce.publisher.api.publisher_client.api.project import (
+from publisher_client import AuthenticatedClient
+from publisher_client.api.project import (
     get_projects,
     get_projects_project_id,
     get_projects_project_id_audit,
@@ -36,11 +36,11 @@ from ce.publisher.api.publisher_client.api.project import (
     start_transform,
     start_validation,
 )
-from ce.publisher.api.publisher_client.models.add_project_reviewer_dto import (
+from publisher_client.models.add_project_reviewer_dto import (
     AddProjectReviewerDto,
 )
-from ce.publisher.api.publisher_client.models.project_create_dto import ProjectCreateDto
-from ce.publisher.api.publisher_client.models.project_type import ProjectType
+from publisher_client.models.project_create_dto import ProjectCreateDto
+from publisher_client.models.project_type import ProjectType
 
 PUBLISHER_URL_ENV_VAR = "CE_PUBLISHER_API_URL"
 
@@ -68,7 +68,7 @@ class PublisherApiError(Exception):
     def __init__(self, message: str, status_code: int | None = None, detail: str = "") -> None:
         super().__init__(message)
         self.status_code = status_code
-        # What the Publisher said, without ce-cli's own words around it. Empty when it said nothing.
+        # The text the Publisher returned with the error, empty if it returned none.
         self.detail = detail
 
 
@@ -104,7 +104,7 @@ class PublisherClient:
         access_token: str,
         *,
         verify: bool = True,
-        transport: httpx.BaseTransport | None = None,
+        transport: httpx2.BaseTransport | None = None,
         timeout: float = _DEFAULT_TIMEOUT_SECONDS,
     ) -> None:
         self.access_token = access_token
@@ -113,7 +113,7 @@ class PublisherClient:
             base_url=base_url.rstrip("/"),
             token=access_token,
             verify_ssl=verify,
-            timeout=httpx.Timeout(timeout),
+            timeout=httpx2.Timeout(timeout),
             headers={"Accept": "application/json", "User-Agent": "ce-cli"},
             httpx_args=httpx_args,
         )
@@ -249,7 +249,7 @@ class PublisherClient:
         label = f"POST {path}"
         try:
             response = self._api.get_httpx_client().request("POST", path, files=parts, data=form)
-        except httpx.HTTPError as exc:
+        except httpx2.HTTPError as exc:
             raise PublisherApiError(
                 f"Could not reach the Publisher at {self._api._base_url}: {exc}"
             ) from exc
@@ -278,34 +278,34 @@ class PublisherClient:
             )
         return payload
 
-    def _request(self, endpoint: ModuleType, *args: Any, **kwargs: Any) -> httpx.Response:
+    def _request(self, endpoint: ModuleType, *args: Any, **kwargs: Any) -> httpx2.Response:
         response, label = self._send(endpoint, *args, **kwargs)
         _raise_for_status(label, response)
         return response
 
     def _send(
         self, endpoint: ModuleType, *args: Any, **kwargs: Any
-    ) -> tuple[httpx.Response, str]:
+    ) -> tuple[httpx2.Response, str]:
         """Send the request the generated endpoint module builds."""
         request = endpoint._get_kwargs(*args, **kwargs)
         label = f"{str(request['method']).upper()} {request['url']}"
 
         try:
             return self._api.get_httpx_client().request(**request), label
-        except httpx.HTTPError as exc:
+        except httpx2.HTTPError as exc:
             raise PublisherApiError(
                 f"Could not reach the Publisher at {self._api._base_url}: {exc}"
             ) from exc
 
 
-def _json_or_none(response: httpx.Response) -> Any:
+def _json_or_none(response: httpx2.Response) -> Any:
     try:
         return response.json()
     except ValueError:
         return None
 
 
-def _raise_for_status(label: str, response: httpx.Response) -> None:
+def _raise_for_status(label: str, response: httpx2.Response) -> None:
     if response.status_code < 400:
         return
 

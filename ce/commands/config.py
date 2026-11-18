@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 import click
-from rich.console import Console
-from rich.table import Table, box
 
 from ce.config.context import CLIConfig, load_cli_config, save_cli_config
+from ce.utils.display import new_console, plain_table
 from ce.utils.output import OUTPUT_FORMATS
 
-console = Console()
-err_console = Console(stderr=True)
+console = new_console()
+err_console = new_console(stderr=True)
 
 
 _SETTABLE_KEYS = {
@@ -68,12 +67,12 @@ def config_set(assignments: tuple[str, ...]) -> None:
         changed.append(f"{key} = {value}")
 
     for err in errors:
-        err_console.print(f"[red]✗[/red] {err}")
+        err_console.print(f"Error: {err}")
 
     if changed:
         save_cli_config(cli_config)
         for line in changed:
-            console.print(f"[green]✓[/green] {line}")
+            console.print(f"{line}")
 
     if errors:
         raise SystemExit(1)
@@ -95,7 +94,7 @@ def config_get(key: str) -> None:
 
     if key not in _SETTABLE_KEYS:
         err_console.print(
-            f"[red]✗[/red] Unknown key '{key}'. "
+            f"Error: Unknown key '{key}'. "
             f"Valid keys: {', '.join(sorted(_SETTABLE_KEYS))}."
         )
         raise SystemExit(1)
@@ -110,16 +109,13 @@ def config_list() -> None:
     """List all CLI configuration values."""
     cli_config = load_cli_config()
 
-    table = Table(box=box.SIMPLE_HEAD, header_style="bold", border_style="dim")
-    table.add_column("Key")
-    table.add_column("Value")
-    table.add_column("Description", style="dim")
+    table = plain_table(["Key", "Value", "Description"])
 
     for key, field in sorted(_SETTABLE_KEYS.items()):
         value = getattr(cli_config, field, "")
         table.add_row(
             key,
-            str(value) if value else "[dim]—[/dim]",
+            str(value) if value else "-",
             _KEY_HELP.get(key, ""),
         )
 
@@ -146,7 +142,7 @@ def config_reset(yes: bool) -> None:
         environments=current.environments,
     )
     save_cli_config(reset)
-    console.print("[green]✓[/green] Configuration reset to defaults.")
+    console.print("Configuration reset to defaults.")
 
 
 config_group.add_command(config_set)

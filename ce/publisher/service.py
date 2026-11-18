@@ -22,7 +22,8 @@ from ce.publisher.client import (
 CSV_EXTENSIONS = (".csv",)
 JSONLD_EXTENSIONS = (".json", ".jsonld")
 
-# What a CSV file holds, by the name of its BU template: (class, other names it goes by).
+# The BU templates a CSV file can follow. Each key is the template name given to --type; the value is the CTDL class of
+# the resources in it and the other spellings of the name that are accepted.
 CSV_CLASSES: dict[str, tuple[str, tuple[str, ...]]] = {
     "credentials": ("ceterms:Credential", ("credential",)),
     "learning-opportunities": ("ceterms:LearningOpportunity", ("learningopportunity", "learningopportunities", "lopp")),
@@ -50,7 +51,7 @@ CSV_CLASSES: dict[str, tuple[str, tuple[str, ...]]] = {
     ),
 }
 
-# Findings of these types stop a project. The rest are warnings.
+# A project cannot be completed while validation reports a finding of one of these types. Other findings are warnings.
 BLOCKING_FINDING_TYPES = frozenset({"JsonLd", "CsvStructure", "CtidReference"})
 
 VALIDATING = "Validating"
@@ -377,7 +378,7 @@ def wait_for_validation(
         clock=clock,
         stuck_hint=(
             "The validation job may have failed. "
-            f"Check with 'ce publisher project show validation status --project-id {project_id}'."
+            f"Check with 'ce publisher project validation status show --project-id {project_id}'."
         ),
     )
     return validation_summary(client, project_id, iteration_id)
@@ -405,7 +406,7 @@ def wait_for_transform(
         clock=clock,
         stuck_hint=(
             "The transform job may have failed. "
-            f"Check with 'ce publisher project show status --project-id {project_id}'."
+            f"Check with 'ce publisher project status show --project-id {project_id}'."
         ),
     )
 
@@ -439,7 +440,7 @@ def wait_for_publish(
             raise PublisherApiError(
                 f"Project {project_id} is still not published after "
                 f"{timeout_seconds:.0f} seconds. Check again with "
-                f"'ce publisher project show status --project-id {project_id}'."
+                f"'ce publisher project status show --project-id {project_id}'."
             )
         sleep(poll_seconds)
 
@@ -477,7 +478,7 @@ def complete_project(
     if status == COMPLETED or publish_status in (PUBLISHING, PUBLISHED):
         raise PublisherApiError(
             f"Project {project_id} is already {publish_status or status}. "
-            f"See 'ce publisher project show status --project-id {project_id}'."
+            f"See 'ce publisher project status show --project-id {project_id}'."
         )
 
     iteration = client.latest_iteration(project_id)
@@ -520,7 +521,7 @@ def _prepare_for_approval(
     if iteration_status not in (VALIDATED, TRANSFORMED):
         raise PublisherApiError(
             f"Iteration {iteration_id} is {iteration_status}, so it has not been validated. Run "
-            f"'ce publisher project run validation --project-id {project_id}' first."
+            f"'ce publisher project validation run --project-id {project_id}' first."
         )
 
     if iteration_status == VALIDATED:
@@ -528,7 +529,7 @@ def _prepare_for_approval(
         if errors:
             raise PublisherApiError(
                 f"Validation found {len(errors)} error(s) in iteration {iteration_id}. See them with "
-                f"'ce publisher project show validation errors --project-id {project_id}', fix the files "
+                f"'ce publisher project validation errors show --project-id {project_id}', fix the files "
                 "and add them again."
             )
 
