@@ -306,7 +306,6 @@ def run_upload(
         valid_until    = row.get("ValidUntil", "")
         ctid_short     = (ctid[:42] + "…") if len(ctid) > 43 else ctid
         pub_error      = ""
-        jwt_icon       = "-"
         publish_icon   = "-"
 
         def pub_fail(reason: str) -> None:
