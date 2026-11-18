@@ -7,11 +7,11 @@ import sys
 from typing import Callable
 
 import click
-from rich.console import Console
 
+from ce.utils.display import new_console
 from ce.utils.http import APIError
 
-err_console = Console(stderr=True)
+err_console = new_console(stderr=True)
 
 
 def handle_api_errors(f: Callable) -> Callable:
@@ -24,23 +24,23 @@ def handle_api_errors(f: Callable) -> Callable:
         except APIError as exc:
             if exc.status_code == 401:
                 err_console.print(
-                    "[red]✗[/red] Unauthorized. Your session may have expired — run [bold]ce login[/bold]."
+                    "Error: Unauthorized. Your session may have expired — run ce login."
                 )
             elif exc.status_code == 403:
                 err_console.print(
-                    f"[red]✗[/red] Permission denied: {exc.message}"
+                    f"Error: Permission denied: {exc.message}"
                 )
             elif exc.status_code == 404:
                 err_console.print(
-                    f"[red]✗[/red] Not found: {exc.message}"
+                    f"Error: Not found: {exc.message}"
                 )
             else:
-                err_console.print(f"[red]✗[/red] API error: {exc.message}")
+                err_console.print(f"API error: {exc.message}")
             sys.exit(1)
         except click.UsageError:
             raise   
         except Exception as exc:
-            err_console.print(f"[red]✗[/red] Unexpected error: {exc}")
+            err_console.print(f"Unexpected error: {exc}")
             sys.exit(1)
 
     return wrapper

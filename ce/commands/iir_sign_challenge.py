@@ -18,10 +18,10 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import (
     Ed25519PrivateKey,
     Ed25519PublicKey,
 )
-from rich.console import Console
+from ce.utils.display import new_console
 
-console = Console()
-err_console = Console(stderr=True)
+console = new_console()
+err_console = new_console(stderr=True)
 
 
 
@@ -226,7 +226,7 @@ def _assert_signature_verifiable(token: str, kid: str) -> None:
         raise click.ClickException(f"JWT verification error: {e}") from e
 
     err_console.print(
-        "[green]Signature verification: OK[/green] (matches DID public key)"
+        "Signature verification: OK (matches DID public key)"
     )
 
 
@@ -314,6 +314,6 @@ def sign_individual_challenge(
     if out_path:
         with open(out_path, "w", encoding="utf-8") as f:
             f.write(token)
-        err_console.print(f"Wrote Proof JWT to: [cyan]{out_path}[/cyan]")
+        err_console.print(f"Wrote Proof JWT to: {out_path}")
     else:
         click.echo(token)
