@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import click
-from rich.console import Console
+from ce.utils.display import new_console
 
 from ce.commands.iir_sign_challenge import sign_individual_challenge
 
@@ -21,8 +21,8 @@ from ce.iir.csv_processor import run_generate, run_upload
 from ce.iir.did_ops import extract_user_id_from_token
 from ce.utils.errors import handle_api_errors
 
-console = Console()
-err_console = Console(stderr=True)
+console = new_console()
+err_console = new_console(stderr=True)
 
 
 @click.group("iir")
@@ -109,7 +109,7 @@ def bulk_sign(csv_path: str, output_path: str | None, errors_path: str | None) -
     try:
         user_id = extract_user_id_from_token(access_token)
     except ValueError as e:
-        err_console.print(f"[red]✗[/red] {e}")
+        err_console.print(f"Error: {e}")
         raise SystemExit(1)
 
     stem = Path(csv_path).stem
@@ -118,8 +118,8 @@ def bulk_sign(csv_path: str, output_path: str | None, errors_path: str | None) -
     resolved_output = output_path or f"Output-{stem}-{timestamp}.csv"
     resolved_errors = errors_path or f"Errors-{stem}-{timestamp}.csv"
 
-    console.print(f"\n[dim]Environment:[/dim] [bold]{env.label}[/bold]  ({env.publisher_base})")
-    console.print(f"[dim]User ID:[/dim]      [bold]{user_id}[/bold]")
+    console.print(f"\nEnvironment: {env.label}  ({env.publisher_base})")
+    console.print(f"User ID:      {user_id}")
 
     ok, errors = run_generate(
         input_path=csv_path,
@@ -132,8 +132,8 @@ def bulk_sign(csv_path: str, output_path: str | None, errors_path: str | None) -
 
     if ok > 0:
         console.print(
-            f"\n[dim]Next step:[/dim] "
-            f"[bold]ce iir issuer-did publish --input \"{resolved_output}\"[/bold]"
+            f"\nNext step: "
+            f"ce iir issuer-did publish --input \"{resolved_output}\""
         )
 
 
@@ -179,7 +179,7 @@ def publish(input_path: str, publish_errors_path: str | None, yes: bool) -> None
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     resolved_pub_errors = publish_errors_path or f"PublishErrors-{stem}-{timestamp}.csv"
 
-    console.print(f"\n[dim]Environment:[/dim] [bold]{env.label}[/bold]  ({env.publisher_base})")
+    console.print(f"\nEnvironment: {env.label}  ({env.publisher_base})")
 
     run_upload(
         output_path=input_path,

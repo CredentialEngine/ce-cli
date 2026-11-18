@@ -6,12 +6,12 @@ Prints version info for the CLI and (optionally) checks PyPI for a newer release
 from __future__ import annotations
 
 import click
-from rich.console import Console
+from ce.utils.display import new_console
 
 from ce import __version__
 
-console = Console()
-err_console = Console(stderr=True)
+console = new_console()
+err_console = new_console(stderr=True)
 
 
 @click.command("version")
@@ -23,7 +23,7 @@ err_console = Console(stderr=True)
 )
 def version_command(check: bool) -> None:
     """Show the current CLI version."""
-    console.print(f"ce version [bold]{__version__}[/bold]")
+    console.print(f"ce version {__version__}")
 
     if check:
         _check_for_update()
@@ -34,26 +34,26 @@ def _check_for_update() -> None:
     import httpx2
 
     try:
-        with console.status("[dim]Checking for updates…[/dim]"):
+        with console.status("Checking for updates…"):
             resp = httpx2.get(
                 "https://pypi.org/pypi/ce-cli/json",
                 timeout=5,
                 follow_redirects=True,
             )
         if not resp.is_success:
-            console.print("[dim]Could not reach PyPI.[/dim]")
+            console.print("Could not reach PyPI.")
             return
 
         latest = resp.json()["info"]["version"]
     except Exception as exc:
-        console.print(f"[dim]Update check failed: {exc}[/dim]")
+        console.print(f"Update check failed: {exc}")
         return
 
     if latest == __version__:
-        console.print(f"[green]✓[/green] You are up to date.")
+        console.print("You are up to date.")
     else:
         console.print(
-            f"[yellow]⚠[/yellow]  A newer version is available: "
-            f"[bold]{latest}[/bold]  (you have {__version__})\n"
-            f"  Upgrade with: [bold]pip install --upgrade ce-cli[/bold]"
+            f"Warning: A newer version is available: "
+            f"{latest}  (you have {__version__})\n"
+            f"  Upgrade with: pip install --upgrade ce-cli"
         )

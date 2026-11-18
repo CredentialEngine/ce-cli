@@ -89,36 +89,27 @@ def _seed_environments(config: CLIConfig) -> tuple[CLIConfig, bool]:
 
 def prompt_select_environment() -> str:
     """Interactively ask the user to pick an environment. Returns the chosen name."""
-    from rich.console import Console
-    from rich.panel import Panel
-    from rich.table import Table, box
+    from ce.utils.display import new_console, plain_table
 
-    console = Console()
+    console = new_console()
 
     console.print()
-    console.print(Panel(
-        "[bold]Welcome to the Credential Engine CLI![/bold]\n\n"
-        "Please select the environment you want to connect to.\n"
-        "[dim]You can change this at any time with [bold]ce env use <name>[/bold][/dim]",
-        border_style="blue",
-        padding=(1, 2),
-    ))
+    console.print("Welcome to the Credential Engine CLI!")
+    console.print("Select the environment you want to connect to.")
+    console.print("You can change this at any time with ce env use <name>")
+    console.print()
 
-    table = Table(box=box.SIMPLE_HEAD, header_style="bold", border_style="dim", padding=(0, 2))
-    table.add_column("#",             style="dim", width=3)
-    table.add_column("Name")
-    table.add_column("Label")
-    table.add_column("Publisher base")
+    table = plain_table(["#", "Name", "Label", "Publisher base"])
 
     names = list(DEFAULT_ENVIRONMENTS.keys())
     for i, (name, env) in enumerate(DEFAULT_ENVIRONMENTS.items(), 1):
-        table.add_row(str(i), f"[bold]{name}[/bold]", env.label, env.publisher_base)
+        table.add_row(str(i), f"{name}", env.label, env.publisher_base)
 
     console.print(table)
 
     while True:
         raw = console.input(
-            "  [bold]Select environment[/bold] [dim](enter name or number, e.g. sandbox)[/dim]: "
+            "  Select environment (enter name or number, e.g. sandbox): "
         ).strip().lower()
 
         if raw.isdigit():
@@ -126,7 +117,7 @@ def prompt_select_environment() -> str:
             if 0 <= idx < len(names):
                 chosen = names[idx]
                 break
-            console.print(f"  [red]✗[/red] Please enter a number between 1 and {len(names)}.")
+            console.print(f"  Error: Please enter a number between 1 and {len(names)}.")
             continue
 
         if raw in DEFAULT_ENVIRONMENTS:
@@ -134,12 +125,12 @@ def prompt_select_environment() -> str:
             break
 
         console.print(
-            f"  [red]✗[/red] '{raw}' is not a valid environment. "
+            f"  Error: '{raw}' is not a valid environment. "
             f"Choose from: {', '.join(names)}."
         )
 
     env = DEFAULT_ENVIRONMENTS[chosen]
-    console.print(f"\n  [green]✓[/green] Environment set to [bold]{chosen}[/bold] ({env.label}).\n")
+    console.print(f"\n  Environment set to {chosen} ({env.label}).\n")
     return chosen
 
 

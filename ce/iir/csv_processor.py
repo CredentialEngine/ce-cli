@@ -24,9 +24,6 @@ from __future__ import annotations
 import csv
 from pathlib import Path
 
-from rich.console import Console
-from rich.table import Table, box
-
 from ce.iir.did_ops import (
     call_create_challenges,
     call_get_organization_iir_detail,
@@ -46,9 +43,10 @@ from ce.iir.did_ops import (
     validate_verification_method,
     verify_proof_jwt,
 )
+from ce.utils.display import new_console, plain_table
 
-console = Console()
-err_console = Console(stderr=True)
+console = new_console()
+err_console = new_console(stderr=True)
 
 
 OUTPUT_FIELDS      = ["CTID", "DID", "VerificationMethod", "Challenge", "ProofJWT", "ValidFrom", "ValidUntil"]
@@ -99,15 +97,12 @@ def run_generate(
     error_rows : list[dict] = []
     total = len(rows)
 
-    table = Table(box=box.SIMPLE_HEAD, header_style="bold", border_style="dim", show_lines=False)
-    table.add_column("#",        width=4,  style="dim")
-    table.add_column("CTID",     width=44)
-    table.add_column("Member",   width=8)
-    table.add_column("Registry", width=10)
-    table.add_column("DID type", width=10)
-    table.add_column("Result",   width=36)
+    table = plain_table(
+        ["#", "CTID", "Member", "Registry", "DID type", "Result"],
+        widths=[4, 44, 8, 10, 10, 36],
+    )
 
-    console.print(f"\n[bold]Processing {total} row(s) from '{input_path}'…[/bold]\n")
+    console.print(f"\nProcessing {total} row(s) from '{input_path}'…\n")
 
     for i, row in enumerate(rows, 1):
         ctid    = row.get("ctid", "")
@@ -119,8 +114,8 @@ def run_generate(
         valid_until = row.get("validuntil", "")
         did_type      = "unknown"
         error         = ""
-        member_icon   = "[dim]—[/dim]"
-        registry_icon = "[dim]—[/dim]"
+        member_icon   = "-"
+        registry_icon = "-"
         registry_data : dict = {}
 
         def fail(reason: str) -> None:
@@ -144,7 +139,7 @@ def run_generate(
             ok, err = call_is_user_member(
                 user_id, ctid, access_token, env.publisher_base, env.ssl_verify
             )
-            member_icon = "[green]✓[/green]" if ok else "[red]✗[/red]"
+            member_icon = "ok" if ok else "fail"
             if not ok:
                 fail(err)
 
@@ -152,7 +147,7 @@ def run_generate(
             ok, registry_data, err = call_get_registry_resource(
                 ctid, access_token, env.publisher_base, env.ssl_verify
             )
-            registry_icon = "[green]✓[/green]" if ok else "[red]✗[/red]"
+            registry_icon = "ok" if ok else "fail"
             if not ok:
                 fail(err)
 
@@ -224,7 +219,7 @@ def run_generate(
         ctid_short = (ctid[:42] + "…") if len(ctid) > 43 else ctid
 
         if not error:
-            result = f"[green]✓[/green] {challenge_uuid[:20]}…"
+            result = f"ok {challenge_uuid[:20]}…"
             ok_rows.append({
                 "CTID":               ctid,
                 "DID":                did,
@@ -235,7 +230,7 @@ def run_generate(
                 "ValidUntil":         valid_until,
             })
         else:
-            result = f"[red]✗[/red] {error[:36]}"
+            result = f"fail {error[:36]}"
             error_rows.append({
                 "CTID":               ctid,
                 "DID":                did,
@@ -258,12 +253,12 @@ def run_generate(
         writer.writeheader()
         writer.writerows(error_rows)
 
-    console.print(f"\n[green]✓[/green] {len(ok_rows)} succeeded  →  [bold]{output_file}[/bold]")
+    console.print(f"\n{len(ok_rows)} succeeded: {output_file}")
     if error_rows:
-        console.print(f"[red]✗[/red] {len(error_rows)} failed     →  [bold]{errors_file}[/bold]")
+        console.print(f"{len(error_rows)} failed: {errors_file}")
         console.print(
             f"  Fix errors and rerun: "
-            f"[bold]ce iir challenge bulk-sign --csv {errors_file.name}[/bold]"
+            f"ce iir challenge bulk-sign --csv {errors_file.name}"
         )
 
     return len(ok_rows), len(error_rows)
@@ -297,13 +292,9 @@ def run_upload(
 
     publish_error_rows: list[dict] = []
 
-    table = Table(box=box.SIMPLE_HEAD, header_style="bold", border_style="dim")
-    table.add_column("#",       width=4,  style="dim")
-    table.add_column("CTID",    width=44)
-    table.add_column("JWT",     width=6)
-    table.add_column("Publish", width=9)
+    table = plain_table(["#", "CTID", "JWT", "Publish"], widths=[4, 44, 6, 9])
 
-    console.print(f"\n[bold]Publishing {len(rows)} issuer(s)…[/bold]\n")
+    console.print(f"\nPublishing {len(rows)} issuer(s)…\n")
 
     for i, row in enumerate(rows, 1):
         ctid           = row["CTID"]
@@ -315,8 +306,8 @@ def run_upload(
         valid_until    = row.get("ValidUntil", "")
         ctid_short     = (ctid[:42] + "…") if len(ctid) > 43 else ctid
         pub_error      = ""
-        jwt_icon       = "[dim]—[/dim]"
-        publish_icon   = "[dim]—[/dim]"
+        jwt_icon       = "-"
+        publish_icon   = "-"
 
         def pub_fail(reason: str) -> None:
             nonlocal pub_error
@@ -325,7 +316,7 @@ def run_upload(
         ok, err = call_verify_jwt_signature(
             proof_jwt, challenge_uuid, access_token, env.publisher_base, env.ssl_verify
         )
-        jwt_icon = "[green]✓[/green]" if ok else "[red]✗[/red]"
+        jwt_icon = "ok" if ok else "fail"
         if not ok:
             pub_fail(err)
 
@@ -363,7 +354,7 @@ def run_upload(
                     valid_from=valid_from,
                     valid_until=valid_until,
                 )
-                publish_icon = "[green]✓[/green]" if ok else "[red]✗[/red]"
+                publish_icon = "ok" if ok else "fail"
                 if not ok:
                     pub_fail(err)
 
@@ -384,8 +375,8 @@ def run_upload(
         writer.writerows(publish_error_rows)
 
     ok_count = len(rows) - len(publish_error_rows)
-    console.print(f"\n[green]✓[/green] {ok_count} published successfully.")
+    console.print(f"\n{ok_count} published successfully.")
     if publish_error_rows:
         console.print(
-            f"[red]✗[/red] {len(publish_error_rows)} error(s)  →  [bold]{publish_err_file}[/bold]"
+            f"{len(publish_error_rows)} error(s): {publish_err_file}"
         )

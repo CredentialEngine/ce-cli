@@ -246,11 +246,11 @@ finds, then complete it. The Publisher has three kinds of project; ce-cli works 
 | ------- | ----------- |
 | `ce publisher project create --name <name> [--jsonld]` | Create a project. A BU project is the default; `--jsonld` makes an API publishing project |
 | `ce publisher project add --project-id <id> --file <file or folder> [--type <template>]` | Add files, or replace the files of the same name. A BU project needs `--type`, the BU template the files follow: `credentials`, `learning-opportunities`, `assessments`, `jobs`, … Repeat `--file` for several; `--recursive` for subfolders |
-| `ce publisher project run validation --project-id <id>` | Validate the latest iteration, including the CTIDs it refers to. A BU project starts validating when files are added, so this waits for it (`--no-wait` to return at once) |
-| `ce publisher project show validation status --project-id <id>` | How many files passed and how many have errors (`--verbose` lists each one) |
-| `ce publisher project show validation errors --project-id <id>` | The errors to fix |
-| `ce publisher project show status --project-id <id>` | The project, its latest iteration and each publishing stage |
-| `ce publisher project show audit --project-id <id>` | Who did what, oldest first |
+| `ce publisher project validation run --project-id <id>` | Validate the latest iteration, including the CTIDs it refers to. A BU project starts validating when files are added, so this waits for it (`--no-wait` to return at once) |
+| `ce publisher project validation status show --project-id <id>` | How many files passed and how many have errors (`--verbose` lists each one) |
+| `ce publisher project validation errors show --project-id <id>` | The errors to fix |
+| `ce publisher project status show --project-id <id>` | The project, its latest iteration and each publishing stage |
+| `ce publisher project audit show --project-id <id>` | Who did what, oldest first |
 | `ce publisher project complete --project-id <id>` | Approve the project and publish it (`--no-wait` to return at once). Run again to retry a failed publish |
 | `ce publisher project list` | Your projects |
 | `ce publisher project abandon --project-id <id>` | Abandon a project that was not published |
@@ -260,12 +260,12 @@ Every `show` command takes `-o json`.
 ```text
 ce publisher project create --name "Welding certificates"
 ce publisher project add --project-id 23 --file credentials.csv --type credentials
-ce publisher project run validation --project-id 23
-ce publisher project show validation errors --project-id 23
+ce publisher project validation run --project-id 23
+ce publisher project validation errors show --project-id 23
 ce publisher project add --project-id 23 --file fixed\credentials.csv --type credentials
-ce publisher project run validation --project-id 23
+ce publisher project validation run --project-id 23
 ce publisher project complete --project-id 23
-ce publisher project show audit --project-id 23
+ce publisher project audit show --project-id 23
 ```
 
 How it behaves:
@@ -286,7 +286,7 @@ The Publisher API address comes from the environment (`publisher_api_base`); ove
 `CE_PUBLISHER_API_URL`. Your account needs the Publisher user role and a tenant on its profile.
 
 The commands call the Publisher through a client generated from its Swagger document
-(`ce/publisher/api/publisher_client`). `generate.ps1` regenerates it. The legacy Registry Assistant request format is
+(`src/sdks/publisher-api/generated-client/publisher_client`, laid out as in ceops). `src/sdks/publisher-api/README.md` says how to regenerate it. The legacy Registry Assistant request format is
 a Publisher feature flag that is off by default; ce-cli does not offer it, and a client generated while it is off has
 no call for it.
 
@@ -316,6 +316,10 @@ ce-cli/
     │   └── did_ops.py             # DID validation, challenges, JWT signing
     └── utils/
         ├── http.py                # Authenticated httpx2 wrapper + APIError
+        ├── display.py             # Plain consoles and tables (no boxes or colours)
         ├── output.py              # table/json/yaml/tsv renderer + @output_option
         └── errors.py              # @handle_api_errors decorator
 ```
+
+Output is plain text: no boxes, no colours, no highlighting. Spinners are the only decoration. Use `ce.utils.display`
+(`new_console`, `plain_table`, `print_pairs`) for anything new; `tests/test_plain_output.py` fails if styling comes back.

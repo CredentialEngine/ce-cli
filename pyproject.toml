@@ -40,9 +40,12 @@ dev = [
 
 [tool.setuptools_scm]
 
+[tool.setuptools]
+package-dir = { "" = ".", "publisher_client" = "src/sdks/publisher-api/generated-client/publisher_client" }
+
 [tool.setuptools.packages.find]
-where = ["."]
-include = ["ce*"]
+where = [".", "src/sdks/publisher-api/generated-client"]
+include = ["ce*", "publisher_client*"]
 
 [tool.pytest.ini_options]
 addopts = "--record-mode=none"

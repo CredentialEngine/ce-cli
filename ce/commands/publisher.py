@@ -2,11 +2,11 @@
 
     ce publisher project create --name NAME [--jsonld]
     ce publisher project add --project-id N --file FILE --type credentials
-    ce publisher project run validation --project-id N
-    ce publisher project show validation status --project-id N
-    ce publisher project show validation errors --project-id N
-    ce publisher project show status --project-id N
-    ce publisher project show audit --project-id N
+    ce publisher project validation run --project-id N
+    ce publisher project validation status show --project-id N
+    ce publisher project validation errors show --project-id N
+    ce publisher project status show --project-id N
+    ce publisher project audit show --project-id N
     ce publisher project complete --project-id N
     ce publisher project list
     ce publisher project abandon --project-id N
@@ -26,13 +26,12 @@ from pathlib import Path
 from typing import Any
 
 import click
-from rich.console import Console
+from ce.utils.display import new_console
 
 from ce.auth.token_manager import require_login
 from ce.config.context import DEFAULT_ENVIRONMENTS, require_environment
 from ce.publisher import service
 from ce.publisher.client import (
-    API_PROJECT,
     BULK_UPLOAD_PROJECT,
     REGISTRY_SYNC_PROJECT,
     PublisherApiError,
@@ -41,8 +40,8 @@ from ce.publisher.client import (
     resolve_publisher_url,
 )
 
-console = Console()
-err_console = Console(stderr=True)
+console = new_console()
+err_console = new_console(stderr=True)
 
 _VALIDATION_WAIT_SECONDS = 600
 _PUBLISH_WAIT_SECONDS = 900
@@ -99,14 +98,14 @@ def _describe_error(exc: PublisherApiError) -> str:
     if exc.status_code == 401:
         return f"{exc} Your session may have expired; run 'ce login'."
     if exc.status_code == 403 and not exc.detail:
-        # The Publisher gave no reason: the Publisher user role is missing. When it does give one (only the
-        # author may change the project; nobody could be checked as the owner; ...), that reason is the answer.
+        # A 403 with no message means the account does not have the Publisher user role. A 403 that comes with a
+        # message (for example, only the project's author may change it) is shown as it is, by the line below.
         return f"{exc} Your account needs the Publisher user role."
     return str(exc)
 
 
 def _fail(message: str) -> None:
-    err_console.print(f"[red]✗[/red] {message}", highlight=False, soft_wrap=True)
+    err_console.print(f"Error: {message}", highlight=False, soft_wrap=True)
     sys.exit(1)
 
 
@@ -122,8 +121,8 @@ def publisher_group() -> None:
     A project collects the files you publish together:
       1. ce publisher project create --name "My project"
       2. ce publisher project add --project-id N --file credentials.csv --type credentials
-      3. ce publisher project run validation --project-id N
-      4. ce publisher project show validation errors --project-id N
+      3. ce publisher project validation run --project-id N
+      4. ce publisher project validation errors show --project-id N
       5. fix the files and add them again, then validate again
       6. ce publisher project complete --project-id N
 
@@ -218,7 +217,7 @@ def project_add(
             result = client.upload_jsonld(project_id, files)
 
     for path in files:
-        console.print(f"[green]✓[/green] Added {path.name}", highlight=False, soft_wrap=True)
+        console.print(f"Added {path.name}", highlight=False, soft_wrap=True)
 
     note = " Validation has started." if kind == BULK_UPLOAD_PROJECT else " Run validation when you have added everything."
     console.print(
@@ -228,15 +227,17 @@ def project_add(
     )
 
 
-# ce publisher project run validation
+# ce publisher project validation run
+# ce publisher project validation status show
+# ce publisher project validation errors show
 
 
-@project_group.group("run")
-def run_group() -> None:
-    """Run a step of a project."""
+@project_group.group("validation")
+def validation_group() -> None:
+    """Run validation on a project and show what it found."""
 
 
-@run_group.command("validation")
+@validation_group.command("run")
 @_project_option
 @click.option("--wait/--no-wait", default=True, show_default=True,
               help="Wait until validation has finished.")
@@ -274,7 +275,7 @@ def run_validation(project_id: int, wait: bool, timeout: int, publisher_url: str
         if not wait and status in ("Created", service.VALIDATING):
             return
 
-        with console.status("[dim]Validating...[/dim]"):
+        with console.status("Validating..."):
             summary = service.wait_for_validation(
                 client, project_id, iteration_id, timeout_seconds=timeout
             )
@@ -301,15 +302,16 @@ def _already_validated_note(project_kind: object, iteration_id: int) -> str:
     )
 
 
-# ce publisher project show ...
+# ce publisher project status show
+# ce publisher project audit show
 
 
-@project_group.group("show")
-def show_group() -> None:
-    """Show a project's state, validation results or audit log."""
+@project_group.group("status")
+def status_group() -> None:
+    """The state of a project."""
 
 
-@show_group.command("status")
+@status_group.command("show")
 @_project_option
 @_output_option
 @_publisher_url_option
@@ -351,7 +353,12 @@ def show_status(project_id: int, output: str, publisher_url: str | None) -> None
         console.print(f"  {job.get('stage')}: {job.get('status')}{error}", highlight=False)
 
 
-@show_group.command("audit")
+@project_group.group("audit")
+def audit_group() -> None:
+    """The log of what was done to a project."""
+
+
+@audit_group.command("show")
 @_project_option
 @_output_option
 @_publisher_url_option
@@ -375,12 +382,12 @@ def show_audit(project_id: int, output: str, publisher_url: str | None) -> None:
         )
 
 
-@show_group.group("validation")
-def show_validation_group() -> None:
-    """Show the validation results of the project's latest iteration."""
+@validation_group.group("status")
+def validation_status_group() -> None:
+    """How many files passed validation, for the project's latest iteration."""
 
 
-@show_validation_group.command("status")
+@validation_status_group.command("show")
 @_project_option
 @click.option("--verbose", "-v", is_flag=True, help="List every file and what was found in it.")
 @_output_option
@@ -402,7 +409,12 @@ def show_validation_status(
     _print_validation_status(summary, verbose=verbose)
 
 
-@show_validation_group.command("errors")
+@validation_group.group("errors")
+def validation_errors_group() -> None:
+    """The validation errors of the project's latest iteration."""
+
+
+@validation_errors_group.command("show")
 @_project_option
 @_output_option
 @_publisher_url_option
@@ -450,8 +462,8 @@ def _print_validation_status(summary: service.ValidationSummary, *, verbose: boo
 
     failed = set(summary.files_with_errors)
     for name in summary.files:
-        mark = "[red]✗[/red]" if name in failed else "[green]✓[/green]"
-        console.print(f"  {mark} {name}", highlight=False, soft_wrap=True)
+        mark = "FAIL" if name in failed else "ok  "
+        console.print(f"  {mark}  {name}", highlight=False, soft_wrap=True)
         for finding in summary.findings:
             if finding.file_name == name:
                 console.print(
@@ -482,7 +494,7 @@ def project_complete(project_id: int, wait: bool, timeout: int, publisher_url: s
     """
     with _client(publisher_url) as client:
         user_id = service.user_id_from_token(client.access_token)
-        with console.status("[dim]Completing...[/dim]"):
+        with console.status("Completing..."):
             service.complete_project(
                 client,
                 project_id,
@@ -506,18 +518,18 @@ def _wait_and_report(client: PublisherClient, project_id: int, timeout: int) -> 
                 seen[stage] = status
                 console.print(f"  {stage}: {status}", highlight=False)
 
-    with console.status(f"[dim]Publishing project {project_id}...[/dim]"):
+    with console.status(f"Publishing project {project_id}..."):
         outcome = service.wait_for_publish(
             client, project_id, timeout_seconds=timeout, on_progress=on_progress
         )
 
     if outcome.result == "published":
-        console.print(f"[green]✓[/green] Project {project_id} is published.", highlight=False)
+        console.print(f"Project {project_id} is published.", highlight=False)
         return True
 
     console.print(
-        f"[red]✗[/red] Project {project_id} is {outcome.result}. "
-        f"See 'ce publisher project show status --project-id {project_id}'.",
+        f"Error: Project {project_id} is {outcome.result}. "
+        f"See 'ce publisher project status show --project-id {project_id}'.",
         highlight=False,
         soft_wrap=True,
     )
@@ -541,7 +553,7 @@ def project_abandon(project_id: int, yes: bool, publisher_url: str | None) -> No
 
 def _short_time(value: str) -> str:
     """An ISO UTC time from the Publisher as 'yyyy-mm-dd hh:mm:ss UTC', or the value as given."""
-    # .NET sends 7 fractional digits; Python before 3.11 reads at most 6.
+    # The Publisher sends 7 digits after the seconds; Python's date parser accepts at most 6, so cut the rest.
     text = re.sub(r"(\.\d{6})\d+", r"\1", value).replace("Z", "+00:00")
     try:
         moment = datetime.fromisoformat(text)
