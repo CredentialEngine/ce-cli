@@ -1,7 +1,6 @@
 """IIR command group:
 
-    ce iir challenge sign           # single challenge (Ed25519, EdDSA)
-    ce iir challenge sign-rs256     # single challenge (RSA, RS256)
+    ce iir challenge sign           # single challenge (--algorithm Ed25519 | RS256)
     ce iir challenge bulk-sign      # bulk DID challenge signing
     ce iir issuer-did publish       # publish signed challenges to IIR
 """
@@ -15,7 +14,6 @@ import click
 from rich.console import Console
 
 from ce.commands.iir_sign_challenge import sign_individual_challenge
-from ce.commands.iir_sign_challenge_rs256 import sign_rs256_challenge
 
 from ce.auth.token_manager import require_login
 from ce.config.context import require_environment
@@ -49,11 +47,6 @@ def issuer_did_group() -> None:
 # ce iir challenge sign  (single)
 
 challenge_group.add_command(sign_individual_challenge, name="sign")
-
-
-# ce iir challenge sign-rs256  (single, RSA)
-
-challenge_group.add_command(sign_rs256_challenge, name="sign-rs256")
 
 
 # ce iir challenge bulk-sign

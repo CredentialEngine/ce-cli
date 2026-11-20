@@ -1,10 +1,8 @@
-"""`ce iir challenge sign-rs256` - sign and verify a Proof JWT for a CE challenge with RSA (RS256).
+"""RS256 signing for `ce iir challenge sign --algorithm RS256`.
 
-Reads a challenge JSON file produced by CE, signs it with an RSA private key
-(alg=RS256), and verifies the resulting JWT against the public key resolved from
-the DID (did:key or did:web). No login required.
-
-Ed25519 keys are handled by `ce iir challenge sign` (alg=EdDSA).
+Signs a CE challenge with an RSA private key (alg=RS256) and verifies the
+resulting JWT against the public key resolved from the DID (did:key or did:web).
+The Ed25519 path lives in ce.commands.iir_sign_challenge.
 
 Key resolution:
   - did:key : multicodec 0x1205 (rsa-pub), PKCS#1 RSAPublicKey DER, base58btc.
@@ -18,6 +16,7 @@ from __future__ import annotations
 import base64
 import binascii
 import json
+from pathlib import Path
 from typing import Any, Dict, Tuple
 from urllib.parse import quote, unquote
 
@@ -38,8 +37,12 @@ MULTICODEC_RSA_PUB = 0x1205
 MIN_RSA_KEY_SIZE_BITS = 2048
 VERIFICATION_METHOD_TYPE = "JsonWebKey2020"
 
-
+# Verification relationships the IIR API accepts for an RSA key.
 ACCEPTED_RELATIONSHIPS = ("authentication",)
+
+
+
+# Multibase + multicodec helpers
 
 def _parse_uvarint(data: bytes) -> Tuple[int, int]:
     x = 0
@@ -365,85 +368,48 @@ def _assert_signature_verifiable(token: str, kid: str) -> None:
 
 
 
-# Click command
+# Entry point used by `ce iir challenge sign --algorithm RS256`
 
-@click.command("sign-rs256")
-@click.option(
-    "--private-key-file",
-    "private_key_file",
-    default=None,
-    type=click.Path(exists=True, dir_okay=False, readable=True),
-    metavar="PATH",
-    help="RSA private key file, PEM or DER (PKCS#8 or PKCS#1), unencrypted.",
-)
-@click.option(
-    "--private-key-pem",
-    "private_key_pem",
-    default=None,
-    metavar="TEXT",
-    help="Pasted RSA private key: full PEM (newlines or literal \\n) or just the base64 body.",
-)
-@click.option(
-    "--challenge-file",
-    "challenge_file",
-    required=True,
-    type=click.Path(exists=True, dir_okay=False, readable=True),
-    metavar="PATH",
-    help="Path to CE-generated challenge JSON file.",
-)
-@click.option(
-    "--output", "-o",
-    "out_path",
-    default=None,
-    type=click.Path(dir_okay=False, writable=True),
-    metavar="PATH",
-    help="Write JWT to this file (otherwise printed to stdout).",
-)
-def sign_rs256_challenge(
-    private_key_file: str | None,
-    private_key_pem: str | None,
-    challenge_file: str,
-    out_path: str | None,
-) -> None:
-    """Sign a single CE challenge JSON file with an RSA key and produce a Proof JWT (RS256).
+def load_private_key_argument(value: str) -> RSAPrivateKey:
+    """--private-key for RS256: a path to a PEM/DER key file, or the PEM text itself."""
+    value = value.strip()
+    if not value:
+        raise click.ClickException("--private-key is empty.")
 
-    \b
-    Give exactly one of --private-key-file or --private-key-pem.
-    The challenge JSON must include: did, challenge, aud, iat, exp.
-    Signature verification uses did:key (offline) or did:web (HTTPS).
+    is_text = "-----BEGIN" in value or "\\n" in value
+    if not is_text:
+        try:
+            path = Path(value).expanduser()
+            if path.is_file():
+                return _load_signing_key(str(path), None)
+        except OSError:
+            pass
 
-    \b
-    Example:
-      ce iir challenge sign-rs256 \\
-        --private-key-file rsa-key.pem \\
-        --challenge-file challenge.json \\
-        --output signed-challenge.jwt
-    """
-    signing_key = _load_signing_key(private_key_file, private_key_pem)
+        if value.startswith("z") and len(value) < 120:
+            raise click.ClickException(
+                "This looks like an Ed25519 multibase key. Use --algorithm Ed25519 for Ed25519 keys."
+            )
 
+        if not _looks_like_base64(value):
+            raise click.ClickException(f"RSA private key file not found: {value}")
+
+    return _load_signing_key(None, value)
+
+
+def _looks_like_base64(value: str) -> bool:
+    body = "".join(value.split())
+    if len(body) < 100:
+        return False
     try:
-        with open(challenge_file, "r", encoding="utf-8") as f:
-            payload_obj = json.load(f)
-    except json.JSONDecodeError as e:
-        raise click.ClickException(f"Challenge file is not valid JSON: {e}")
+        base64.b64decode(body, validate=True)
+    except (binascii.Error, ValueError):
+        return False
+    return True
 
-    if not isinstance(payload_obj, dict):
-        raise click.ClickException("Challenge payload must be a JSON object.")
 
-    required_fields = ["did", "challenge", "aud", "iat", "exp"]
-    missing = [k for k in required_fields if k not in payload_obj]
-    if missing:
-        raise click.ClickException(
-            f"Challenge JSON missing required field(s): {', '.join(missing)}"
-        )
-
-    did_value = payload_obj.get("did")
-    if not isinstance(did_value, str) or not did_value.strip():
-        raise click.ClickException(
-            'Challenge JSON must include a non-empty string field "did".'
-        )
-
-    kid = did_value.strip()
+def sign_and_verify(private_key_value: str, kid: str, payload_obj: Dict[str, Any]) -> str:
+    """Load the RSA key, sign the challenge with RS256, and verify it against the DID."""
+    signing_key = load_private_key_argument(private_key_value)
 
     try:
         token = _sign_payload(signing_key, kid, payload_obj)
@@ -457,9 +423,4 @@ def sign_rs256_challenge(
     except ValueError as e:
         raise click.ClickException(f"DID resolution error: {e}")
 
-    if out_path:
-        with open(out_path, "w", encoding="utf-8") as f:
-            f.write(token)
-        err_console.print(f"Wrote Proof JWT to: [cyan]{out_path}[/cyan]")
-    else:
-        click.echo(token)
+    return token

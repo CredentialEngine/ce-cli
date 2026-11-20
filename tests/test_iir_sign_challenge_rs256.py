@@ -1,5 +1,5 @@
 """
-Unit tests for ce.commands.iir_sign_challenge_rs256.
+Unit tests for ce.commands.iir_sign_challenge_rs256 (the RS256 path of `ce iir challenge sign`).
 Run with:
     pytest -m unit -s
 """
@@ -14,7 +14,6 @@ from unittest.mock import MagicMock, patch
 import click
 import pytest
 import requests
-from click.testing import CliRunner
 
 
 
@@ -34,7 +33,8 @@ from ce.commands.iir_sign_challenge_rs256 import (
     _resolve_public_key_for_kid,
     _sign_payload,
     _verify_signature_only,
-    sign_rs256_challenge,
+    load_private_key_argument,
+    sign_and_verify,
 )
 
 
@@ -515,90 +515,98 @@ class TestAssertSignatureVerifiable:
 
 
 
-class TestSignRs256Command:
-    """End-to-end through the click command."""
-
-    def _run(self, args):
-        result = CliRunner().invoke(sign_rs256_challenge, args)
-        return result.exit_code, result.output
-
-    def _key_file(self, rsa_key, tmp_path) -> Path:
+class TestLoadPrivateKeyArgument:
+    def test_file_path(self, rsa_key, tmp_path):
         from cryptography.hazmat.primitives import serialization
         path = tmp_path / "rsa.pem"
         path.write_bytes(_pem(rsa_key, serialization.PrivateFormat.PKCS8))
-        return path
+        assert load_private_key_argument(str(path)).key_size == 2048
 
-    def test_key_file_did_key(self, rsa_key, rsa_kid, tmp_path, challenge_payload):
-        challenge = _write_json(tmp_path / "challenge.json", challenge_payload)
-        out_path = tmp_path / "signed.jwt"
-
-        code, output = self._run(
-            [
-                "--private-key-file", str(self._key_file(rsa_key, tmp_path)),
-                "--challenge-file", str(challenge),
-                "-o", str(out_path),
-            ]
-        )
-
-        assert code == 0, output
-        header = _decode_segment(out_path.read_text(encoding="utf-8"), 0)
-        assert header["alg"] == "RS256"
-        assert header["kid"] == rsa_kid
-
-    def test_pasted_pem_did_web(self, rsa_key, tmp_path, challenge_payload):
+    def test_pem_text(self, rsa_key):
         from cryptography.hazmat.primitives import serialization
-        challenge = _write_json(tmp_path / "challenge.json", dict(challenge_payload, did=DID_WEB_KID))
+        text = _pem(rsa_key, serialization.PrivateFormat.PKCS8).decode()
+        assert load_private_key_argument(text).key_size == 2048
 
-        with _mock_did_json(_did_web_doc(rsa_key.public_key())):
-            code, output = self._run(
-                [
-                    "--private-key-pem", _pem(rsa_key, serialization.PrivateFormat.PKCS8).decode(),
-                    "--challenge-file", str(challenge),
-                ]
-            )
+    def test_pem_text_with_literal_backslash_n(self, rsa_key):
+        from cryptography.hazmat.primitives import serialization
+        text = _pem(rsa_key, serialization.PrivateFormat.PKCS8).decode().replace("\n", "\\n")
+        assert load_private_key_argument(text).key_size == 2048
 
-        assert code == 0, output
-        token = output.strip().splitlines()[-1]
-        assert _decode_segment(token, 0)["kid"] == DID_WEB_KID
+    def test_bare_base64_body(self, rsa_key):
+        from cryptography.hazmat.primitives import serialization
+        body = "".join(
+            line
+            for line in _pem(rsa_key, serialization.PrivateFormat.PKCS8).decode().splitlines()
+            if "-----" not in line
+        )
+        assert load_private_key_argument(body).key_size == 2048
 
-    def test_ed25519_key_rejected(self, tmp_path, challenge_payload):
+    def test_missing_file(self, tmp_path):
+        with pytest.raises(click.ClickException, match="RSA private key file not found"):
+            load_private_key_argument(str(tmp_path / "missing.pem"))
+
+    def test_ed25519_multibase_gets_hint(self):
+        with pytest.raises(click.ClickException, match="--algorithm Ed25519"):
+            load_private_key_argument("z3u2en7t5LR2WtQH5PfsRMHEsVGzpW2GZaRcX5qnwX4bBEzhJR")
+
+    def test_ed25519_pem_rejected(self, tmp_path):
         from cryptography.hazmat.primitives import serialization
         from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-        key_path = tmp_path / "ed.pem"
-        key_path.write_bytes(_pem(Ed25519PrivateKey.generate(), serialization.PrivateFormat.PKCS8))
-        challenge = _write_json(tmp_path / "challenge.json", challenge_payload)
+        path = tmp_path / "ed.pem"
+        path.write_bytes(_pem(Ed25519PrivateKey.generate(), serialization.PrivateFormat.PKCS8))
+        with pytest.raises(click.ClickException, match="Expected an RSA private key"):
+            load_private_key_argument(str(path))
 
-        code, output = self._run(["--private-key-file", str(key_path), "--challenge-file", str(challenge)])
+    def test_small_key_rejected(self, tmp_path):
+        from cryptography.hazmat.primitives import serialization
+        from cryptography.hazmat.primitives.asymmetric import rsa
+        path = tmp_path / "small.pem"
+        path.write_bytes(_pem(rsa.generate_private_key(public_exponent=65537, key_size=1024), serialization.PrivateFormat.PKCS8))
+        with pytest.raises(click.ClickException, match="2048"):
+            load_private_key_argument(str(path))
 
-        assert code != 0
-        assert "ce iir challenge sign" in output
+    def test_empty_rejected(self):
+        with pytest.raises(click.ClickException, match="empty"):
+            load_private_key_argument("   ")
 
-    def test_did_is_ed25519_rejected(self, rsa_key, tmp_path, challenge_payload):
-        challenge = _write_json(tmp_path / "challenge.json", dict(challenge_payload, did=ED25519_DID_KEY))
 
-        code, output = self._run(
-            ["--private-key-file", str(self._key_file(rsa_key, tmp_path)), "--challenge-file", str(challenge)]
-        )
+class TestSignAndVerify:
+    def test_did_key(self, rsa_key, rsa_kid, tmp_path, challenge_payload):
+        from cryptography.hazmat.primitives import serialization
+        path = tmp_path / "rsa.pem"
+        path.write_bytes(_pem(rsa_key, serialization.PrivateFormat.PKCS8))
 
-        assert code != 0
-        assert "not an RSA public key" in output
+        token = sign_and_verify(str(path), rsa_kid, challenge_payload)
 
-    def test_missing_required_field_rejected(self, rsa_key, tmp_path, challenge_payload):
-        payload = dict(challenge_payload)
-        del payload["exp"]
-        challenge = _write_json(tmp_path / "challenge.json", payload)
+        assert _decode_segment(token, 0) == {"typ": "JWT", "alg": "RS256", "kid": rsa_kid}
+        assert _decode_segment(token, 1) == challenge_payload
 
-        code, output = self._run(
-            ["--private-key-file", str(self._key_file(rsa_key, tmp_path)), "--challenge-file", str(challenge)]
-        )
+    def test_did_web(self, rsa_key, challenge_payload):
+        from cryptography.hazmat.primitives import serialization
+        text = _pem(rsa_key, serialization.PrivateFormat.PKCS8).decode()
 
-        assert code != 0
-        assert "exp" in output
+        with _mock_did_json(_did_web_doc(rsa_key.public_key())):
+            token = sign_and_verify(text, DID_WEB_KID, dict(challenge_payload, did=DID_WEB_KID))
 
-    def test_no_key_option_rejected(self, tmp_path, challenge_payload):
-        challenge = _write_json(tmp_path / "challenge.json", challenge_payload)
+        assert _decode_segment(token, 0)["kid"] == DID_WEB_KID
 
-        code, output = self._run(["--challenge-file", str(challenge)])
+    def test_wrong_key_for_did(self, other_rsa_key, rsa_kid, challenge_payload):
+        from cryptography.hazmat.primitives import serialization
+        text = _pem(other_rsa_key, serialization.PrivateFormat.PKCS8).decode()
+        with pytest.raises(click.ClickException, match="Signature verification failed"):
+            sign_and_verify(text, rsa_kid, challenge_payload)
 
-        assert code != 0
-        assert "exactly one" in output
+    def test_ed25519_did_rejected(self, rsa_key, challenge_payload):
+        from cryptography.hazmat.primitives import serialization
+        text = _pem(rsa_key, serialization.PrivateFormat.PKCS8).decode()
+        with pytest.raises(click.ClickException, match="not an RSA public key"):
+            sign_and_verify(text, ED25519_DID_KEY, dict(challenge_payload, did=ED25519_DID_KEY))
+
+    def test_did_web_fetch_error(self, rsa_key, challenge_payload):
+        from cryptography.hazmat.primitives import serialization
+        text = _pem(rsa_key, serialization.PrivateFormat.PKCS8).decode()
+        mock_resp = MagicMock()
+        mock_resp.raise_for_status.side_effect = requests.HTTPError("404 Not Found")
+        with patch(f"{MODULE}.requests.get", return_value=mock_resp):
+            with pytest.raises(click.ClickException, match="Failed to fetch did.json"):
+                sign_and_verify(text, DID_WEB_KID, dict(challenge_payload, did=DID_WEB_KID))
