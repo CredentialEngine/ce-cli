@@ -33,6 +33,7 @@ from ce.commands.iir_sign_challenge_rs256 import (
     _resolve_public_key_for_kid,
     _sign_payload,
     _verify_signature_only,
+    is_existing_file,
     load_private_key_argument,
     sign_and_verify,
 )
@@ -201,7 +202,7 @@ class TestLoadPrivateKey:
         from cryptography.hazmat.primitives import serialization
         from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
         pem = _pem(Ed25519PrivateKey.generate(), serialization.PrivateFormat.PKCS8)
-        with pytest.raises(ValueError, match="ce iir challenge sign"):
+        with pytest.raises(ValueError, match="--algorithm Ed25519"):
             _load_private_key_bytes(pem)
 
     def test_encrypted_pem_rejected(self, rsa_key):
@@ -260,7 +261,7 @@ class TestLoadSigningKey:
             _load_signing_key(str(path), None)
 
     def test_no_option_rejected(self):
-        with pytest.raises(click.ClickException, match="exactly one"):
+        with pytest.raises(click.ClickException, match="not both"):
             _load_signing_key(None, None)
 
     def test_both_options_rejected(self, rsa_key, tmp_path):
@@ -268,7 +269,7 @@ class TestLoadSigningKey:
         pem = _pem(rsa_key, serialization.PrivateFormat.PKCS8)
         path = tmp_path / "rsa.pem"
         path.write_bytes(pem)
-        with pytest.raises(click.ClickException, match="exactly one"):
+        with pytest.raises(click.ClickException, match="not both"):
             _load_signing_key(str(path), pem.decode())
 
 
@@ -513,6 +514,30 @@ class TestAssertSignatureVerifiable:
         with pytest.raises(click.ClickException, match="JWT verification error"):
             _assert_signature_verifiable("not.a.real.jwt", rsa_kid)
 
+
+
+class TestIsExistingFile:
+    def test_existing_file(self, tmp_path):
+        path = tmp_path / "key.pem"
+        path.write_text("x", encoding="ascii")
+        assert is_existing_file(str(path))
+
+    def test_missing_file(self, tmp_path):
+        assert not is_existing_file(str(tmp_path / "missing.pem"))
+
+    def test_folder_is_not_a_file(self, tmp_path):
+        assert not is_existing_file(str(tmp_path))
+
+    def test_value_the_os_rejects_as_a_path(self, rsa_key):
+        # Pasted key text is far longer than a file name may be, so the OS raises
+        # instead of answering; that must come back as "not a file".
+        from cryptography.hazmat.primitives import serialization
+        body = "".join(
+            line
+            for line in _pem(rsa_key, serialization.PrivateFormat.PKCS8).decode().splitlines()
+            if "-----" not in line
+        )
+        assert not is_existing_file(body)
 
 
 class TestLoadPrivateKeyArgument:

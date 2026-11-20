@@ -13,7 +13,6 @@ verifies the resulting JWT against the public key resolved from the DID
 from __future__ import annotations
 
 import json
-from pathlib import Path
 from typing import Any, Dict, Tuple
 
 import base58
@@ -249,10 +248,7 @@ def _looks_like_rsa_key(value: str) -> bool:
     """True when an Ed25519 --private-key value looks like a PEM key or a key file path."""
     if "-----BEGIN" in value or "\\n" in value:
         return True
-    try:
-        return Path(value).expanduser().is_file()
-    except OSError:
-        return False
+    return _rs256.is_existing_file(value)
 
 
 @click.command("sign")

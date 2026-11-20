@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import base64
 import binascii
-import json
 from pathlib import Path
 from typing import Any, Dict, Tuple
 from urllib.parse import quote, unquote
@@ -85,7 +84,7 @@ def _load_private_key_bytes(data: bytes) -> RSAPrivateKey:
     if not isinstance(key, RSAPrivateKey):
         raise ValueError(
             f"Expected an RSA private key, got {type(key).__name__}. "
-            "Use `ce iir challenge sign` for Ed25519 keys."
+            "Use --algorithm Ed25519 for Ed25519 keys."
         )
 
     return key
@@ -110,7 +109,7 @@ def _load_private_key_from_text(text: str) -> RSAPrivateKey:
 def _load_signing_key(private_key_file: str | None, private_key_pem: str | None) -> RSAPrivateKey:
     if bool(private_key_file) == bool(private_key_pem):
         raise click.ClickException(
-            "Give exactly one of --private-key-file or --private-key-pem."
+            "Give the RSA private key as either a file path or the key text, not both."
         )
 
     try:
@@ -378,12 +377,8 @@ def load_private_key_argument(value: str) -> RSAPrivateKey:
 
     is_text = "-----BEGIN" in value or "\\n" in value
     if not is_text:
-        try:
-            path = Path(value).expanduser()
-            if path.is_file():
-                return _load_signing_key(str(path), None)
-        except OSError:
-            pass
+        if is_existing_file(value):
+            return _load_signing_key(str(Path(value).expanduser()), None)
 
         if value.startswith("z") and len(value) < 120:
             raise click.ClickException(
@@ -394,6 +389,14 @@ def load_private_key_argument(value: str) -> RSAPrivateKey:
             raise click.ClickException(f"RSA private key file not found: {value}")
 
     return _load_signing_key(None, value)
+
+
+def is_existing_file(value: str) -> bool:
+    """True when value is the path of an existing file."""
+    try:
+        return Path(value).expanduser().is_file()
+    except OSError:
+        return False
 
 
 def _looks_like_base64(value: str) -> bool:
