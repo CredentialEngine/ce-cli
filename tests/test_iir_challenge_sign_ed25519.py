@@ -1,5 +1,5 @@
 """
-Unit tests for ce.commands.iir_sign_challenge.
+Unit tests for ce.implementations.iir_challenge_sign_ed25519.
 Run with:
     pytest -m unit -s
 """
@@ -20,7 +20,7 @@ import requests
 pytestmark = pytest.mark.unit
 
 
-from ce.commands.iir_sign_challenge import (
+from ce.implementations.iir_challenge_sign_ed25519 import (
     _assert_signature_verifiable,
     _decode_multibase_base58btc,
     _did_web_to_url,
@@ -32,6 +32,7 @@ from ce.commands.iir_sign_challenge import (
     _resolve_public_key_bytes_for_kid,
     _sign_payload,
     _verify_signature_only,
+    sign_and_verify,
 )
 
 
@@ -235,7 +236,7 @@ class TestFetchDidJson:
         mock_resp.raise_for_status = MagicMock()
 
         with patch(
-            "ce.commands.iir_sign_challenge.requests.get",
+            "ce.implementations.iir_challenge_sign_ed25519.requests.get",
             return_value=mock_resp,
         ) as mock_get:
             result = _fetch_did_json("did:web:example.com")
@@ -250,7 +251,7 @@ class TestFetchDidJson:
         mock_resp.raise_for_status.side_effect = requests.HTTPError("404 Not Found")
 
         with patch(
-            "ce.commands.iir_sign_challenge.requests.get",
+            "ce.implementations.iir_challenge_sign_ed25519.requests.get",
             return_value=mock_resp,
         ):
             with pytest.raises(requests.HTTPError):
@@ -262,7 +263,7 @@ class TestFetchDidJson:
         mock_resp.raise_for_status = MagicMock()
 
         with patch(
-            "ce.commands.iir_sign_challenge.requests.get",
+            "ce.implementations.iir_challenge_sign_ed25519.requests.get",
             return_value=mock_resp,
         ):
             with pytest.raises(ValueError, match="must be a JSON object"):
@@ -274,7 +275,7 @@ class TestFetchDidJson:
         mock_resp.raise_for_status = MagicMock()
 
         with patch(
-            "ce.commands.iir_sign_challenge.requests.get",
+            "ce.implementations.iir_challenge_sign_ed25519.requests.get",
             return_value=mock_resp,
         ) as mock_get:
             _fetch_did_json("did:web:example.com:users:alice")
@@ -436,7 +437,7 @@ class TestResolvePublicKeyBytesForKid:
         mock_resp.json.return_value = doc
         mock_resp.raise_for_status = MagicMock()
         with patch(
-            "ce.commands.iir_sign_challenge.requests.get",
+            "ce.implementations.iir_challenge_sign_ed25519.requests.get",
             return_value=mock_resp,
         ):
             result = _resolve_public_key_bytes_for_kid(kid)
@@ -550,3 +551,80 @@ class TestAssertSignatureVerifiable:
         with pytest.raises(click.ClickException, match="JWT verification error"):
             _assert_signature_verifiable("not.a.real.jwt", kid)
 
+
+class TestSignAndVerify:
+    def test_did_key(self, ed25519_keypair, valid_challenge_payload):
+        priv, _, kid = ed25519_keypair
+        payload = dict(valid_challenge_payload, did=kid)
+
+        token = sign_and_verify(priv, kid, payload)
+
+        header_b64 = token.split(".")[0]
+        header = json.loads(base64.urlsafe_b64decode(header_b64 + "=" * (-len(header_b64) % 4)))
+        assert header == {"typ": "JWT", "alg": "EdDSA", "kid": kid}
+
+    def test_did_web(self, valid_challenge_payload):
+        import base58
+        from cryptography.hazmat.primitives import serialization
+        from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+        sk = Ed25519PrivateKey.generate()
+        seed = sk.private_bytes(
+            encoding=serialization.Encoding.Raw,
+            format=serialization.PrivateFormat.Raw,
+            encryption_algorithm=serialization.NoEncryption(),
+        )
+        pub = sk.public_key().public_bytes(
+            encoding=serialization.Encoding.Raw,
+            format=serialization.PublicFormat.Raw,
+        )
+        did = "did:web:example.com"
+        kid = f"{did}#key-1"
+        doc = {
+            "id": did,
+            "verificationMethod": [
+                {
+                    "id": kid,
+                    "type": "Multikey",
+                    "publicKeyMultibase": "z" + base58.b58encode(bytes([0xED, 0x01]) + pub).decode(),
+                }
+            ],
+        }
+        mock_resp = MagicMock()
+        mock_resp.json.return_value = doc
+        mock_resp.raise_for_status = MagicMock()
+
+        with patch(
+            "ce.implementations.iir_challenge_sign_ed25519.requests.get",
+            return_value=mock_resp,
+        ):
+            token = sign_and_verify("z" + base58.b58encode(seed).decode(), kid, dict(valid_challenge_payload, did=kid))
+
+        assert token.count(".") == 2
+
+    def test_bad_private_key(self, valid_challenge_payload):
+        with pytest.raises(click.ClickException, match="Signing failed"):
+            sign_and_verify("zNOT-A-REAL-KEY", ED25519_KID, valid_challenge_payload)
+
+    def test_wrong_key_for_did(self, ed25519_keypair, valid_challenge_payload):
+        priv, _, _ = ed25519_keypair
+        # Signed with the session key, but the kid names a different (fixed) DID.
+        with pytest.raises(click.ClickException, match="Signature verification failed"):
+            sign_and_verify(priv, ED25519_KID, valid_challenge_payload)
+
+    def test_did_web_fetch_error(self, ed25519_keypair, valid_challenge_payload):
+        priv, _, _ = ed25519_keypair
+        mock_resp = MagicMock()
+        mock_resp.raise_for_status.side_effect = requests.HTTPError("404 Not Found")
+
+        with patch(
+            "ce.implementations.iir_challenge_sign_ed25519.requests.get",
+            return_value=mock_resp,
+        ):
+            with pytest.raises(click.ClickException, match="Failed to fetch did.json"):
+                sign_and_verify(priv, "did:web:example.com#key-1", valid_challenge_payload)
+
+    def test_unsupported_did_method(self, ed25519_keypair, valid_challenge_payload):
+        priv, _, _ = ed25519_keypair
+        with pytest.raises(click.ClickException, match="DID resolution error"):
+            sign_and_verify(priv, "did:ethr:0x123#key-1", valid_challenge_payload)
