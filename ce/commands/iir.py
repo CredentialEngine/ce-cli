@@ -13,7 +13,7 @@ from pathlib import Path
 import click
 from rich.console import Console
 
-from ce.commands.iir_sign_challenge import sign_individual_challenge
+from ce.iir.challenge.sign import main as sign_command
 
 from ce.auth.token_manager import require_login
 from ce.config.context import require_environment
@@ -46,7 +46,7 @@ def issuer_did_group() -> None:
 
 # ce iir challenge sign  (single)
 
-challenge_group.add_command(sign_individual_challenge, name="sign")
+challenge_group.add_command(sign_command, name="sign")
 
 
 # ce iir challenge bulk-sign

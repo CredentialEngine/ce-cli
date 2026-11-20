@@ -1,18 +1,13 @@
-"""`ce iir challenge sign` - sign and verify a Proof JWT for a single CE challenge.
+"""Ed25519 signing for `ce iir challenge sign --algorithm Ed25519`.
 
-Reads a challenge JSON file produced by CE, signs it with a private key, and
-verifies the resulting JWT against the public key resolved from the DID
-(did:key or did:web). No login required.
-
---algorithm picks the signing method:
-  - Ed25519 : alg=EdDSA, --private-key is a multibase seed (z...). Handled in this module.
-  - RS256   : alg=RS256, --private-key is a PEM file path or the PEM text.
-              Handled in ce.commands.iir_sign_challenge_rs256.
+Signs a CE challenge with an Ed25519 private key (alg=EdDSA) and verifies the
+resulting JWT against the public key resolved from the DID (did:key or did:web).
+The RS256 path lives in ce.implementations.iir_challenge_sign_rs256.
+The command is ce.iir.challenge.sign.
 """
 
 from __future__ import annotations
 
-import json
 from typing import Any, Dict, Tuple
 
 import base58
@@ -24,8 +19,6 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import (
     Ed25519PublicKey,
 )
 from rich.console import Console
-
-from ce.commands import iir_sign_challenge_rs256 as _rs256
 
 console = Console()
 err_console = Console(stderr=True)
@@ -238,127 +231,20 @@ def _assert_signature_verifiable(token: str, kid: str) -> None:
 
 
 
-# Click command
+# Entry point used by `ce iir challenge sign --algorithm Ed25519`
 
-ALGORITHM_ED25519 = "Ed25519"
-ALGORITHM_RS256 = "RS256"
-
-
-def _looks_like_rsa_key(value: str) -> bool:
-    """True when an Ed25519 --private-key value looks like a PEM key or a key file path."""
-    if "-----BEGIN" in value or "\\n" in value:
-        return True
-    return _rs256.is_existing_file(value)
-
-
-@click.command("sign")
-@click.option(
-    "--algorithm",
-    "algorithm",
-    required=True,
-    type=click.Choice([ALGORITHM_ED25519, ALGORITHM_RS256]),
-    help="Signing algorithm: Ed25519 (alg=EdDSA) or RS256 (RSA).",
-)
-@click.option(
-    "--private-key",
-    "private_key",
-    required=True,
-    metavar="KEY",
-    help=(
-        "Ed25519: private seed (multibase base58btc, starts with 'z'). "
-        "RS256: path to an unencrypted PEM/DER key file, or the PEM text."
-    ),
-)
-@click.option(
-    "--challenge-file",
-    "challenge_file",
-    required=True,
-    type=click.Path(exists=True, dir_okay=False, readable=True),
-    metavar="PATH",
-    help="Path to CE-generated challenge JSON file.",
-)
-@click.option(
-    "--output", "-o",
-    "out_path",
-    default=None,
-    type=click.Path(dir_okay=False, writable=True),
-    metavar="PATH",
-    help="Write JWT to this file (otherwise printed to stdout).",
-)
-def sign_individual_challenge(
-    algorithm: str,
-    private_key: str,
-    challenge_file: str,
-    out_path: str | None,
-) -> None:
-    """Sign a single CE challenge JSON file and produce a Proof JWT.
-
-    \b
-    --algorithm Ed25519 : --private-key is the multibase seed (z...).
-    --algorithm RS256   : --private-key is a PEM file path or the PEM text.
-    The challenge JSON must include: did, challenge, aud, iat, exp.
-    Signature verification uses did:key (offline) or did:web (HTTPS).
-
-    \b
-    Examples:
-      ce iir challenge sign --algorithm Ed25519 \\
-        --private-key zABC... \\
-        --challenge-file challenge.json \\
-        --output signed-challenge.jwt
-
-    \b
-      ce iir challenge sign --algorithm RS256 \\
-        --private-key rsa-key.pem \\
-        --challenge-file challenge.json \\
-        --output signed-challenge.jwt
-    """
+def sign_and_verify(private_key_value: str, kid: str, payload_obj: Dict[str, Any]) -> str:
+    """Sign the challenge with the Ed25519 seed (EdDSA) and verify it against the DID."""
     try:
-        with open(challenge_file, "r", encoding="utf-8") as f:
-            payload_obj = json.load(f)
-    except json.JSONDecodeError as e:
-        raise click.ClickException(f"Challenge file is not valid JSON: {e}")
+        token = _sign_payload(private_key_value, kid, payload_obj)
+    except ValueError as e:
+        raise click.ClickException(f"Signing failed: {e}")
 
-    if not isinstance(payload_obj, dict):
-        raise click.ClickException("Challenge payload must be a JSON object.")
+    try:
+        _assert_signature_verifiable(token, kid)
+    except requests.RequestException as e:
+        raise click.ClickException(f"Failed to fetch did.json: {e}")
+    except ValueError as e:
+        raise click.ClickException(f"DID resolution error: {e}")
 
-    required_fields = ["did", "challenge", "aud", "iat", "exp"]
-    missing = [k for k in required_fields if k not in payload_obj]
-    if missing:
-        raise click.ClickException(
-            f"Challenge JSON missing required field(s): {', '.join(missing)}"
-        )
-
-    did_value = payload_obj.get("did")
-    if not isinstance(did_value, str) or not did_value.strip():
-        raise click.ClickException(
-            'Challenge JSON must include a non-empty string field "did".'
-        )
-
-    kid = did_value.strip()
-
-    if algorithm == ALGORITHM_RS256:
-        token = _rs256.sign_and_verify(private_key, kid, payload_obj)
-    else:
-        if _looks_like_rsa_key(private_key):
-            raise click.ClickException(
-                "This looks like an RSA/PEM key. Use --algorithm RS256 for RSA keys."
-            )
-
-        try:
-            token = _sign_payload(private_key, kid, payload_obj)
-        except ValueError as e:
-            raise click.ClickException(f"Signing failed: {e}")
-
-        try:
-            _assert_signature_verifiable(token, kid)
-        except requests.RequestException as e:
-            raise click.ClickException(f"Failed to fetch did.json: {e}")
-        except ValueError as e:
-            raise click.ClickException(f"DID resolution error: {e}")
-
-    if out_path:
-        with open(out_path, "w", encoding="utf-8") as f:
-            f.write(token)
-        err_console.print(f"Wrote Proof JWT to: [cyan]{out_path}[/cyan]")
-    else:
-        click.echo(token)
+    return token

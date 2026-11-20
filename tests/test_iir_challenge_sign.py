@@ -19,10 +19,10 @@ from click.testing import CliRunner
 pytestmark = pytest.mark.unit
 
 
-from ce.commands.iir_sign_challenge import sign_individual_challenge
+from ce.iir.challenge.sign import main as sign_command
 
 
-RS256_MODULE = "ce.commands.iir_sign_challenge_rs256"
+RS256_MODULE = "ce.implementations.iir_challenge_sign_rs256"
 
 CHALLENGE_UUID = "11111111-2222-3333-4444-555555555555"
 CTID = "ce-12345678-1234-1234-1234-123456789abc"
@@ -34,7 +34,7 @@ DID_WEB_KID = f"{DID_WEB}#key-1"
 # Helpers
 
 def _run(args):
-    result = CliRunner().invoke(sign_individual_challenge, args)
+    result = CliRunner().invoke(sign_command, args)
     return result.exit_code, result.output
 
 
@@ -284,3 +284,11 @@ class TestRs256:
 
         assert code != 0
         assert "exp" in output
+
+
+
+class TestRegistration:
+    def test_registered_as_iir_challenge_sign(self):
+        from ce.commands.iir import challenge_group
+
+        assert challenge_group.commands["sign"] is sign_command

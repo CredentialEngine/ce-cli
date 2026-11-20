@@ -1,5 +1,5 @@
 """
-Unit tests for ce.commands.iir_sign_challenge_rs256 (the RS256 path of `ce iir challenge sign`).
+Unit tests for ce.implementations.iir_challenge_sign_rs256 (the RS256 path of `ce iir challenge sign`).
 Run with:
     pytest -m unit -s
 """
@@ -20,7 +20,7 @@ import requests
 pytestmark = pytest.mark.unit
 
 
-from ce.commands.iir_sign_challenge_rs256 import (
+from ce.implementations.iir_challenge_sign_rs256 import (
     _assert_signature_verifiable,
     _did_web_to_url,
     _fetch_did_json,
@@ -39,7 +39,7 @@ from ce.commands.iir_sign_challenge_rs256 import (
 )
 
 
-MODULE = "ce.commands.iir_sign_challenge_rs256"
+MODULE = "ce.implementations.iir_challenge_sign_rs256"
 
 CHALLENGE_UUID = "11111111-2222-3333-4444-555555555555"
 CTID = "ce-12345678-1234-1234-1234-123456789abc"

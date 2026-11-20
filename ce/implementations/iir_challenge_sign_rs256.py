@@ -2,7 +2,8 @@
 
 Signs a CE challenge with an RSA private key (alg=RS256) and verifies the
 resulting JWT against the public key resolved from the DID (did:key or did:web).
-The Ed25519 path lives in ce.commands.iir_sign_challenge.
+The Ed25519 path lives in ce.implementations.iir_challenge_sign_ed25519.
+The command is ce.iir.challenge.sign.
 
 Key resolution:
   - did:key : multicodec 0x1205 (rsa-pub), PKCS#1 RSAPublicKey DER, base58btc.
@@ -396,6 +397,8 @@ def is_existing_file(value: str) -> bool:
     try:
         return Path(value).expanduser().is_file()
     except OSError:
+        # The OS can refuse a value as a path (for example pasted key text that is
+        # too long or has characters a path can't have). Such a value is not a file.
         return False
 
 
