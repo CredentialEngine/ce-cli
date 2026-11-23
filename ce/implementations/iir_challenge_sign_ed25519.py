@@ -1,13 +1,13 @@
-"""`ce iir challenge sign` - sign and verify a Proof JWT for a single CE challenge.
+"""Ed25519 signing for `ce iir challenge sign --algorithm Ed25519`.
 
-Reads a challenge JSON file produced by CE, signs it with an Ed25519 private key
-(alg=EdDSA), and verifies the resulting JWT against the public key resolved from
-the DID (did:key or did:web). No login required.
+Signs a CE challenge with an Ed25519 private key (alg=EdDSA) and verifies the
+resulting JWT against the public key resolved from the DID (did:key or did:web).
+The RS256 path lives in ce.implementations.iir_challenge_sign_rs256.
+The command is ce.iir.challenge.sign.
 """
 
 from __future__ import annotations
 
-import json
 from typing import Any, Dict, Tuple
 
 import base58
@@ -231,76 +231,12 @@ def _assert_signature_verifiable(token: str, kid: str) -> None:
 
 
 
-# Click command
+# Entry point used by `ce iir challenge sign --algorithm Ed25519`
 
-@click.command("sign")
-@click.option(
-    "--private-key",
-    "private_key",
-    required=True,
-    metavar="MULTIBASE",
-    help="Ed25519 private seed (multibase base58btc, starts with 'z').",
-)
-@click.option(
-    "--challenge-file",
-    "challenge_file",
-    required=True,
-    type=click.Path(exists=True, dir_okay=False, readable=True),
-    metavar="PATH",
-    help="Path to CE-generated challenge JSON file.",
-)
-@click.option(
-    "--output", "-o",
-    "out_path",
-    default=None,
-    type=click.Path(dir_okay=False, writable=True),
-    metavar="PATH",
-    help="Write JWT to this file (otherwise printed to stdout).",
-)
-def sign_individual_challenge(
-    private_key: str,
-    challenge_file: str,
-    out_path: str | None,
-) -> None:
-    """Sign a single CE challenge JSON file and produce a Proof JWT (EdDSA/Ed25519).
-
-    \b
-    The challenge JSON must include: did, challenge, aud, iat, exp.
-    Signature verification uses did:key (offline) or did:web (HTTPS).
-
-    \b
-    Example:
-      ce iir challenge sign \\
-        --private-key zABC... \\
-        --challenge-file challenge.json \\
-        --output signed-challenge.jwt
-    """
+def sign_and_verify(private_key_value: str, kid: str, payload_obj: Dict[str, Any]) -> str:
+    """Sign the challenge with the Ed25519 seed (EdDSA) and verify it against the DID."""
     try:
-        with open(challenge_file, "r", encoding="utf-8") as f:
-            payload_obj = json.load(f)
-    except json.JSONDecodeError as e:
-        raise click.ClickException(f"Challenge file is not valid JSON: {e}")
-
-    if not isinstance(payload_obj, dict):
-        raise click.ClickException("Challenge payload must be a JSON object.")
-
-    required_fields = ["did", "challenge", "aud", "iat", "exp"]
-    missing = [k for k in required_fields if k not in payload_obj]
-    if missing:
-        raise click.ClickException(
-            f"Challenge JSON missing required field(s): {', '.join(missing)}"
-        )
-
-    did_value = payload_obj.get("did")
-    if not isinstance(did_value, str) or not did_value.strip():
-        raise click.ClickException(
-            'Challenge JSON must include a non-empty string field "did".'
-        )
-
-    kid = did_value.strip()
-
-    try:
-        token = _sign_payload(private_key, kid, payload_obj)
+        token = _sign_payload(private_key_value, kid, payload_obj)
     except ValueError as e:
         raise click.ClickException(f"Signing failed: {e}")
 
@@ -311,9 +247,4 @@ def sign_individual_challenge(
     except ValueError as e:
         raise click.ClickException(f"DID resolution error: {e}")
 
-    if out_path:
-        with open(out_path, "w", encoding="utf-8") as f:
-            f.write(token)
-        err_console.print(f"Wrote Proof JWT to: [cyan]{out_path}[/cyan]")
-    else:
-        click.echo(token)
+    return token
