@@ -1,0 +1,311 @@
+{
+  "interactions": [
+    {
+      "request": {
+        "json": {
+          "name": "ce-cli replay: BU project",
+          "projectType": "BulkUpload"
+        },
+        "method": "POST",
+        "path": "/projects",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"projectId\":163}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"projectId\":163,\"name\":\"ce-cli replay: BU project\",\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"status\":\"Active\",\"publishStatus\":\"NotPublished\",\"projectType\":\"BulkUpload\",\"createdAt\":\"2026-11-18T21:02:34.678444Z\",\"updatedAt\":\"2026-11-18T21:02:34.678444Z\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/163",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"projectId\":163,\"name\":\"ce-cli replay: BU project\",\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"status\":\"Active\",\"publishStatus\":\"NotPublished\",\"projectType\":\"BulkUpload\",\"createdAt\":\"2026-11-18T21:02:34.678444Z\",\"updatedAt\":\"2026-11-18T21:02:34.678444Z\",\"iterations\":[],\"reviewers\":[],\"publishingJobs\":[]}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "files": [
+          "credentials.csv"
+        ],
+        "method": "POST",
+        "path": "/projects/163/iterations/upload",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T21:02:34.7083379Z\",\"status\":\"Created\"}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/163",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"projectId\":163,\"name\":\"ce-cli replay: BU project\",\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"status\":\"Active\",\"publishStatus\":\"NotPublished\",\"projectType\":\"BulkUpload\",\"createdAt\":\"2026-11-18T21:02:34.678444Z\",\"updatedAt\":\"2026-11-18T21:02:34.678444Z\",\"iterations\":[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T21:02:34.708337Z\",\"status\":\"Validating\"}],\"reviewers\":[],\"publishingJobs\":[]}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/163/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T21:02:34.708337Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/163/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T21:02:34.708337Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/163/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T21:02:34.708337Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/163/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T21:02:34.708337Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/163/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T21:02:34.708337Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/163/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T21:02:34.708337Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/163/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T21:02:34.708337Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/163/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T21:02:34.708337Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/163/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T21:02:34.708337Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/163/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T21:02:34.708337Z\",\"status\":\"Validated\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/163/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T21:02:34.708337Z\",\"status\":\"Validated\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/163/iterations/1/files",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"fileName\":\"credentials.csv\",\"resourceClass\":\"ceterms:Credential\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/163/iterations/1/validationResults",
+        "query": "limitPerFile=50"
+      },
+      "response": {
+        "body": "{\"credentials.csv\":{\"CsvStructure\":[],\"SpellCheck\":[],\"Whitespace\":[],\"CtidReference\":[]}}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/163/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T21:02:34.708337Z\",\"status\":\"Validated\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/163/iterations/1/files",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"fileName\":\"credentials.csv\",\"resourceClass\":\"ceterms:Credential\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/163/iterations/1/validationResults",
+        "query": "limitPerFile=50"
+      },
+      "response": {
+        "body": "{\"credentials.csv\":{\"CsvStructure\":[],\"SpellCheck\":[],\"Whitespace\":[],\"CtidReference\":[]}}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/163",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"projectId\":163,\"name\":\"ce-cli replay: BU project\",\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"status\":\"Active\",\"publishStatus\":\"NotPublished\",\"projectType\":\"BulkUpload\",\"createdAt\":\"2026-11-18T21:02:34.678444Z\",\"updatedAt\":\"2026-11-18T21:02:34.678444Z\",\"iterations\":[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T21:02:34.708337Z\",\"status\":\"Validated\"}],\"reviewers\":[],\"publishingJobs\":[]}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/163/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T21:02:34.708337Z\",\"status\":\"Validated\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/163/audit",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"id\":1730,\"projectId\":163,\"iterationId\":1,\"actorUserId\":\"00000000-0000-0000-0000-000000000000\",\"createdAt\":\"2026-11-18T21:02:57.281336Z\",\"eventType\":\"ValidationCompleted\",\"description\":\"Validation completed for Iteration 1\",\"metadata\":null},{\"id\":1729,\"projectId\":163,\"iterationId\":1,\"actorUserId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T21:02:34.741769Z\",\"eventType\":\"ValidationStarted\",\"description\":\"Started validation for Iteration 1\",\"metadata\":null},{\"id\":1728,\"projectId\":163,\"iterationId\":1,\"actorUserId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T21:02:34.72004Z\",\"eventType\":\"IterationFilesAdded\",\"description\":\"Created Iteration 1 with 1 file(s).\",\"metadata\":null},{\"id\":1727,\"projectId\":163,\"iterationId\":null,\"actorUserId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T21:02:34.67911Z\",\"eventType\":\"ProjectCreated\",\"description\":\"Created project 'ce-cli replay: BU project'\",\"metadata\":null}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/projects/163/abandon",
+        "query": ""
+      },
+      "response": {
+        "body": "",
+        "content_type": "",
+        "status": 200
+      }
+    }
+  ]
+}

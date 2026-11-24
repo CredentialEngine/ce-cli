@@ -1,0 +1,311 @@
+{
+  "interactions": [
+    {
+      "request": {
+        "json": {
+          "name": "ce-cli replay: JSON-LD",
+          "projectType": "ApiPublishing"
+        },
+        "method": "POST",
+        "path": "/projects",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"projectId\":164}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"projectId\":164,\"name\":\"ce-cli replay: JSON-LD\",\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"status\":\"Active\",\"publishStatus\":\"NotPublished\",\"projectType\":\"ApiPublishing\",\"createdAt\":\"2026-11-18T21:02:59.011727Z\",\"updatedAt\":\"2026-11-18T21:02:59.011727Z\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/164",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"projectId\":164,\"name\":\"ce-cli replay: JSON-LD\",\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"status\":\"Active\",\"publishStatus\":\"NotPublished\",\"projectType\":\"ApiPublishing\",\"createdAt\":\"2026-11-18T21:02:59.011727Z\",\"updatedAt\":\"2026-11-18T21:02:59.011727Z\",\"iterations\":[],\"reviewers\":[{\"userId\":\"11111111-1111-1111-1111-111111111111\",\"isRequired\":true,\"isApproved\":false}],\"publishingJobs\":[]}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "files": [
+          "credentials.json"
+        ],
+        "method": "POST",
+        "path": "/projects/164/iterations/upload-jsonld",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T21:02:59.084075Z\",\"status\":\"Created\"}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/164",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"projectId\":164,\"name\":\"ce-cli replay: JSON-LD\",\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"status\":\"Active\",\"publishStatus\":\"NotPublished\",\"projectType\":\"ApiPublishing\",\"createdAt\":\"2026-11-18T21:02:59.011727Z\",\"updatedAt\":\"2026-11-18T21:02:59.011727Z\",\"iterations\":[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T21:02:59.084075Z\",\"status\":\"Created\"}],\"reviewers\":[{\"userId\":\"11111111-1111-1111-1111-111111111111\",\"isRequired\":true,\"isApproved\":false}],\"publishingJobs\":[]}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/164/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T21:02:59.084075Z\",\"status\":\"Created\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/projects/164/iterations/1/validation/start",
+        "query": ""
+      },
+      "response": {
+        "body": "",
+        "content_type": "",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/164/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T21:02:59.084075Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/164/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T21:02:59.084075Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/164/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T21:02:59.084075Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/164/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T21:02:59.084075Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/164/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T21:02:59.084075Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/164/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T21:02:59.084075Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/164/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T21:02:59.084075Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/164/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T21:02:59.084075Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/164/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T21:02:59.084075Z\",\"status\":\"Validated\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/164/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T21:02:59.084075Z\",\"status\":\"Validated\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/164/iterations/1/files",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"fileName\":\"credentials.json\",\"resourceClass\":\"JSON-LD\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/164/iterations/1/validationResults",
+        "query": "limitPerFile=50"
+      },
+      "response": {
+        "body": "{\"credentials.json\":{\"JsonLd\":[],\"CtidReference\":[]}}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/164/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T21:02:59.084075Z\",\"status\":\"Validated\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/164/iterations/1/files",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"fileName\":\"credentials.json\",\"resourceClass\":\"JSON-LD\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/164/iterations/1/validationResults",
+        "query": "limitPerFile=50"
+      },
+      "response": {
+        "body": "{\"credentials.json\":{\"JsonLd\":[],\"CtidReference\":[]}}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/164",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"projectId\":164,\"name\":\"ce-cli replay: JSON-LD\",\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"status\":\"Active\",\"publishStatus\":\"NotPublished\",\"projectType\":\"ApiPublishing\",\"createdAt\":\"2026-11-18T21:02:59.011727Z\",\"updatedAt\":\"2026-11-18T21:02:59.011727Z\",\"iterations\":[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T21:02:59.084075Z\",\"status\":\"Validated\"}],\"reviewers\":[{\"userId\":\"11111111-1111-1111-1111-111111111111\",\"isRequired\":true,\"isApproved\":false}],\"publishingJobs\":[]}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/164/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T21:02:59.084075Z\",\"status\":\"Validated\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/projects/164/abandon",
+        "query": ""
+      },
+      "response": {
+        "body": "",
+        "content_type": "",
+        "status": 200
+      }
+    }
+  ]
+}

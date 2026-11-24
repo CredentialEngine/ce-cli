@@ -323,3 +323,31 @@ ce-cli/
 
 Output is plain text: no boxes, no colours, no highlighting. Spinners are the only decoration. Use `ce.utils.display`
 (`new_console`, `plain_table`, `print_pairs`) for anything new; `tests/test_plain_output.py` fails if styling comes back.
+
+## Tests
+
+```powershell
+pytest -m unit          # unit tests
+pytest -m integration   # recorded tests: replay only, no server needed
+pytest -m recorded      # only the Publisher record and replay scenarios
+```
+
+Tests that talk to the Publisher (`tests/test_publisher_replay.py`) are recorded once against a real server and replayed in
+CI. Each test is a scenario typed as the commands a user would type; its HTTP exchange is the JSON cassette
+`tests/cassettes/publisher/<test name>.json`.
+
+To record a scenario, start a Publisher, sign in to it with `ce login`, then:
+
+```powershell
+$env:CE_CLI_RECORD_CASSETTES = "true"
+pytest tests/test_publisher_replay.py -k <test name>
+Remove-Item Env:CE_CLI_RECORD_CASSETTES
+pytest tests/test_publisher_replay.py     # replay: no server, no sign-in
+```
+
+Read the new cassette before you commit it. It holds project names and file contents. The recorder replaces e-mail addresses
+and the signed-in user's id, trims the project list to the projects the scenario created, and refuses to save a cassette that
+holds a token. A scenario that fails while recording writes no cassette and leaves an existing one alone. Replay fails if a command
+sends a request that differs from the recording, or fewer requests than were recorded. A scenario with no cassette is skipped on
+your machine, so a new test can be merged before it is recorded, and fails in CI (the `CI` variable is set), so a deleted or renamed
+cassette is never silent.
