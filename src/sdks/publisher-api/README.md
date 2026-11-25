@@ -22,4 +22,4 @@ python -c "import publisher_client; print(publisher_client.__file__)"
 
 Do not install `generated-client` separately. Changing `swagger.json` alone changes nothing: regenerate, then reinstall.
 
-`ce/publisher/client.py` is the only code that imports the SDK.
+`ce/implementations/publisher/client.py` is the only code that imports the SDK.

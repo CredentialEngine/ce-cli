@@ -13,8 +13,8 @@ from ce import __version__
 from ce.commands.auth import account_show, login, logout
 from ce.commands.env import env_group
 from ce.commands.iir import iir_group
-from ce.commands.publisher import publisher_group
 from ce.commands.version import version_command
+from ce.publisher import main as publisher_group
 
 console = new_console()
 

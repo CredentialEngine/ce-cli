@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from ce.publisher.client import (
+from ce.implementations.publisher.client import (
     API_PROJECT,
     BULK_UPLOAD_PROJECT,
     REGISTRY_SYNC_PROJECT,

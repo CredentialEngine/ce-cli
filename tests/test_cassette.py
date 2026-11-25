@@ -38,8 +38,8 @@ from _cassette import (
 )
 from click.testing import CliRunner
 
-from ce.commands.publisher import publisher_group
-from ce.publisher import service
+from ce.implementations.publisher import service
+from ce.publisher import main as publisher_group
 
 pytestmark = pytest.mark.unit
 
@@ -100,8 +100,8 @@ def throwaway_server() -> Iterator[str]:
 @contextmanager
 def signed_in(base_url: str) -> Iterator[None]:
     env = SimpleNamespace(publisher_api_base=base_url, ssl_verify=True)
-    with patch("ce.commands.publisher.require_login", return_value=TOKEN), \
-            patch("ce.commands.publisher.require_environment", return_value=("test", env)):
+    with patch("ce.implementations.publisher.cli.require_login", return_value=TOKEN), \
+            patch("ce.implementations.publisher.cli.require_environment", return_value=("test", env)):
         yield
 
 
@@ -161,14 +161,14 @@ def test_the_conftest_registers_the_hook_that_tells_a_fixture_whether_the_test_p
 ) -> None:
     hooks = request.config.pluginmanager.hook.pytest_runtest_makereport.get_hookimpls()
 
-    assert any(hook.function is _cassette.pytest_runtest_makereport for hook in hooks)
+    assert any(Path(str(hook.plugin_name)).name == "conftest.py" for hook in hooks)
 
 
 def test_only_a_scenario_that_passed_is_written_to_a_cassette(tmp_path: Path) -> None:
     """A failing test's fixture must not write its cassette, shown in a nested pytest run with the same hook.
 
     A fixture's teardown does not see the test's failure, so this fails if `scenario_passed` does not read what
-    `_cassette.pytest_runtest_makereport` stores. That tests/conftest.py registers the hook is the test above.
+    `_cassette.remember_outcome` stores. That tests/conftest.py registers the hook that calls it is the test above.
     """
     nested = tmp_path / "nested"
     cassettes = tmp_path / "cassettes"
@@ -176,7 +176,15 @@ def test_only_a_scenario_that_passed_is_written_to_a_cassette(tmp_path: Path) ->
     cassettes.mkdir()
     (nested / "pytest.ini").write_text("[pytest]\n", encoding="utf-8")
     (nested / "conftest.py").write_text(
-        "from _cassette import pytest_runtest_makereport  # noqa: F401\n", encoding="utf-8"
+        "import pytest\n"
+        "from _cassette import remember_outcome\n"
+        "\n"
+        "@pytest.hookimpl(wrapper=True)\n"
+        "def pytest_runtest_makereport(item, call):\n"
+        "    report = yield\n"
+        "    remember_outcome(item, report)\n"
+        "    return report\n",
+        encoding="utf-8",
     )
     (nested / "test_nested.py").write_text(
         "import os\n"

@@ -17,14 +17,14 @@ import httpx2
 import pytest
 from click.testing import CliRunner
 
-from ce.commands.publisher import publisher_group
-from ce.publisher import service
-from ce.publisher.client import (
+from ce.implementations.publisher import service
+from ce.implementations.publisher.client import (
     PublisherApiError,
     PublisherClient,
     resolve_publisher_url,
     project_kind_label,
 )
+from ce.publisher import main as publisher_group
 
 
 def _load_keep_json_content():
@@ -139,10 +139,10 @@ def cli(publisher: FakePublisher):
     env.publisher_api_base = "http://publisher"
     env.ssl_verify = True
 
-    with patch("ce.commands.publisher.require_login", return_value=make_token()), \
-            patch("ce.commands.publisher.require_environment", return_value=("dev", env)), \
-            patch("ce.commands.publisher.PublisherClient", side_effect=publisher.client), \
-            patch("ce.publisher.service.time.sleep"):
+    with patch("ce.implementations.publisher.cli.require_login", return_value=make_token()), \
+            patch("ce.implementations.publisher.cli.require_environment", return_value=("dev", env)), \
+            patch("ce.implementations.publisher.cli.PublisherClient", side_effect=publisher.client), \
+            patch("ce.implementations.publisher.service.time.sleep"):
         yield CliRunner()
 
 

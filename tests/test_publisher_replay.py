@@ -34,8 +34,8 @@ from _cassette import (
 )
 from click.testing import CliRunner
 
-from ce.commands.publisher import publisher_group
-from ce.publisher import service
+from ce.implementations.publisher import service
+from ce.publisher import main as publisher_group
 
 pytestmark = [pytest.mark.integration, pytest.mark.recorded]
 
@@ -66,8 +66,8 @@ def cli(request: pytest.FixtureRequest):
             report_missing_cassette(request.node.name)
         env = SimpleNamespace(publisher_api_base=REPLAYED_PUBLISHER_URL, ssl_verify=True)
         patches = [
-            patch("ce.commands.publisher.require_environment", return_value=("replay", env)),
-            patch("ce.commands.publisher.require_login", return_value=REPLAY_ACCESS_TOKEN),
+            patch("ce.implementations.publisher.cli.require_environment", return_value=("replay", env)),
+            patch("ce.implementations.publisher.cli.require_login", return_value=REPLAY_ACCESS_TOKEN),
         ]
         saved = without_sleeping()
 

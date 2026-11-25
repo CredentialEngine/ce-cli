@@ -31,13 +31,13 @@ from unittest.mock import patch
 import httpx2
 import pytest
 
-from ce.publisher.client import PublisherClient
+from ce.implementations.publisher.client import PublisherClient
 
 RECORD_ENV = "CE_CLI_RECORD_CASSETTES"
 CASSETTE_DIR = Path(__file__).parent / "cassettes" / "publisher"
 
 # Where the commands build their client. The cassette replaces it so every client gets the recording or replaying transport.
-CLIENT_TARGET = "ce.commands.publisher.PublisherClient"
+CLIENT_TARGET = "ce.implementations.publisher.cli.PublisherClient"
 
 EMAIL = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 JWT = re.compile(r"eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]*")
@@ -232,16 +232,13 @@ def check_cassette_is_clean(text: str, token: str | None, user_id: str | None = 
         assert user_id not in text, "the cassette holds the signed-in user's id"
 
 
-@pytest.hookimpl(wrapper=True)
-def pytest_runtest_makereport(item: pytest.Item, call: pytest.CallInfo[None]) -> Iterator[None]:
+def remember_outcome(item: pytest.Item, report: pytest.TestReport) -> None:
     """Keep each phase's report on the test item, so a fixture can tell at teardown whether the test passed.
 
-    Registered by tests/conftest.py. A fixture's teardown does not see the test's failure, so without this a scenario that
-    failed half way would still be written to a cassette.
+    Called by the `pytest_runtest_makereport` hook in tests/conftest.py. A fixture's teardown does not see the test's failure,
+    so without this a scenario that failed half way would still be written to a cassette.
     """
-    report = yield
     setattr(item, f"rep_{report.when}", report)
-    return report
 
 
 def scenario_passed(request: pytest.FixtureRequest) -> Callable[[], bool]:

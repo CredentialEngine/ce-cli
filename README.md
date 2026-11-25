@@ -306,7 +306,6 @@ ce-cli/
     │   ├── config.py              # ce config set / get / list / reset
     │   ├── iir.py                 # ce iir challenge bulk-sign, ce iir issuer-did publish
     │   ├── iir_sign_challenge.py  # ce iir challenge sign
-    │   ├── publisher.py           # ce publisher project ... / format
     │   └── resource.py            # ce resource list / show / create / delete
     ├── config/
     │   ├── settings.py            # OIDCSettings, token I/O, paths
@@ -314,6 +313,13 @@ ce-cli/
     ├── iir/
     │   ├── csv_processor.py       # Bulk DID upload (bulk-sign + publish)
     │   └── did_ops.py             # DID validation, challenges, JWT signing
+    ├── implementations/
+    │   └── publisher/             # Behind ce publisher: client.py, service.py, cli.py (shared options and errors)
+    ├── publisher/                 # ce publisher: a noun is a folder, a verb is a file that exposes `main`
+    │   └── project/
+    │       ├── create.py, add.py, list.py, complete.py, abandon.py
+    │       ├── status/show.py, audit/show.py
+    │       └── validation/run.py, status/show.py, errors/show.py
     └── utils/
         ├── http.py                # Authenticated httpx2 wrapper + APIError
         ├── display.py             # Plain consoles and tables (no boxes or colours)
