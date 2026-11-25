@@ -7,15 +7,16 @@ except ImportError:
     pass
 
 import click
-from rich.console import Console
+from ce.utils.display import new_console
 
 from ce import __version__
 from ce.commands.auth import account_show, login, logout
 from ce.commands.env import env_group
 from ce.commands.iir import iir_group
 from ce.commands.version import version_command
+from ce.publisher import main as publisher_group
 
-console = Console()
+console = new_console()
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
@@ -45,6 +46,7 @@ def cli(ctx: click.Context, debug: bool) -> None:
     Everyday use:
       ce logout                        Sign out
       ce env use <name>                Switch environment
+      ce publisher project create      Publish CSVs or JSON-LD to the Credential Registry, step by step
 
     \b
     Run any command with --help for full options:
@@ -67,4 +69,5 @@ cli.add_command(account_show, name="whoami")   # ce whoami
 # Command groups
 cli.add_command(env_group)        # ce env list / use / show
 cli.add_command(iir_group)        # ce iir challenge ... / ce iir issuer-did ...
+cli.add_command(publisher_group)  # ce publisher project ...
 cli.add_command(version_command)  # ce version

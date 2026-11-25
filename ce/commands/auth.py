@@ -3,9 +3,6 @@
 from __future__ import annotations
 
 import click
-from rich.console import Console
-from rich.panel import Panel
-from rich.table import Table
 
 from ce.auth.device_flow import (
     AccessDeniedError,
@@ -19,11 +16,12 @@ from ce.auth.token_manager import (
     login_required_message,
     resolve_access_token,
 )
-from ce.config.context import get_current_environment, load_cli_config, require_environment
+from ce.config.context import get_current_environment, load_cli_config
 from ce.config.settings import delete_tokens, load_tokens, save_tokens
+from ce.utils.display import new_console, print_pairs
 
-console = Console()
-err_console = Console(stderr=True)
+console = new_console()
+err_console = new_console(stderr=True)
 
 
 @click.group("account")
@@ -46,59 +44,49 @@ def login(env_name: str | None) -> None:
 
     if env_name:
         if env_name not in config.environments:
-            err_console.print(f"Unknown environment [bold]{env_name}[/bold]. "
-                              f"Run [bold]ce env list[/bold] to see available environments.")
+            err_console.print(f"Unknown environment {env_name}. "
+                              f"Run ce env list to see available environments.")
             raise SystemExit(1)
         env = config.environments[env_name]
         active_name = env_name
     else:
         result = get_current_environment()
         if result is None:
-            err_console.print("No active environment. Run [bold]ce env use <name>[/bold] first.")
+            err_console.print("No active environment. Run ce env use <name> first.")
             raise SystemExit(1)
         active_name, env = result
 
     # Reuse this environment's session rather than starting a second sign-in.
     # An expired access token is renewed here; if it cannot be, sign-in goes ahead.
     if is_logged_in(active_name):
-        console.print(f"Already signed in to [bold]{active_name}[/bold] "
-                      f"([dim]{env.label}[/dim]). Run [bold]ce account show[/bold] for details.")
-        console.print("  To switch accounts, run [bold]ce account logout[/bold] first.")
+        console.print(f"Already signed in to {active_name} "
+                      f"({env.label}). Run ce account show for details.")
+        console.print("  To switch accounts, run ce account logout first.")
         return
 
     client = KeycloakDeviceFlowClient(env)
 
     console.print()
-    with console.status(f"[bold]Contacting {env.label} Keycloak...[/bold]"):
+    with console.status(f"Contacting {env.label} Keycloak..."):
         try:
             device_auth = client.request_device_code()
         except DeviceFlowError as exc:
             err_console.print(f"Error: {exc}")
             raise SystemExit(1)
 
-    panel_content = (
-        f"[dim]Environment:[/dim] [bold]{active_name}[/bold] ({env.label})\n\n"
-        f"[dim]Open a browser and navigate to:[/dim]\n\n"
-        f"  [bold underline]{device_auth.verification_uri}[/bold underline]\n\n"
-        f"[dim]Then enter the code:[/dim]\n\n"
-        f"  [bold cyan]{device_auth.user_code}[/bold cyan]\n"
-    )
+    console.print(f"Sign in to Credential Engine: {active_name} ({env.label})")
+    console.print()
+    console.print("Open a browser and go to:")
+    console.print(f"  {device_auth.verification_uri}")
+    console.print("Then enter the code:")
+    console.print(f"  {device_auth.user_code}")
     if device_auth.verification_uri_complete:
-        panel_content += (
-            f"\n[dim]Or visit the direct link:[/dim]\n"
-            f"  [link={device_auth.verification_uri_complete}]"
-            f"{device_auth.verification_uri_complete}[/link]\n"
-        )
-
-    console.print(Panel(
-        panel_content,
-        title="[bold]Credential Engine - Device Sign-In[/bold]",
-        border_style="blue",
-        padding=(1, 2),
-    ))
+        console.print("Or open the direct link:")
+        console.print(f"  {device_auth.verification_uri_complete}")
+    console.print()
 
     try:
-        with console.status("[dim]Waiting for you to approve in the browser...[/dim]", spinner="dots"):
+        with console.status("Waiting for you to approve in the browser...", spinner="dots"):
             token_resp = client.poll_for_token(
                 device_code=device_auth.device_code,
                 interval=device_auth.interval,
@@ -110,7 +98,7 @@ def login(env_name: str | None) -> None:
         raise SystemExit(1)
     except TokenExpiredError:
         console.print()
-        err_console.print("The device code expired. Run [bold]ce login[/bold] again.")
+        err_console.print("The device code expired. Run ce login again.")
         raise SystemExit(1)
     except DeviceFlowError as exc:
         console.print()
@@ -128,12 +116,12 @@ def login(env_name: str | None) -> None:
         name, email = "there", ""
 
     console.print()
-    greeting = f"Signed in as [bold]{name}[/bold]"
+    greeting = f"Signed in as {name}"
     if email:
-        greeting += f" [dim]({email})[/dim]"
-    greeting += f"  [dim]-> {active_name} ({env.label})[/dim]"
+        greeting += f" ({email})"
+    greeting += f"  -> {active_name} ({env.label})"
     console.print(greeting)
-    console.print("  Run [bold]ce whoami[/bold] to view your account details.")
+    console.print("  Run ce whoami to view your account details.")
     console.print()
 
 
@@ -174,7 +162,7 @@ def account_show() -> None:
     """Show the currently signed-in account."""
     tokens = load_tokens()
     if tokens is None:
-        console.print("Not signed in. Run [bold]ce login[/bold].")
+        console.print("Not signed in. Run ce login.")
         return
 
     result = get_current_environment()
@@ -201,26 +189,23 @@ def account_show() -> None:
         err_console.print(f"Error fetching account info: {exc}")
         return
 
-    table = Table(show_header=False, box=None, padding=(0, 2))
-    table.add_column("Key", style="dim")
-    table.add_column("Value", style="bold")
-
-    table.add_row("Environment", f"{active_name} ({env.label})")
-    table.add_row("API endpoint base", env.publisher_base)
-    table.add_row("Name", userinfo.get("name", "-"))
-    table.add_row("Username", userinfo.get("preferred_username", "-"))
-    table.add_row("Email", userinfo.get("email", "-"))
-    table.add_row("UserId", userinfo.get("sub", "-"))
-
+    rows = [
+        ("Environment", f"{active_name} ({env.label})"),
+        ("API endpoint base", env.publisher_base),
+        ("Name", userinfo.get("name", "-")),
+        ("Username", userinfo.get("preferred_username", "-")),
+        ("Email", userinfo.get("email", "-")),
+        ("UserId", userinfo.get("sub", "-")),
+    ]
     if tokens.scope:
-        table.add_row("Scopes", tokens.scope)
+        rows.append(("Scopes", tokens.scope))
     if tokens.expires_at:
         import datetime
         exp = datetime.datetime.fromtimestamp(tokens.expires_at).strftime("%Y-%m-%d %H:%M:%S")
-        table.add_row("Token expires", exp)
+        rows.append(("Token expires", exp))
 
     console.print()
-    console.print(Panel(table, title="[bold]Account[/bold]", border_style="blue", padding=(1, 2)))
+    print_pairs(console, rows)
     console.print()
 
 

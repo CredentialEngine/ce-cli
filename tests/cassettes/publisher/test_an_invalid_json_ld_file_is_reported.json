@@ -1,0 +1,275 @@
+{
+  "interactions": [
+    {
+      "request": {
+        "json": {
+          "name": "ce-cli replay: bad JSON-LD",
+          "projectType": "ApiPublishing"
+        },
+        "method": "POST",
+        "path": "/projects",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"projectId\":160}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/160",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"projectId\":160,\"name\":\"ce-cli replay: bad JSON-LD\",\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"status\":\"Active\",\"publishStatus\":\"NotPublished\",\"projectType\":\"ApiPublishing\",\"createdAt\":\"2026-11-18T20:59:38.440169Z\",\"updatedAt\":\"2026-11-18T20:59:38.440169Z\",\"iterations\":[],\"reviewers\":[{\"userId\":\"11111111-1111-1111-1111-111111111111\",\"isRequired\":true,\"isApproved\":false}],\"publishingJobs\":[]}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "files": [
+          "bad-no-ctid.json"
+        ],
+        "method": "POST",
+        "path": "/projects/160/iterations/upload-jsonld",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T20:59:38.4568108Z\",\"status\":\"Created\"}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/160",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"projectId\":160,\"name\":\"ce-cli replay: bad JSON-LD\",\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"status\":\"Active\",\"publishStatus\":\"NotPublished\",\"projectType\":\"ApiPublishing\",\"createdAt\":\"2026-11-18T20:59:38.440169Z\",\"updatedAt\":\"2026-11-18T20:59:38.440169Z\",\"iterations\":[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T20:59:38.45681Z\",\"status\":\"Created\"}],\"reviewers\":[{\"userId\":\"11111111-1111-1111-1111-111111111111\",\"isRequired\":true,\"isApproved\":false}],\"publishingJobs\":[]}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/160/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T20:59:38.45681Z\",\"status\":\"Created\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/projects/160/iterations/1/validation/start",
+        "query": ""
+      },
+      "response": {
+        "body": "",
+        "content_type": "",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/160/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T20:59:38.45681Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/160/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T20:59:38.45681Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/160/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T20:59:38.45681Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/160/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T20:59:38.45681Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/160/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T20:59:38.45681Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/160/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T20:59:38.45681Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/160/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T20:59:38.45681Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/160/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T20:59:38.45681Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/160/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T20:59:38.45681Z\",\"status\":\"Validated\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/160/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T20:59:38.45681Z\",\"status\":\"Validated\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/160/iterations/1/files",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"fileName\":\"bad-no-ctid.json\",\"resourceClass\":\"JSON-LD\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/160/iterations/1/validationResults",
+        "query": "limitPerFile=50"
+      },
+      "response": {
+        "body": "{\"bad-no-ctid.json\":{\"JsonLd\":[{\"row\":1,\"column\":\"ceterms:ctid\",\"value\":\"\",\"message\":\"Resource 'http://host.docker.internal:9292/resources/ce-5a9780cf-b75c-4ac2-ab0e-d0d361da798c' has no ceterms:ctid.\",\"type\":\"JsonLd\"}],\"CtidReference\":[]}}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/160/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T20:59:38.45681Z\",\"status\":\"Validated\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/160/iterations/1/files",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"fileName\":\"bad-no-ctid.json\",\"resourceClass\":\"JSON-LD\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/160/iterations/1/validationResults",
+        "query": "limitPerFile=50"
+      },
+      "response": {
+        "body": "{\"bad-no-ctid.json\":{\"JsonLd\":[{\"row\":1,\"column\":\"ceterms:ctid\",\"value\":\"\",\"message\":\"Resource 'http://host.docker.internal:9292/resources/ce-5a9780cf-b75c-4ac2-ab0e-d0d361da798c' has no ceterms:ctid.\",\"type\":\"JsonLd\"}],\"CtidReference\":[]}}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/projects/160/abandon",
+        "query": ""
+      },
+      "response": {
+        "body": "",
+        "content_type": "",
+        "status": 200
+      }
+    }
+  ]
+}

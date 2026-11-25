@@ -1,0 +1,52 @@
+[
+    {
+        "@id": "http://host.docker.internal:9292/graph/ce-5a9780cf-b75c-4ac2-ab0e-d0d361da798c",
+        "@context": "https://credreg.net/ctdl/schema/context/json",
+        "@graph": [
+            {
+                "@id": "http://host.docker.internal:9292/resources/ce-5a9780cf-b75c-4ac2-ab0e-d0d361da798c",
+                "@type": "ceterms:Certificate",
+                "ceterms:availableOnlineAt": [
+                    "https://example.org/safety-orientation"
+                ],
+                "ceterms:credentialStatusType": {
+                    "@type": "ceterms:CredentialAlignmentObject",
+                    "ceterms:framework": "https://credreg.net/ctdl/terms/CredentialStatus",
+                    "ceterms:frameworkName": {
+                        "en-US": "Credential Status"
+                    },
+                    "ceterms:targetNode": "credentialStat:Active",
+                    "ceterms:targetNodeDescription": {
+                        "en-US": "Awards of the credential are ongoing."
+                    },
+                    "ceterms:targetNodeName": {
+                        "en-US": "Active"
+                    }
+                },
+                "ceterms:description": {
+                    "en-US": "A short certificate that shows a worker has completed site safety orientation."
+                },
+                "ceterms:inLanguage": [
+                    "en"
+                ],
+                "ceterms:keyword": {
+                    "en-US": [
+                        "orientation",
+                        "safety",
+                        "smoke test"
+                    ]
+                },
+                "ceterms:name": {
+                    "en-US": "Smoke Test: Safety Orientation Certificate"
+                },
+                "ceterms:offeredBy": [
+                    "http://host.docker.internal:9292/resources/ce-973800b4-4102-41dd-9a80-93395dbfcbe8"
+                ],
+                "ceterms:ownedBy": [
+                    "http://host.docker.internal:9292/resources/ce-973800b4-4102-41dd-9a80-93395dbfcbe8"
+                ],
+                "ceterms:subjectWebpage": "https://example.org/safety-orientation"
+            }
+        ]
+    }
+]

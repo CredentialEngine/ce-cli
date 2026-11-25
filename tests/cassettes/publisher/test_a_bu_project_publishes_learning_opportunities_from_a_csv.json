@@ -1,0 +1,759 @@
+{
+  "interactions": [
+    {
+      "request": {
+        "json": {
+          "name": "ce-cli replay: publish learning opportunities",
+          "projectType": "BulkUpload"
+        },
+        "method": "POST",
+        "path": "/projects",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"projectId\":172}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"projectId\":172,\"name\":\"ce-cli replay: publish learning opportunities\",\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"status\":\"Active\",\"publishStatus\":\"NotPublished\",\"projectType\":\"BulkUpload\",\"createdAt\":\"2026-11-23T23:34:56.69733Z\",\"updatedAt\":\"2026-11-23T23:34:56.69733Z\",\"iterations\":[],\"reviewers\":[],\"publishingJobs\":[]}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "files": [
+          "learning-opportunities.csv"
+        ],
+        "method": "POST",
+        "path": "/projects/172/iterations/upload",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.7091749Z\",\"status\":\"Created\"}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"projectId\":172,\"name\":\"ce-cli replay: publish learning opportunities\",\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"status\":\"Active\",\"publishStatus\":\"NotPublished\",\"projectType\":\"BulkUpload\",\"createdAt\":\"2026-11-23T23:34:56.69733Z\",\"updatedAt\":\"2026-11-23T23:34:56.69733Z\",\"iterations\":[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Validating\"}],\"reviewers\":[],\"publishingJobs\":[]}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Validated\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Validated\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172/iterations/1/files",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"fileName\":\"learning-opportunities.csv\",\"resourceClass\":\"ceterms:LearningOpportunity\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172/iterations/1/validationResults",
+        "query": "limitPerFile=50"
+      },
+      "response": {
+        "body": "{\"learning-opportunities.csv\":{\"CsvStructure\":[],\"SpellCheck\":[{\"row\":2,\"column\":\"Keywords\",\"value\":\"welding|safety\",\"message\":\"This sentence does not start with an uppercase letter.\",\"type\":\"SpellCheck\"},{\"row\":2,\"column\":\"Delivery Type\",\"value\":\"InPerson\",\"message\":\"Possible spelling mistake found.\",\"type\":\"SpellCheck\"},{\"row\":3,\"column\":\"Keywords\",\"value\":\"forklift|workshop\",\"message\":\"This sentence does not start with an uppercase letter.\",\"type\":\"SpellCheck\"},{\"row\":3,\"column\":\"Delivery Type\",\"value\":\"BlendedDelivery\",\"message\":\"Possible spelling mistake found.\",\"type\":\"SpellCheck\"}],\"Whitespace\":[],\"CtidReference\":[]}}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Validated\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172/iterations/1/files",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"fileName\":\"learning-opportunities.csv\",\"resourceClass\":\"ceterms:LearningOpportunity\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172/iterations/1/validationResults",
+        "query": "limitPerFile=50"
+      },
+      "response": {
+        "body": "{\"learning-opportunities.csv\":{\"CsvStructure\":[],\"SpellCheck\":[{\"row\":2,\"column\":\"Keywords\",\"value\":\"welding|safety\",\"message\":\"This sentence does not start with an uppercase letter.\",\"type\":\"SpellCheck\"},{\"row\":2,\"column\":\"Delivery Type\",\"value\":\"InPerson\",\"message\":\"Possible spelling mistake found.\",\"type\":\"SpellCheck\"},{\"row\":3,\"column\":\"Keywords\",\"value\":\"forklift|workshop\",\"message\":\"This sentence does not start with an uppercase letter.\",\"type\":\"SpellCheck\"},{\"row\":3,\"column\":\"Delivery Type\",\"value\":\"BlendedDelivery\",\"message\":\"Possible spelling mistake found.\",\"type\":\"SpellCheck\"}],\"Whitespace\":[],\"CtidReference\":[]}}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"projectId\":172,\"name\":\"ce-cli replay: publish learning opportunities\",\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"status\":\"Active\",\"publishStatus\":\"NotPublished\",\"projectType\":\"BulkUpload\",\"createdAt\":\"2026-11-23T23:34:56.69733Z\",\"updatedAt\":\"2026-11-23T23:34:56.69733Z\",\"iterations\":[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Validated\"}],\"reviewers\":[],\"publishingJobs\":[]}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Validated\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Validated\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172/iterations/1/files",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"fileName\":\"learning-opportunities.csv\",\"resourceClass\":\"ceterms:LearningOpportunity\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172/iterations/1/validationResults",
+        "query": "limitPerFile=50"
+      },
+      "response": {
+        "body": "{\"learning-opportunities.csv\":{\"CsvStructure\":[],\"SpellCheck\":[{\"row\":2,\"column\":\"Keywords\",\"value\":\"welding|safety\",\"message\":\"This sentence does not start with an uppercase letter.\",\"type\":\"SpellCheck\"},{\"row\":2,\"column\":\"Delivery Type\",\"value\":\"InPerson\",\"message\":\"Possible spelling mistake found.\",\"type\":\"SpellCheck\"},{\"row\":3,\"column\":\"Keywords\",\"value\":\"forklift|workshop\",\"message\":\"This sentence does not start with an uppercase letter.\",\"type\":\"SpellCheck\"},{\"row\":3,\"column\":\"Delivery Type\",\"value\":\"BlendedDelivery\",\"message\":\"Possible spelling mistake found.\",\"type\":\"SpellCheck\"}],\"Whitespace\":[],\"CtidReference\":[]}}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/projects/172/iterations/1/transform",
+        "query": ""
+      },
+      "response": {
+        "body": "",
+        "content_type": "",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Transforming\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Transforming\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Transforming\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Transforming\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Transforming\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Transforming\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Transforming\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Transforming\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Transformed\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "json": {
+          "isRequired": true,
+          "userId": "11111111-1111-1111-1111-111111111111"
+        },
+        "method": "POST",
+        "path": "/projects/172/reviewers",
+        "query": ""
+      },
+      "response": {
+        "body": "",
+        "content_type": "",
+        "status": 204
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/projects/172/approve",
+        "query": ""
+      },
+      "response": {
+        "body": "",
+        "content_type": "",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/projects/172/publish/start",
+        "query": "iterationId=1"
+      },
+      "response": {
+        "body": "",
+        "content_type": "",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"projectId\":172,\"name\":\"ce-cli replay: publish learning opportunities\",\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"status\":\"Approved\",\"publishStatus\":\"Publishing\",\"projectType\":\"BulkUpload\",\"createdAt\":\"2026-11-23T23:34:56.69733Z\",\"updatedAt\":\"2026-11-23T23:34:56.69733Z\",\"iterations\":[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Transformed\"}],\"reviewers\":[{\"userId\":\"11111111-1111-1111-1111-111111111111\",\"isRequired\":true,\"isApproved\":true}],\"publishingJobs\":[{\"jobId\":\"63669fbf-ed48-4c84-8b3c-6e103f75ae1b\",\"iterationId\":1,\"stage\":\"ChangesetGeneration\",\"status\":\"Queued\",\"workflowName\":\"execute-generate-changeset-job-g8zj6\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:35:45.109674Z\"}]}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"projectId\":172,\"name\":\"ce-cli replay: publish learning opportunities\",\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"status\":\"Approved\",\"publishStatus\":\"Publishing\",\"projectType\":\"BulkUpload\",\"createdAt\":\"2026-11-23T23:34:56.69733Z\",\"updatedAt\":\"2026-11-23T23:34:56.69733Z\",\"iterations\":[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Transformed\"}],\"reviewers\":[{\"userId\":\"11111111-1111-1111-1111-111111111111\",\"isRequired\":true,\"isApproved\":true}],\"publishingJobs\":[{\"jobId\":\"63669fbf-ed48-4c84-8b3c-6e103f75ae1b\",\"iterationId\":1,\"stage\":\"ChangesetGeneration\",\"status\":\"Queued\",\"workflowName\":\"execute-generate-changeset-job-g8zj6\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:35:45.109674Z\"}]}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"projectId\":172,\"name\":\"ce-cli replay: publish learning opportunities\",\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"status\":\"Approved\",\"publishStatus\":\"Publishing\",\"projectType\":\"BulkUpload\",\"createdAt\":\"2026-11-23T23:34:56.69733Z\",\"updatedAt\":\"2026-11-23T23:34:56.69733Z\",\"iterations\":[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Transformed\"}],\"reviewers\":[{\"userId\":\"11111111-1111-1111-1111-111111111111\",\"isRequired\":true,\"isApproved\":true}],\"publishingJobs\":[{\"jobId\":\"63669fbf-ed48-4c84-8b3c-6e103f75ae1b\",\"iterationId\":1,\"stage\":\"ChangesetGeneration\",\"status\":\"Queued\",\"workflowName\":\"execute-generate-changeset-job-g8zj6\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:35:45.109674Z\"}]}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"projectId\":172,\"name\":\"ce-cli replay: publish learning opportunities\",\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"status\":\"Approved\",\"publishStatus\":\"Publishing\",\"projectType\":\"BulkUpload\",\"createdAt\":\"2026-11-23T23:34:56.69733Z\",\"updatedAt\":\"2026-11-23T23:34:56.69733Z\",\"iterations\":[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Transformed\"}],\"reviewers\":[{\"userId\":\"11111111-1111-1111-1111-111111111111\",\"isRequired\":true,\"isApproved\":true}],\"publishingJobs\":[{\"jobId\":\"63669fbf-ed48-4c84-8b3c-6e103f75ae1b\",\"iterationId\":1,\"stage\":\"ChangesetGeneration\",\"status\":\"Succeeded\",\"workflowName\":\"execute-generate-changeset-job-g8zj6\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:35:57.299435Z\"},{\"jobId\":\"089c73d2-b849-4a2c-a25a-587997e4744d\",\"iterationId\":1,\"stage\":\"ChangesetApplication\",\"status\":\"Queued\",\"workflowName\":\"changeset-apply-fs7xw\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:35:57.300646Z\"}]}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"projectId\":172,\"name\":\"ce-cli replay: publish learning opportunities\",\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"status\":\"Approved\",\"publishStatus\":\"Publishing\",\"projectType\":\"BulkUpload\",\"createdAt\":\"2026-11-23T23:34:56.69733Z\",\"updatedAt\":\"2026-11-23T23:34:56.69733Z\",\"iterations\":[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Transformed\"}],\"reviewers\":[{\"userId\":\"11111111-1111-1111-1111-111111111111\",\"isRequired\":true,\"isApproved\":true}],\"publishingJobs\":[{\"jobId\":\"63669fbf-ed48-4c84-8b3c-6e103f75ae1b\",\"iterationId\":1,\"stage\":\"ChangesetGeneration\",\"status\":\"Succeeded\",\"workflowName\":\"execute-generate-changeset-job-g8zj6\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:35:57.299435Z\"},{\"jobId\":\"089c73d2-b849-4a2c-a25a-587997e4744d\",\"iterationId\":1,\"stage\":\"ChangesetApplication\",\"status\":\"Queued\",\"workflowName\":\"changeset-apply-fs7xw\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:35:57.300646Z\"}]}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"projectId\":172,\"name\":\"ce-cli replay: publish learning opportunities\",\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"status\":\"Approved\",\"publishStatus\":\"Publishing\",\"projectType\":\"BulkUpload\",\"createdAt\":\"2026-11-23T23:34:56.69733Z\",\"updatedAt\":\"2026-11-23T23:34:56.69733Z\",\"iterations\":[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Transformed\"}],\"reviewers\":[{\"userId\":\"11111111-1111-1111-1111-111111111111\",\"isRequired\":true,\"isApproved\":true}],\"publishingJobs\":[{\"jobId\":\"63669fbf-ed48-4c84-8b3c-6e103f75ae1b\",\"iterationId\":1,\"stage\":\"ChangesetGeneration\",\"status\":\"Succeeded\",\"workflowName\":\"execute-generate-changeset-job-g8zj6\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:35:57.299435Z\"},{\"jobId\":\"089c73d2-b849-4a2c-a25a-587997e4744d\",\"iterationId\":1,\"stage\":\"ChangesetApplication\",\"status\":\"Succeeded\",\"workflowName\":\"changeset-apply-fs7xw\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:09.291858Z\"},{\"jobId\":\"b0cfedba-8c78-4846-9727-40d8bd845a00\",\"iterationId\":1,\"stage\":\"GraphDbUpdate\",\"status\":\"Queued\",\"workflowName\":\"graphdb-repository-update-x4ddk\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:09.293846Z\"}]}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"projectId\":172,\"name\":\"ce-cli replay: publish learning opportunities\",\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"status\":\"Approved\",\"publishStatus\":\"Publishing\",\"projectType\":\"BulkUpload\",\"createdAt\":\"2026-11-23T23:34:56.69733Z\",\"updatedAt\":\"2026-11-23T23:34:56.69733Z\",\"iterations\":[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Transformed\"}],\"reviewers\":[{\"userId\":\"11111111-1111-1111-1111-111111111111\",\"isRequired\":true,\"isApproved\":true}],\"publishingJobs\":[{\"jobId\":\"63669fbf-ed48-4c84-8b3c-6e103f75ae1b\",\"iterationId\":1,\"stage\":\"ChangesetGeneration\",\"status\":\"Succeeded\",\"workflowName\":\"execute-generate-changeset-job-g8zj6\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:35:57.299435Z\"},{\"jobId\":\"089c73d2-b849-4a2c-a25a-587997e4744d\",\"iterationId\":1,\"stage\":\"ChangesetApplication\",\"status\":\"Succeeded\",\"workflowName\":\"changeset-apply-fs7xw\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:09.291858Z\"},{\"jobId\":\"b0cfedba-8c78-4846-9727-40d8bd845a00\",\"iterationId\":1,\"stage\":\"GraphDbUpdate\",\"status\":\"Queued\",\"workflowName\":\"graphdb-repository-update-x4ddk\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:09.293846Z\"}]}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"projectId\":172,\"name\":\"ce-cli replay: publish learning opportunities\",\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"status\":\"Approved\",\"publishStatus\":\"Publishing\",\"projectType\":\"BulkUpload\",\"createdAt\":\"2026-11-23T23:34:56.69733Z\",\"updatedAt\":\"2026-11-23T23:34:56.69733Z\",\"iterations\":[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Transformed\"}],\"reviewers\":[{\"userId\":\"11111111-1111-1111-1111-111111111111\",\"isRequired\":true,\"isApproved\":true}],\"publishingJobs\":[{\"jobId\":\"63669fbf-ed48-4c84-8b3c-6e103f75ae1b\",\"iterationId\":1,\"stage\":\"ChangesetGeneration\",\"status\":\"Succeeded\",\"workflowName\":\"execute-generate-changeset-job-g8zj6\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:35:57.299435Z\"},{\"jobId\":\"089c73d2-b849-4a2c-a25a-587997e4744d\",\"iterationId\":1,\"stage\":\"ChangesetApplication\",\"status\":\"Succeeded\",\"workflowName\":\"changeset-apply-fs7xw\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:09.291858Z\"},{\"jobId\":\"b0cfedba-8c78-4846-9727-40d8bd845a00\",\"iterationId\":1,\"stage\":\"GraphDbUpdate\",\"status\":\"Queued\",\"workflowName\":\"graphdb-repository-update-x4ddk\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:09.293846Z\"}]}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"projectId\":172,\"name\":\"ce-cli replay: publish learning opportunities\",\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"status\":\"Approved\",\"publishStatus\":\"Publishing\",\"projectType\":\"BulkUpload\",\"createdAt\":\"2026-11-23T23:34:56.69733Z\",\"updatedAt\":\"2026-11-23T23:34:56.69733Z\",\"iterations\":[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Transformed\"}],\"reviewers\":[{\"userId\":\"11111111-1111-1111-1111-111111111111\",\"isRequired\":true,\"isApproved\":true}],\"publishingJobs\":[{\"jobId\":\"63669fbf-ed48-4c84-8b3c-6e103f75ae1b\",\"iterationId\":1,\"stage\":\"ChangesetGeneration\",\"status\":\"Succeeded\",\"workflowName\":\"execute-generate-changeset-job-g8zj6\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:35:57.299435Z\"},{\"jobId\":\"089c73d2-b849-4a2c-a25a-587997e4744d\",\"iterationId\":1,\"stage\":\"ChangesetApplication\",\"status\":\"Succeeded\",\"workflowName\":\"changeset-apply-fs7xw\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:09.291858Z\"},{\"jobId\":\"b0cfedba-8c78-4846-9727-40d8bd845a00\",\"iterationId\":1,\"stage\":\"GraphDbUpdate\",\"status\":\"Succeeded\",\"workflowName\":\"graphdb-repository-update-x4ddk\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:21.99867Z\"},{\"jobId\":\"ff2e41dd-67a9-4d30-8b2b-7b69a9e8b9dd\",\"iterationId\":1,\"stage\":\"ElasticsearchGraphsUpdate\",\"status\":\"Queued\",\"workflowName\":\"elastic-search-graphs-update-ww7m7\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:22.000146Z\"}]}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"projectId\":172,\"name\":\"ce-cli replay: publish learning opportunities\",\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"status\":\"Approved\",\"publishStatus\":\"Publishing\",\"projectType\":\"BulkUpload\",\"createdAt\":\"2026-11-23T23:34:56.69733Z\",\"updatedAt\":\"2026-11-23T23:34:56.69733Z\",\"iterations\":[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Transformed\"}],\"reviewers\":[{\"userId\":\"11111111-1111-1111-1111-111111111111\",\"isRequired\":true,\"isApproved\":true}],\"publishingJobs\":[{\"jobId\":\"63669fbf-ed48-4c84-8b3c-6e103f75ae1b\",\"iterationId\":1,\"stage\":\"ChangesetGeneration\",\"status\":\"Succeeded\",\"workflowName\":\"execute-generate-changeset-job-g8zj6\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:35:57.299435Z\"},{\"jobId\":\"089c73d2-b849-4a2c-a25a-587997e4744d\",\"iterationId\":1,\"stage\":\"ChangesetApplication\",\"status\":\"Succeeded\",\"workflowName\":\"changeset-apply-fs7xw\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:09.291858Z\"},{\"jobId\":\"b0cfedba-8c78-4846-9727-40d8bd845a00\",\"iterationId\":1,\"stage\":\"GraphDbUpdate\",\"status\":\"Succeeded\",\"workflowName\":\"graphdb-repository-update-x4ddk\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:21.99867Z\"},{\"jobId\":\"ff2e41dd-67a9-4d30-8b2b-7b69a9e8b9dd\",\"iterationId\":1,\"stage\":\"ElasticsearchGraphsUpdate\",\"status\":\"Queued\",\"workflowName\":\"elastic-search-graphs-update-ww7m7\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:22.000146Z\"}]}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"projectId\":172,\"name\":\"ce-cli replay: publish learning opportunities\",\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"status\":\"Approved\",\"publishStatus\":\"Publishing\",\"projectType\":\"BulkUpload\",\"createdAt\":\"2026-11-23T23:34:56.69733Z\",\"updatedAt\":\"2026-11-23T23:34:56.69733Z\",\"iterations\":[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Transformed\"}],\"reviewers\":[{\"userId\":\"11111111-1111-1111-1111-111111111111\",\"isRequired\":true,\"isApproved\":true}],\"publishingJobs\":[{\"jobId\":\"63669fbf-ed48-4c84-8b3c-6e103f75ae1b\",\"iterationId\":1,\"stage\":\"ChangesetGeneration\",\"status\":\"Succeeded\",\"workflowName\":\"execute-generate-changeset-job-g8zj6\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:35:57.299435Z\"},{\"jobId\":\"089c73d2-b849-4a2c-a25a-587997e4744d\",\"iterationId\":1,\"stage\":\"ChangesetApplication\",\"status\":\"Succeeded\",\"workflowName\":\"changeset-apply-fs7xw\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:09.291858Z\"},{\"jobId\":\"b0cfedba-8c78-4846-9727-40d8bd845a00\",\"iterationId\":1,\"stage\":\"GraphDbUpdate\",\"status\":\"Succeeded\",\"workflowName\":\"graphdb-repository-update-x4ddk\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:21.99867Z\"},{\"jobId\":\"ff2e41dd-67a9-4d30-8b2b-7b69a9e8b9dd\",\"iterationId\":1,\"stage\":\"ElasticsearchGraphsUpdate\",\"status\":\"Queued\",\"workflowName\":\"elastic-search-graphs-update-ww7m7\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:22.000146Z\"}]}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"projectId\":172,\"name\":\"ce-cli replay: publish learning opportunities\",\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"status\":\"Approved\",\"publishStatus\":\"Publishing\",\"projectType\":\"BulkUpload\",\"createdAt\":\"2026-11-23T23:34:56.69733Z\",\"updatedAt\":\"2026-11-23T23:34:56.69733Z\",\"iterations\":[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Transformed\"}],\"reviewers\":[{\"userId\":\"11111111-1111-1111-1111-111111111111\",\"isRequired\":true,\"isApproved\":true}],\"publishingJobs\":[{\"jobId\":\"63669fbf-ed48-4c84-8b3c-6e103f75ae1b\",\"iterationId\":1,\"stage\":\"ChangesetGeneration\",\"status\":\"Succeeded\",\"workflowName\":\"execute-generate-changeset-job-g8zj6\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:35:57.299435Z\"},{\"jobId\":\"089c73d2-b849-4a2c-a25a-587997e4744d\",\"iterationId\":1,\"stage\":\"ChangesetApplication\",\"status\":\"Succeeded\",\"workflowName\":\"changeset-apply-fs7xw\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:09.291858Z\"},{\"jobId\":\"b0cfedba-8c78-4846-9727-40d8bd845a00\",\"iterationId\":1,\"stage\":\"GraphDbUpdate\",\"status\":\"Succeeded\",\"workflowName\":\"graphdb-repository-update-x4ddk\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:21.99867Z\"},{\"jobId\":\"ff2e41dd-67a9-4d30-8b2b-7b69a9e8b9dd\",\"iterationId\":1,\"stage\":\"ElasticsearchGraphsUpdate\",\"status\":\"Queued\",\"workflowName\":\"elastic-search-graphs-update-ww7m7\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:22.000146Z\"}]}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"projectId\":172,\"name\":\"ce-cli replay: publish learning opportunities\",\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"status\":\"Approved\",\"publishStatus\":\"Publishing\",\"projectType\":\"BulkUpload\",\"createdAt\":\"2026-11-23T23:34:56.69733Z\",\"updatedAt\":\"2026-11-23T23:34:56.69733Z\",\"iterations\":[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Transformed\"}],\"reviewers\":[{\"userId\":\"11111111-1111-1111-1111-111111111111\",\"isRequired\":true,\"isApproved\":true}],\"publishingJobs\":[{\"jobId\":\"63669fbf-ed48-4c84-8b3c-6e103f75ae1b\",\"iterationId\":1,\"stage\":\"ChangesetGeneration\",\"status\":\"Succeeded\",\"workflowName\":\"execute-generate-changeset-job-g8zj6\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:35:57.299435Z\"},{\"jobId\":\"089c73d2-b849-4a2c-a25a-587997e4744d\",\"iterationId\":1,\"stage\":\"ChangesetApplication\",\"status\":\"Succeeded\",\"workflowName\":\"changeset-apply-fs7xw\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:09.291858Z\"},{\"jobId\":\"b0cfedba-8c78-4846-9727-40d8bd845a00\",\"iterationId\":1,\"stage\":\"GraphDbUpdate\",\"status\":\"Succeeded\",\"workflowName\":\"graphdb-repository-update-x4ddk\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:21.99867Z\"},{\"jobId\":\"ff2e41dd-67a9-4d30-8b2b-7b69a9e8b9dd\",\"iterationId\":1,\"stage\":\"ElasticsearchGraphsUpdate\",\"status\":\"Succeeded\",\"workflowName\":\"elastic-search-graphs-update-ww7m7\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:43.989383Z\"},{\"jobId\":\"4711f1d1-753a-4c94-80e8-2505394b0816\",\"iterationId\":1,\"stage\":\"ElasticsearchResourcesUpdate\",\"status\":\"Queued\",\"workflowName\":\"elastic-search-resources-update-xh7n7\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:43.990569Z\"}]}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"projectId\":172,\"name\":\"ce-cli replay: publish learning opportunities\",\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"status\":\"Approved\",\"publishStatus\":\"Publishing\",\"projectType\":\"BulkUpload\",\"createdAt\":\"2026-11-23T23:34:56.69733Z\",\"updatedAt\":\"2026-11-23T23:34:56.69733Z\",\"iterations\":[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Transformed\"}],\"reviewers\":[{\"userId\":\"11111111-1111-1111-1111-111111111111\",\"isRequired\":true,\"isApproved\":true}],\"publishingJobs\":[{\"jobId\":\"63669fbf-ed48-4c84-8b3c-6e103f75ae1b\",\"iterationId\":1,\"stage\":\"ChangesetGeneration\",\"status\":\"Succeeded\",\"workflowName\":\"execute-generate-changeset-job-g8zj6\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:35:57.299435Z\"},{\"jobId\":\"089c73d2-b849-4a2c-a25a-587997e4744d\",\"iterationId\":1,\"stage\":\"ChangesetApplication\",\"status\":\"Succeeded\",\"workflowName\":\"changeset-apply-fs7xw\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:09.291858Z\"},{\"jobId\":\"b0cfedba-8c78-4846-9727-40d8bd845a00\",\"iterationId\":1,\"stage\":\"GraphDbUpdate\",\"status\":\"Succeeded\",\"workflowName\":\"graphdb-repository-update-x4ddk\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:21.99867Z\"},{\"jobId\":\"ff2e41dd-67a9-4d30-8b2b-7b69a9e8b9dd\",\"iterationId\":1,\"stage\":\"ElasticsearchGraphsUpdate\",\"status\":\"Succeeded\",\"workflowName\":\"elastic-search-graphs-update-ww7m7\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:43.989383Z\"},{\"jobId\":\"4711f1d1-753a-4c94-80e8-2505394b0816\",\"iterationId\":1,\"stage\":\"ElasticsearchResourcesUpdate\",\"status\":\"Queued\",\"workflowName\":\"elastic-search-resources-update-xh7n7\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:43.990569Z\"}]}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"projectId\":172,\"name\":\"ce-cli replay: publish learning opportunities\",\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"status\":\"Approved\",\"publishStatus\":\"Publishing\",\"projectType\":\"BulkUpload\",\"createdAt\":\"2026-11-23T23:34:56.69733Z\",\"updatedAt\":\"2026-11-23T23:34:56.69733Z\",\"iterations\":[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Transformed\"}],\"reviewers\":[{\"userId\":\"11111111-1111-1111-1111-111111111111\",\"isRequired\":true,\"isApproved\":true}],\"publishingJobs\":[{\"jobId\":\"63669fbf-ed48-4c84-8b3c-6e103f75ae1b\",\"iterationId\":1,\"stage\":\"ChangesetGeneration\",\"status\":\"Succeeded\",\"workflowName\":\"execute-generate-changeset-job-g8zj6\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:35:57.299435Z\"},{\"jobId\":\"089c73d2-b849-4a2c-a25a-587997e4744d\",\"iterationId\":1,\"stage\":\"ChangesetApplication\",\"status\":\"Succeeded\",\"workflowName\":\"changeset-apply-fs7xw\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:09.291858Z\"},{\"jobId\":\"b0cfedba-8c78-4846-9727-40d8bd845a00\",\"iterationId\":1,\"stage\":\"GraphDbUpdate\",\"status\":\"Succeeded\",\"workflowName\":\"graphdb-repository-update-x4ddk\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:21.99867Z\"},{\"jobId\":\"ff2e41dd-67a9-4d30-8b2b-7b69a9e8b9dd\",\"iterationId\":1,\"stage\":\"ElasticsearchGraphsUpdate\",\"status\":\"Succeeded\",\"workflowName\":\"elastic-search-graphs-update-ww7m7\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:43.989383Z\"},{\"jobId\":\"4711f1d1-753a-4c94-80e8-2505394b0816\",\"iterationId\":1,\"stage\":\"ElasticsearchResourcesUpdate\",\"status\":\"Queued\",\"workflowName\":\"elastic-search-resources-update-xh7n7\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:43.990569Z\"}]}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"projectId\":172,\"name\":\"ce-cli replay: publish learning opportunities\",\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"status\":\"Approved\",\"publishStatus\":\"Publishing\",\"projectType\":\"BulkUpload\",\"createdAt\":\"2026-11-23T23:34:56.69733Z\",\"updatedAt\":\"2026-11-23T23:34:56.69733Z\",\"iterations\":[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Transformed\"}],\"reviewers\":[{\"userId\":\"11111111-1111-1111-1111-111111111111\",\"isRequired\":true,\"isApproved\":true}],\"publishingJobs\":[{\"jobId\":\"63669fbf-ed48-4c84-8b3c-6e103f75ae1b\",\"iterationId\":1,\"stage\":\"ChangesetGeneration\",\"status\":\"Succeeded\",\"workflowName\":\"execute-generate-changeset-job-g8zj6\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:35:57.299435Z\"},{\"jobId\":\"089c73d2-b849-4a2c-a25a-587997e4744d\",\"iterationId\":1,\"stage\":\"ChangesetApplication\",\"status\":\"Succeeded\",\"workflowName\":\"changeset-apply-fs7xw\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:09.291858Z\"},{\"jobId\":\"b0cfedba-8c78-4846-9727-40d8bd845a00\",\"iterationId\":1,\"stage\":\"GraphDbUpdate\",\"status\":\"Succeeded\",\"workflowName\":\"graphdb-repository-update-x4ddk\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:21.99867Z\"},{\"jobId\":\"ff2e41dd-67a9-4d30-8b2b-7b69a9e8b9dd\",\"iterationId\":1,\"stage\":\"ElasticsearchGraphsUpdate\",\"status\":\"Succeeded\",\"workflowName\":\"elastic-search-graphs-update-ww7m7\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:43.989383Z\"},{\"jobId\":\"4711f1d1-753a-4c94-80e8-2505394b0816\",\"iterationId\":1,\"stage\":\"ElasticsearchResourcesUpdate\",\"status\":\"Queued\",\"workflowName\":\"elastic-search-resources-update-xh7n7\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:43.990569Z\"}]}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"projectId\":172,\"name\":\"ce-cli replay: publish learning opportunities\",\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"status\":\"Approved\",\"publishStatus\":\"Publishing\",\"projectType\":\"BulkUpload\",\"createdAt\":\"2026-11-23T23:34:56.69733Z\",\"updatedAt\":\"2026-11-23T23:34:56.69733Z\",\"iterations\":[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Transformed\"}],\"reviewers\":[{\"userId\":\"11111111-1111-1111-1111-111111111111\",\"isRequired\":true,\"isApproved\":true}],\"publishingJobs\":[{\"jobId\":\"63669fbf-ed48-4c84-8b3c-6e103f75ae1b\",\"iterationId\":1,\"stage\":\"ChangesetGeneration\",\"status\":\"Succeeded\",\"workflowName\":\"execute-generate-changeset-job-g8zj6\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:35:57.299435Z\"},{\"jobId\":\"089c73d2-b849-4a2c-a25a-587997e4744d\",\"iterationId\":1,\"stage\":\"ChangesetApplication\",\"status\":\"Succeeded\",\"workflowName\":\"changeset-apply-fs7xw\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:09.291858Z\"},{\"jobId\":\"b0cfedba-8c78-4846-9727-40d8bd845a00\",\"iterationId\":1,\"stage\":\"GraphDbUpdate\",\"status\":\"Succeeded\",\"workflowName\":\"graphdb-repository-update-x4ddk\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:21.99867Z\"},{\"jobId\":\"ff2e41dd-67a9-4d30-8b2b-7b69a9e8b9dd\",\"iterationId\":1,\"stage\":\"ElasticsearchGraphsUpdate\",\"status\":\"Succeeded\",\"workflowName\":\"elastic-search-graphs-update-ww7m7\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:43.989383Z\"},{\"jobId\":\"4711f1d1-753a-4c94-80e8-2505394b0816\",\"iterationId\":1,\"stage\":\"ElasticsearchResourcesUpdate\",\"status\":\"Queued\",\"workflowName\":\"elastic-search-resources-update-xh7n7\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:43.990569Z\"}]}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"projectId\":172,\"name\":\"ce-cli replay: publish learning opportunities\",\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"status\":\"Approved\",\"publishStatus\":\"Publishing\",\"projectType\":\"BulkUpload\",\"createdAt\":\"2026-11-23T23:34:56.69733Z\",\"updatedAt\":\"2026-11-23T23:34:56.69733Z\",\"iterations\":[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Transformed\"}],\"reviewers\":[{\"userId\":\"11111111-1111-1111-1111-111111111111\",\"isRequired\":true,\"isApproved\":true}],\"publishingJobs\":[{\"jobId\":\"63669fbf-ed48-4c84-8b3c-6e103f75ae1b\",\"iterationId\":1,\"stage\":\"ChangesetGeneration\",\"status\":\"Succeeded\",\"workflowName\":\"execute-generate-changeset-job-g8zj6\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:35:57.299435Z\"},{\"jobId\":\"089c73d2-b849-4a2c-a25a-587997e4744d\",\"iterationId\":1,\"stage\":\"ChangesetApplication\",\"status\":\"Succeeded\",\"workflowName\":\"changeset-apply-fs7xw\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:09.291858Z\"},{\"jobId\":\"b0cfedba-8c78-4846-9727-40d8bd845a00\",\"iterationId\":1,\"stage\":\"GraphDbUpdate\",\"status\":\"Succeeded\",\"workflowName\":\"graphdb-repository-update-x4ddk\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:21.99867Z\"},{\"jobId\":\"ff2e41dd-67a9-4d30-8b2b-7b69a9e8b9dd\",\"iterationId\":1,\"stage\":\"ElasticsearchGraphsUpdate\",\"status\":\"Succeeded\",\"workflowName\":\"elastic-search-graphs-update-ww7m7\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:43.989383Z\"},{\"jobId\":\"4711f1d1-753a-4c94-80e8-2505394b0816\",\"iterationId\":1,\"stage\":\"ElasticsearchResourcesUpdate\",\"status\":\"Succeeded\",\"workflowName\":\"elastic-search-resources-update-xh7n7\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:37:06.496057Z\"},{\"jobId\":\"7979eabf-25e6-4b19-a8d0-81aaf01cca18\",\"iterationId\":1,\"stage\":\"ElasticsearchMetadataUpdate\",\"status\":\"Queued\",\"workflowName\":\"update-index-metadata-elasticsearch-jkr46\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:37:06.498744Z\"}]}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"projectId\":172,\"name\":\"ce-cli replay: publish learning opportunities\",\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"status\":\"Approved\",\"publishStatus\":\"Publishing\",\"projectType\":\"BulkUpload\",\"createdAt\":\"2026-11-23T23:34:56.69733Z\",\"updatedAt\":\"2026-11-23T23:34:56.69733Z\",\"iterations\":[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Transformed\"}],\"reviewers\":[{\"userId\":\"11111111-1111-1111-1111-111111111111\",\"isRequired\":true,\"isApproved\":true}],\"publishingJobs\":[{\"jobId\":\"63669fbf-ed48-4c84-8b3c-6e103f75ae1b\",\"iterationId\":1,\"stage\":\"ChangesetGeneration\",\"status\":\"Succeeded\",\"workflowName\":\"execute-generate-changeset-job-g8zj6\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:35:57.299435Z\"},{\"jobId\":\"089c73d2-b849-4a2c-a25a-587997e4744d\",\"iterationId\":1,\"stage\":\"ChangesetApplication\",\"status\":\"Succeeded\",\"workflowName\":\"changeset-apply-fs7xw\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:09.291858Z\"},{\"jobId\":\"b0cfedba-8c78-4846-9727-40d8bd845a00\",\"iterationId\":1,\"stage\":\"GraphDbUpdate\",\"status\":\"Succeeded\",\"workflowName\":\"graphdb-repository-update-x4ddk\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:21.99867Z\"},{\"jobId\":\"ff2e41dd-67a9-4d30-8b2b-7b69a9e8b9dd\",\"iterationId\":1,\"stage\":\"ElasticsearchGraphsUpdate\",\"status\":\"Succeeded\",\"workflowName\":\"elastic-search-graphs-update-ww7m7\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:43.989383Z\"},{\"jobId\":\"4711f1d1-753a-4c94-80e8-2505394b0816\",\"iterationId\":1,\"stage\":\"ElasticsearchResourcesUpdate\",\"status\":\"Succeeded\",\"workflowName\":\"elastic-search-resources-update-xh7n7\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:37:06.496057Z\"},{\"jobId\":\"7979eabf-25e6-4b19-a8d0-81aaf01cca18\",\"iterationId\":1,\"stage\":\"ElasticsearchMetadataUpdate\",\"status\":\"Queued\",\"workflowName\":\"update-index-metadata-elasticsearch-jkr46\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:37:06.498744Z\"}]}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"projectId\":172,\"name\":\"ce-cli replay: publish learning opportunities\",\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"status\":\"Approved\",\"publishStatus\":\"Publishing\",\"projectType\":\"BulkUpload\",\"createdAt\":\"2026-11-23T23:34:56.69733Z\",\"updatedAt\":\"2026-11-23T23:34:56.69733Z\",\"iterations\":[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Transformed\"}],\"reviewers\":[{\"userId\":\"11111111-1111-1111-1111-111111111111\",\"isRequired\":true,\"isApproved\":true}],\"publishingJobs\":[{\"jobId\":\"63669fbf-ed48-4c84-8b3c-6e103f75ae1b\",\"iterationId\":1,\"stage\":\"ChangesetGeneration\",\"status\":\"Succeeded\",\"workflowName\":\"execute-generate-changeset-job-g8zj6\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:35:57.299435Z\"},{\"jobId\":\"089c73d2-b849-4a2c-a25a-587997e4744d\",\"iterationId\":1,\"stage\":\"ChangesetApplication\",\"status\":\"Succeeded\",\"workflowName\":\"changeset-apply-fs7xw\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:09.291858Z\"},{\"jobId\":\"b0cfedba-8c78-4846-9727-40d8bd845a00\",\"iterationId\":1,\"stage\":\"GraphDbUpdate\",\"status\":\"Succeeded\",\"workflowName\":\"graphdb-repository-update-x4ddk\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:21.99867Z\"},{\"jobId\":\"ff2e41dd-67a9-4d30-8b2b-7b69a9e8b9dd\",\"iterationId\":1,\"stage\":\"ElasticsearchGraphsUpdate\",\"status\":\"Succeeded\",\"workflowName\":\"elastic-search-graphs-update-ww7m7\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:43.989383Z\"},{\"jobId\":\"4711f1d1-753a-4c94-80e8-2505394b0816\",\"iterationId\":1,\"stage\":\"ElasticsearchResourcesUpdate\",\"status\":\"Succeeded\",\"workflowName\":\"elastic-search-resources-update-xh7n7\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:37:06.496057Z\"},{\"jobId\":\"7979eabf-25e6-4b19-a8d0-81aaf01cca18\",\"iterationId\":1,\"stage\":\"ElasticsearchMetadataUpdate\",\"status\":\"Queued\",\"workflowName\":\"update-index-metadata-elasticsearch-jkr46\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:37:06.498744Z\"}]}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"projectId\":172,\"name\":\"ce-cli replay: publish learning opportunities\",\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"status\":\"Approved\",\"publishStatus\":\"Publishing\",\"projectType\":\"BulkUpload\",\"createdAt\":\"2026-11-23T23:34:56.69733Z\",\"updatedAt\":\"2026-11-23T23:34:56.69733Z\",\"iterations\":[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Transformed\"}],\"reviewers\":[{\"userId\":\"11111111-1111-1111-1111-111111111111\",\"isRequired\":true,\"isApproved\":true}],\"publishingJobs\":[{\"jobId\":\"63669fbf-ed48-4c84-8b3c-6e103f75ae1b\",\"iterationId\":1,\"stage\":\"ChangesetGeneration\",\"status\":\"Succeeded\",\"workflowName\":\"execute-generate-changeset-job-g8zj6\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:35:57.299435Z\"},{\"jobId\":\"089c73d2-b849-4a2c-a25a-587997e4744d\",\"iterationId\":1,\"stage\":\"ChangesetApplication\",\"status\":\"Succeeded\",\"workflowName\":\"changeset-apply-fs7xw\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:09.291858Z\"},{\"jobId\":\"b0cfedba-8c78-4846-9727-40d8bd845a00\",\"iterationId\":1,\"stage\":\"GraphDbUpdate\",\"status\":\"Succeeded\",\"workflowName\":\"graphdb-repository-update-x4ddk\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:21.99867Z\"},{\"jobId\":\"ff2e41dd-67a9-4d30-8b2b-7b69a9e8b9dd\",\"iterationId\":1,\"stage\":\"ElasticsearchGraphsUpdate\",\"status\":\"Succeeded\",\"workflowName\":\"elastic-search-graphs-update-ww7m7\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:43.989383Z\"},{\"jobId\":\"4711f1d1-753a-4c94-80e8-2505394b0816\",\"iterationId\":1,\"stage\":\"ElasticsearchResourcesUpdate\",\"status\":\"Succeeded\",\"workflowName\":\"elastic-search-resources-update-xh7n7\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:37:06.496057Z\"},{\"jobId\":\"7979eabf-25e6-4b19-a8d0-81aaf01cca18\",\"iterationId\":1,\"stage\":\"ElasticsearchMetadataUpdate\",\"status\":\"Queued\",\"workflowName\":\"update-index-metadata-elasticsearch-jkr46\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:37:06.498744Z\"}]}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"projectId\":172,\"name\":\"ce-cli replay: publish learning opportunities\",\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"status\":\"Completed\",\"publishStatus\":\"Published\",\"projectType\":\"BulkUpload\",\"createdAt\":\"2026-11-23T23:34:56.69733Z\",\"updatedAt\":\"2026-11-23T23:34:56.69733Z\",\"iterations\":[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Transformed\"}],\"reviewers\":[{\"userId\":\"11111111-1111-1111-1111-111111111111\",\"isRequired\":true,\"isApproved\":true}],\"publishingJobs\":[{\"jobId\":\"63669fbf-ed48-4c84-8b3c-6e103f75ae1b\",\"iterationId\":1,\"stage\":\"ChangesetGeneration\",\"status\":\"Succeeded\",\"workflowName\":\"execute-generate-changeset-job-g8zj6\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:35:57.299435Z\"},{\"jobId\":\"089c73d2-b849-4a2c-a25a-587997e4744d\",\"iterationId\":1,\"stage\":\"ChangesetApplication\",\"status\":\"Succeeded\",\"workflowName\":\"changeset-apply-fs7xw\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:09.291858Z\"},{\"jobId\":\"b0cfedba-8c78-4846-9727-40d8bd845a00\",\"iterationId\":1,\"stage\":\"GraphDbUpdate\",\"status\":\"Succeeded\",\"workflowName\":\"graphdb-repository-update-x4ddk\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:21.99867Z\"},{\"jobId\":\"ff2e41dd-67a9-4d30-8b2b-7b69a9e8b9dd\",\"iterationId\":1,\"stage\":\"ElasticsearchGraphsUpdate\",\"status\":\"Succeeded\",\"workflowName\":\"elastic-search-graphs-update-ww7m7\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:43.989383Z\"},{\"jobId\":\"4711f1d1-753a-4c94-80e8-2505394b0816\",\"iterationId\":1,\"stage\":\"ElasticsearchResourcesUpdate\",\"status\":\"Succeeded\",\"workflowName\":\"elastic-search-resources-update-xh7n7\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:37:06.496057Z\"},{\"jobId\":\"7979eabf-25e6-4b19-a8d0-81aaf01cca18\",\"iterationId\":1,\"stage\":\"ElasticsearchMetadataUpdate\",\"status\":\"Succeeded\",\"workflowName\":\"update-index-metadata-elasticsearch-jkr46\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:37:29.392019Z\"}]}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"projectId\":172,\"name\":\"ce-cli replay: publish learning opportunities\",\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"status\":\"Completed\",\"publishStatus\":\"Published\",\"projectType\":\"BulkUpload\",\"createdAt\":\"2026-11-23T23:34:56.69733Z\",\"updatedAt\":\"2026-11-23T23:34:56.69733Z\",\"iterations\":[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Transformed\"}],\"reviewers\":[{\"userId\":\"11111111-1111-1111-1111-111111111111\",\"isRequired\":true,\"isApproved\":true}],\"publishingJobs\":[{\"jobId\":\"63669fbf-ed48-4c84-8b3c-6e103f75ae1b\",\"iterationId\":1,\"stage\":\"ChangesetGeneration\",\"status\":\"Succeeded\",\"workflowName\":\"execute-generate-changeset-job-g8zj6\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:35:57.299435Z\"},{\"jobId\":\"089c73d2-b849-4a2c-a25a-587997e4744d\",\"iterationId\":1,\"stage\":\"ChangesetApplication\",\"status\":\"Succeeded\",\"workflowName\":\"changeset-apply-fs7xw\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:09.291858Z\"},{\"jobId\":\"b0cfedba-8c78-4846-9727-40d8bd845a00\",\"iterationId\":1,\"stage\":\"GraphDbUpdate\",\"status\":\"Succeeded\",\"workflowName\":\"graphdb-repository-update-x4ddk\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:21.99867Z\"},{\"jobId\":\"ff2e41dd-67a9-4d30-8b2b-7b69a9e8b9dd\",\"iterationId\":1,\"stage\":\"ElasticsearchGraphsUpdate\",\"status\":\"Succeeded\",\"workflowName\":\"elastic-search-graphs-update-ww7m7\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:36:43.989383Z\"},{\"jobId\":\"4711f1d1-753a-4c94-80e8-2505394b0816\",\"iterationId\":1,\"stage\":\"ElasticsearchResourcesUpdate\",\"status\":\"Succeeded\",\"workflowName\":\"elastic-search-resources-update-xh7n7\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:37:06.496057Z\"},{\"jobId\":\"7979eabf-25e6-4b19-a8d0-81aaf01cca18\",\"iterationId\":1,\"stage\":\"ElasticsearchMetadataUpdate\",\"status\":\"Succeeded\",\"workflowName\":\"update-index-metadata-elasticsearch-jkr46\",\"errorMessage\":null,\"updatedAt\":\"2026-11-23T23:37:29.392019Z\"}]}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/172/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-23T23:34:56.709174Z\",\"status\":\"Transformed\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    }
+  ]
+}

@@ -2,14 +2,12 @@
 from __future__ import annotations
 
 import os
-import sys
 import time
 from typing import Any
 
-from rich.console import Console
-from rich.text import Text
+from ce.utils.display import new_console
 
-_stderr = Console(stderr=True)
+_stderr = new_console(stderr=True)
 
 _debug_enabled: bool = bool(os.environ.get("CE_DEBUG", ""))
 
@@ -28,10 +26,10 @@ class CELogger:
     """Lightweight structured logger that writes to stderr via Rich."""
 
     _LEVELS = {
-        "debug":   ("[dim blue]DEBUG[/dim blue]",   False),
-        "info":    ("[dim green]INFO [/dim green]",  False),
-        "warning": ("[yellow]WARN [/yellow]",        False),  
-        "error":   ("[red]ERROR[/red]",              True),   # always shown
+        "debug":   ("DEBUG", False),
+        "info":    ("INFO ", False),
+        "warning": ("WARN ", False),
+        "error":   ("ERROR", True),   # always shown
     }
 
     def __init__(self, name: str) -> None:
@@ -42,9 +40,9 @@ class CELogger:
         if not always and not _debug_enabled:
             return
 
-        parts = [label, f"[dim]{self._name}[/dim]", message]
+        parts = [label, self._name, message]
         if fields:
-            kv = "  ".join(f"[dim]{k}[/dim]=[cyan]{v}[/cyan]" for k, v in fields.items())
+            kv = "  ".join(f"{k}={v}" for k, v in fields.items())
             parts.append(kv)
 
         _stderr.print("  ".join(parts))
@@ -64,13 +62,12 @@ class CELogger:
 
     def http_request(self, method: str, url: str, **extra: Any) -> float:
         """Log an outgoing HTTP request; returns start time for latency tracking."""
-        self.debug(f"→ {method} {url}", **extra)
+        self.debug(f"-> {method} {url}", **extra)
         return time.monotonic()
 
     def http_response(self, status: int, start: float, **extra: Any) -> None:
         elapsed_ms = int((time.monotonic() - start) * 1000)
-        colour = "green" if status < 400 else "red"
-        self.debug(f"← [{colour}]{status}[/{colour}] ({elapsed_ms}ms)", **extra)
+        self.debug(f"<- {status} ({elapsed_ms}ms)", **extra)
 
 
 def get_logger(name: str) -> CELogger:

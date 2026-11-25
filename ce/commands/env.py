@@ -3,9 +3,6 @@
 from __future__ import annotations
 
 import click
-from rich.console import Console
-from rich.panel import Panel
-from rich.table import Table, box
 
 from ce.config.context import (
     DEFAULT_ENVIRONMENTS,
@@ -13,9 +10,10 @@ from ce.config.context import (
     load_cli_config,
     save_cli_config,
 )
+from ce.utils.display import new_console, plain_table, print_pairs
 
-console = Console()
-err_console = Console(stderr=True)
+console = new_console()
+err_console = new_console(stderr=True)
 
 
 @click.group("env")
@@ -30,26 +28,16 @@ def env_list() -> None:
     """List all configured environments."""
     config = load_cli_config()
 
-    table = Table(box=box.SIMPLE_HEAD, header_style="bold", border_style="dim")
-    table.add_column("")
-    table.add_column("Name")
-    table.add_column("Label")
-    table.add_column("Publisher base")
+    table = plain_table(["", "Name", "Label", "Publisher base"])
 
     for name, env in sorted(config.environments.items()):
-        active = "[green]●[/green]" if name == config.current_environment else " "
-        bold = name == config.current_environment
-        table.add_row(
-            active,
-            f"[bold]{name}[/bold]" if bold else name,
-            env.label,
-            env.publisher_base,
-        )
+        active = "*" if name == config.current_environment else " "
+        table.add_row(active, name, env.label, env.publisher_base)
 
     console.print()
     console.print(table)
     if config.current_environment:
-        console.print(f"  Active: [bold green]{config.current_environment}[/bold green]")
+        console.print(f"  Active: {config.current_environment}")
     console.print()
 
 
@@ -88,7 +76,7 @@ def env_add(name, label, client_id, device_auth_url, token_url, scopes,
 
     if base is None and not all([label, client_id, device_auth_url, token_url, publisher_base]):
         err_console.print(
-            f"[red]✗[/red] '{name}' is not a built-in environment. "
+            f"Error: '{name}' is not a built-in environment. "
             "Provide all required options: --label, --client-id, --device-auth-url, "
             "--token-url, --publisher-base."
         )
@@ -108,9 +96,9 @@ def env_add(name, label, client_id, device_auth_url, token_url, scopes,
 
     save_cli_config(config)
     verb = "Updated" if existing else "Added"
-    console.print(f"[green]✓[/green] {verb} environment [bold]{name}[/bold]")
+    console.print(f"{verb} environment {name}")
     if config.current_environment == name:
-        console.print("  [dim]Now active.[/dim]")
+        console.print("  Now active.")
 
 
 # ce env use
@@ -127,14 +115,14 @@ def env_use(name: str) -> None:
     config = load_cli_config()
     if name not in config.environments:
         err_console.print(
-            f"[red]✗[/red] Unknown environment [bold]{name}[/bold]. "
-            "Run [bold]ce env list[/bold] to see available environments."
+            f"Error: Unknown environment {name}. "
+            "Run ce env list to see available environments."
         )
         raise SystemExit(1)
     config.current_environment = name
     save_cli_config(config)
     env = config.environments[name]
-    console.print(f"[green]✓[/green] Switched to [bold]{name}[/bold] ({env.label}).")
+    console.print(f"Switched to {name} ({env.label}).")
 
 
 # ce env show
@@ -154,21 +142,17 @@ def env_show(name: str | None) -> None:
 
     if not target:
         err_console.print(
-            "[yellow]⚠[/yellow]  No active environment. "
-            "Run [bold]ce env use <name>[/bold] to select one."
+            "Warning: No active environment. "
+            "Run ce env use <name> to select one."
         )
         return
 
     env = config.environments.get(target)
     if not env:
-        err_console.print(f"[red]✗[/red] Environment [bold]{target}[/bold] not found.")
+        err_console.print(f"Error: Environment {target} not found.")
         raise SystemExit(1)
 
-    table = Table(show_header=False, box=None, padding=(0, 2))
-    table.add_column("Key", style="dim")
-    table.add_column("Value", style="bold")
-
-    active_label = " [green](active)[/green]" if target == config.current_environment else ""
+    active_label = " (active)" if target == config.current_environment else ""
     rows = [
         ("Name",            f"{target}{active_label}"),
         ("Label",           env.label),
@@ -179,16 +163,9 @@ def env_show(name: str | None) -> None:
         ("Publisher base",  env.publisher_base),
         ("SSL verify",      str(env.ssl_verify)),
     ]
-    for k, v in rows:
-        table.add_row(k, v)
-
     console.print()
-    console.print(Panel(
-        table,
-        title=f"[bold]Environment: {target}[/bold]",
-        border_style="blue",
-        padding=(1, 2),
-    ))
+    console.print(f"Environment: {target}")
+    print_pairs(console, rows)
     console.print()
 
 
@@ -207,7 +184,7 @@ def env_remove(name: str, yes: bool) -> None:
     """
     config = load_cli_config()
     if name not in config.environments:
-        err_console.print(f"[red]✗[/red] Environment [bold]{name}[/bold] not found.")
+        err_console.print(f"Error: Environment {name} not found.")
         raise SystemExit(1)
 
     if not yes:
@@ -218,12 +195,12 @@ def env_remove(name: str, yes: bool) -> None:
         config.current_environment = next(iter(config.environments), None)
         if config.current_environment:
             console.print(
-                f"  [dim]Switched active environment to "
-                f"[bold]{config.current_environment}[/bold].[/dim]"
+                f"  Switched active environment to "
+                f"{config.current_environment}."
             )
 
     save_cli_config(config)
-    console.print(f"[green]✓[/green] Removed environment [bold]{name}[/bold].")
+    console.print(f"Removed environment {name}.")
 
 
 # Wire up

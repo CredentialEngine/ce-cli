@@ -1,0 +1,16 @@
+{
+  "interactions": [
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/999999",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"type\":\"https://tools.ietf.org/html/rfc9110#section-15.5.5\",\"title\":\"Not Found\",\"status\":404,\"traceId\":\"00-5796abdd570d72d71e04966f681c06ba-9fa381f63e470c7a-00\"}",
+        "content_type": "application/problem+json; charset=utf-8",
+        "status": 404
+      }
+    }
+  ]
+}

@@ -1,0 +1,120 @@
+from __future__ import annotations
+
+from collections.abc import Mapping
+from typing import Any, TypeVar, cast
+
+from attrs import define as _attrs_define
+
+from ..types import UNSET, Unset
+
+T = TypeVar("T", bound="WorkflowEvent")
+
+
+@_attrs_define
+class WorkflowEvent:
+    """
+    Attributes:
+        workflow_name (str):
+        status (str):
+        tenant (str):
+        export_id (None | str | Unset):
+        result_folder (None | str | Unset):
+        error (None | str | Unset):
+    """
+
+    workflow_name: str
+    status: str
+    tenant: str
+    export_id: None | str | Unset = UNSET
+    result_folder: None | str | Unset = UNSET
+    error: None | str | Unset = UNSET
+
+    def to_dict(self) -> dict[str, Any]:
+        workflow_name = self.workflow_name
+
+        status = self.status
+
+        tenant = self.tenant
+
+        export_id: None | str | Unset
+        if isinstance(self.export_id, Unset):
+            export_id = UNSET
+        else:
+            export_id = self.export_id
+
+        result_folder: None | str | Unset
+        if isinstance(self.result_folder, Unset):
+            result_folder = UNSET
+        else:
+            result_folder = self.result_folder
+
+        error: None | str | Unset
+        if isinstance(self.error, Unset):
+            error = UNSET
+        else:
+            error = self.error
+
+        field_dict: dict[str, Any] = {}
+
+        field_dict.update(
+            {
+                "workflowName": workflow_name,
+                "status": status,
+                "tenant": tenant,
+            }
+        )
+        if export_id is not UNSET:
+            field_dict["exportId"] = export_id
+        if result_folder is not UNSET:
+            field_dict["resultFolder"] = result_folder
+        if error is not UNSET:
+            field_dict["error"] = error
+
+        return field_dict
+
+    @classmethod
+    def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        d = dict(src_dict)
+        workflow_name = d.pop("workflowName")
+
+        status = d.pop("status")
+
+        tenant = d.pop("tenant")
+
+        def _parse_export_id(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        export_id = _parse_export_id(d.pop("exportId", UNSET))
+
+        def _parse_result_folder(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        result_folder = _parse_result_folder(d.pop("resultFolder", UNSET))
+
+        def _parse_error(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        error = _parse_error(d.pop("error", UNSET))
+
+        workflow_event = cls(
+            workflow_name=workflow_name,
+            status=status,
+            tenant=tenant,
+            export_id=export_id,
+            result_folder=result_folder,
+            error=error,
+        )
+
+        return workflow_event

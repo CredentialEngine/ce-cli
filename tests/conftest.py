@@ -7,6 +7,7 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
+from _cassette import remember_outcome
 from dotenv import load_dotenv
 
 if os.environ.get("VCR_RECORD_MODE", "none").lower() != "none":
@@ -42,6 +43,18 @@ def pytest_configure(config):
         "markers",
         "vcr: mark test as using recorded HTTP interactions (pytest-recording)",
     )
+    config.addinivalue_line(
+        "markers",
+        "recorded: tests that record real Publisher calls and replay them from cassette files",
+    )
+
+
+@pytest.hookimpl(wrapper=True)
+def pytest_runtest_makereport(item, call):
+    """Let a fixture's teardown tell whether the test passed (a scenario that failed is not written to a cassette)."""
+    report = yield
+    remember_outcome(item, report)
+    return report
 
 
 @pytest.fixture

@@ -1,0 +1,299 @@
+{
+  "interactions": [
+    {
+      "request": {
+        "json": {
+          "name": "ce-cli replay: broken CSV",
+          "projectType": "BulkUpload"
+        },
+        "method": "POST",
+        "path": "/projects",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"projectId\":158}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/158",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"projectId\":158,\"name\":\"ce-cli replay: broken CSV\",\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"status\":\"Active\",\"publishStatus\":\"NotPublished\",\"projectType\":\"BulkUpload\",\"createdAt\":\"2026-11-18T20:58:49.759924Z\",\"updatedAt\":\"2026-11-18T20:58:49.759924Z\",\"iterations\":[],\"reviewers\":[],\"publishingJobs\":[]}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "files": [
+          "credentials-bad-structure.csv"
+        ],
+        "method": "POST",
+        "path": "/projects/158/iterations/upload",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T20:58:49.7875102Z\",\"status\":\"Created\"}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/158",
+        "query": ""
+      },
+      "response": {
+        "body": "{\"projectId\":158,\"name\":\"ce-cli replay: broken CSV\",\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"status\":\"Active\",\"publishStatus\":\"NotPublished\",\"projectType\":\"BulkUpload\",\"createdAt\":\"2026-11-18T20:58:49.759924Z\",\"updatedAt\":\"2026-11-18T20:58:49.759924Z\",\"iterations\":[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T20:58:49.78751Z\",\"status\":\"Validating\"}],\"reviewers\":[],\"publishingJobs\":[]}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/158/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T20:58:49.78751Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/158/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T20:58:49.78751Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/158/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T20:58:49.78751Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/158/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T20:58:49.78751Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/158/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T20:58:49.78751Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/158/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T20:58:49.78751Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/158/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T20:58:49.78751Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/158/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T20:58:49.78751Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/158/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T20:58:49.78751Z\",\"status\":\"Validating\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/158/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T20:58:49.78751Z\",\"status\":\"Validated\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/158/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T20:58:49.78751Z\",\"status\":\"Validated\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/158/iterations/1/files",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"fileName\":\"credentials-bad-structure.csv\",\"resourceClass\":\"ceterms:Credential\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/158/iterations/1/validationResults",
+        "query": "limitPerFile=50"
+      },
+      "response": {
+        "body": "{\"credentials-bad-structure.csv\":{\"CsvStructure\":[{\"row\":3,\"column\":\"Structure\",\"value\":\"ce-973800b4-4102-41dd-9a80-93395dbfcbe8, , Smoke Test: Safety Orientation Certificate, Certificate, A short certificate that shows a worker has completed site safety orientation., https://example.org/safety-orientation, Active, English, ce-973800b4-4102-41dd-9a80-93395dbfcbe8, https://example.org/safety-orientation\",\"message\":\"Expected 11 fields but found 10\",\"type\":\"CsvStructure\"}],\"SpellCheck\":[{\"row\":2,\"column\":\"Keywords\",\"value\":\"pipefitting|certification|smoke test\",\"message\":\"Possible spelling mistake found.\",\"type\":\"SpellCheck\"}],\"Whitespace\":[],\"CtidReference\":[]}}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/158/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T20:58:49.78751Z\",\"status\":\"Validated\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/158/iterations/1/files",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"fileName\":\"credentials-bad-structure.csv\",\"resourceClass\":\"ceterms:Credential\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/158/iterations/1/validationResults",
+        "query": "limitPerFile=50"
+      },
+      "response": {
+        "body": "{\"credentials-bad-structure.csv\":{\"CsvStructure\":[{\"row\":3,\"column\":\"Structure\",\"value\":\"ce-973800b4-4102-41dd-9a80-93395dbfcbe8, , Smoke Test: Safety Orientation Certificate, Certificate, A short certificate that shows a worker has completed site safety orientation., https://example.org/safety-orientation, Active, English, ce-973800b4-4102-41dd-9a80-93395dbfcbe8, https://example.org/safety-orientation\",\"message\":\"Expected 11 fields but found 10\",\"type\":\"CsvStructure\"}],\"SpellCheck\":[{\"row\":2,\"column\":\"Keywords\",\"value\":\"pipefitting|certification|smoke test\",\"message\":\"Possible spelling mistake found.\",\"type\":\"SpellCheck\"}],\"Whitespace\":[],\"CtidReference\":[]}}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/158/iterations",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"iterationId\":1,\"authorId\":\"11111111-1111-1111-1111-111111111111\",\"createdAt\":\"2026-11-18T20:58:49.78751Z\",\"status\":\"Validated\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/158/iterations/1/files",
+        "query": ""
+      },
+      "response": {
+        "body": "[{\"fileName\":\"credentials-bad-structure.csv\",\"resourceClass\":\"ceterms:Credential\"}]",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "path": "/projects/158/iterations/1/validationResults",
+        "query": "limitPerFile=50"
+      },
+      "response": {
+        "body": "{\"credentials-bad-structure.csv\":{\"CsvStructure\":[{\"row\":3,\"column\":\"Structure\",\"value\":\"ce-973800b4-4102-41dd-9a80-93395dbfcbe8, , Smoke Test: Safety Orientation Certificate, Certificate, A short certificate that shows a worker has completed site safety orientation., https://example.org/safety-orientation, Active, English, ce-973800b4-4102-41dd-9a80-93395dbfcbe8, https://example.org/safety-orientation\",\"message\":\"Expected 11 fields but found 10\",\"type\":\"CsvStructure\"}],\"SpellCheck\":[{\"row\":2,\"column\":\"Keywords\",\"value\":\"pipefitting|certification|smoke test\",\"message\":\"Possible spelling mistake found.\",\"type\":\"SpellCheck\"}],\"Whitespace\":[],\"CtidReference\":[]}}",
+        "content_type": "application/json; charset=utf-8",
+        "status": 200
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "path": "/projects/158/abandon",
+        "query": ""
+      },
+      "response": {
+        "body": "",
+        "content_type": "",
+        "status": 200
+      }
+    }
+  ]
+}
