@@ -14,21 +14,23 @@ dependencies = [
     "httpx2>=2.16,<3",
     "keyring>=25",
     "rich>=13",
-    "pydantic>=2",
+    "pydantic>=2.11",
     "pydantic-settings>=2",
-    "requests>=2.31",
     "truststore>=0.9",
     "base58>=2.1",
     "PyJWT>=2.8",
     "cryptography>=41",
     "attrs>=22.2.0",
-    "python-dateutil>=2.8.0,<3.0.0",
+    "python-dateutil>=2.8.2,<3.0.0",
+    "typing-extensions>=4.7.1",
 ]
 
 [project.scripts]
 ce = "ce.main:cli"
 
 [project.optional-dependencies]
+cloudwatch = ["boto3>=1.43.17", "watchtower>=3.4.0"]
+azure-logging = ["opencensus-ext-azure>=1.1.15"]
 dev = [
     "pytest>=8",
     "pytest-mock>=3",
@@ -41,11 +43,11 @@ dev = [
 [tool.setuptools_scm]
 
 [tool.setuptools]
-package-dir = { "" = ".", "publisher_client" = "src/sdks/publisher-api/generated-client/publisher_client" }
+package-dir = { "" = ".", "publisher_client" = "src/sdks/publisher-api/generated-client/publisher_client", "consumer_api_client" = "src/sdks/consumer-api/generated-client/consumer_api_client" }
 
 [tool.setuptools.packages.find]
-where = [".", "src/sdks/publisher-api/generated-client"]
-include = ["ce*", "publisher_client*"]
+where = [".", "src/sdks/publisher-api/generated-client", "src/sdks/consumer-api/generated-client"]
+include = ["ce*", "publisher_client*", "consumer_api_client*"]
 
 [tool.pytest.ini_options]
 addopts = "--record-mode=none"
@@ -84,3 +86,6 @@ commands = pytest tests/ -m integration --record-mode=none -s
 [testenv:record]
 commands = pytest tests/ -m integration --record-mode=once -s {posargs}
 """
+[tool.ruff]
+force-exclude = true
+extend-exclude = ["src/sdks/**/generated-client", "ce/iir/api"]

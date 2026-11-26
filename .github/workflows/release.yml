@@ -17,10 +17,26 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Python 3.13
+      - name: Semgrep security scan
+        run: |
+          set -euo pipefail
+          docker run --rm -v "$GITHUB_WORKSPACE:/src:ro" -w /src \
+            semgrep/semgrep semgrep scan \
+            --verbose --error --strict \
+            --no-git-ignore \
+            --max-target-bytes 0 \
+            --max-log-list-entries 0 \
+            --scan-unknown-extensions \
+            --config p/secrets \
+            --config p/security-audit \
+            --config p/python \
+            --config p/dockerfile \
+            .
+
+      - name: Set up Python 3.14
         uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: "3.14"
           cache: pip
 
       - name: Generate version
@@ -28,29 +44,52 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install build
+          python -m pip install --upgrade pip
+          python -m pip install build ruff pytest-cov
           pip install -e ".[dev]"
+        env:
+          SETUPTOOLS_SCM_PRETEND_VERSION: ${{ env.VERSION }}
 
-      - name: Run unit tests
-        run: pytest -m unit -v
+      - name: Ruff lint and format checks
+        run: |
+          ruff check .
+          ruff format . --check
+
+      - name: Run unit and offline replay tests with coverage
+        run: |
+          pytest -m "not integration" --record-mode=none --tb=short \
+            --cov=ce --cov-config=.github/coverage.ini \
+            --cov-report=term-missing --cov-report=html \
+            --cov-report=xml --cov-fail-under=80
+        env:
+          VCR_RECORD_MODE: none
 
       - name: Run integration tests (VCR playback)
-        run: pytest -m integration -v
+        run: pytest -m integration --record-mode=none --tb=short
         env:
-          CE_PUBLISHER_BASE: ${{ secrets.CE_PUBLISHER_BASE }}
-          CE_TEST_ACCESS_TOKEN: ${{ secrets.CE_TEST_ACCESS_TOKEN }}
-          CE_TEST_CHALLENGE_UUID: ${{ secrets.CE_TEST_CHALLENGE_UUID }}
-          CE_TEST_CTID: ${{ secrets.CE_TEST_CTID }}
-          CE_TEST_DID_KEY: ${{ secrets.CE_TEST_DID_KEY }}
-          CE_TEST_DID_WEB: ${{ secrets.CE_TEST_DID_WEB }}
-          CE_TEST_PRIVKEY_MULTIBASE: ${{ secrets.CE_TEST_PRIVKEY_MULTIBASE }}
-          CE_TEST_USER_ID: ${{ secrets.CE_TEST_USER_ID }}
           VCR_RECORD_MODE: none
+
+      - name: Upload coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ce-cli-coverage
+          path: |
+            htmlcov/
+            coverage.xml
+          if-no-files-found: ignore
 
       - name: Build package
         run: python -m build
         env:
           SETUPTOOLS_SCM_PRETEND_VERSION: ${{ env.VERSION }}
+
+      - name: Upload package artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ce-cli-drop
+          path: dist/*
+          if-no-files-found: error
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2

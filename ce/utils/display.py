@@ -5,7 +5,7 @@ Spinners (console.status) are the one piece of decoration the CLI keeps.
 
 from __future__ import annotations
 
-from typing import Iterable, Sequence
+from collections.abc import Iterable, Sequence
 
 from rich.console import Console
 from rich.table import Table
@@ -16,7 +16,9 @@ def new_console(*, stderr: bool = False) -> Console:
     return Console(stderr=stderr, highlight=False, emoji=False, markup=False)
 
 
-def plain_table(headers: Sequence[str], widths: Sequence[int | None] | None = None) -> Table:
+def plain_table(
+    headers: Sequence[str], widths: Sequence[int | None] | None = None
+) -> Table:
     """Columns separated by spaces, with a plain header row. No borders, rules or styles."""
     table = Table(
         box=None,

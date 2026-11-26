@@ -80,6 +80,7 @@ def config_set(assignments: tuple[str, ...]) -> None:
 
 # ce config get
 
+
 @click.command("get")
 @click.argument("key")
 def config_get(key: str) -> None:
@@ -122,7 +123,6 @@ def config_list() -> None:
     console.print()
     console.print(table)
     console.print()
-
 
 
 @click.command("reset")

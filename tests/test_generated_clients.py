@@ -16,9 +16,9 @@ import pkgutil
 import typing
 from types import ModuleType
 
+import publisher_client.api
 import pytest
 
-import publisher_client.api
 from ce.iir.api.iir_client import api as iir_api
 
 pytestmark = pytest.mark.unit
@@ -33,7 +33,9 @@ def endpoint_modules(package: ModuleType) -> list[ModuleType]:
     ]
 
 
-@pytest.mark.parametrize("package", [publisher_client.api, iir_api], ids=["publisher", "iir"])
+@pytest.mark.parametrize(
+    "package", [publisher_client.api, iir_api], ids=["publisher", "iir"]
+)
 def test_the_type_hints_of_every_endpoint_resolve(package: ModuleType) -> None:
     modules = endpoint_modules(package)
     assert modules, "no endpoint modules found"

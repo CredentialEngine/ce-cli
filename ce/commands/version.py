@@ -6,9 +6,10 @@ Prints version info for the CLI and (optionally) checks PyPI for a newer release
 from __future__ import annotations
 
 import click
-from ce.utils.display import new_console
 
 from ce import __version__
+from ce.utils.display import new_console
+from ce.utils.user_agent import USER_AGENT
 
 console = new_console()
 err_console = new_console(stderr=True)
@@ -38,6 +39,7 @@ def _check_for_update() -> None:
             resp = httpx2.get(
                 "https://pypi.org/pypi/ce-cli/json",
                 timeout=5,
+                headers={"User-Agent": USER_AGENT},
                 follow_redirects=True,
             )
         if not resp.is_success:
@@ -45,7 +47,7 @@ def _check_for_update() -> None:
             return
 
         latest = resp.json()["info"]["version"]
-    except Exception as exc:
+    except (httpx2.HTTPError, ValueError, KeyError, TypeError) as exc:
         console.print(f"Update check failed: {exc}")
         return
 

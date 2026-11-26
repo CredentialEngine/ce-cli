@@ -54,7 +54,9 @@ def _b64(claims: dict[str, str]) -> str:
 
 # What replay signs in with. `ce publisher project complete` reads the user id from the token and sends it (to add the user
 # as reviewer), so replay needs a token that carries the placeholder id the recording was made with. It is not a real token.
-REPLAY_ACCESS_TOKEN = f"{_b64({'alg': 'none'})}.{_b64({'sub': PLACEHOLDER_USER_ID})}.replay"
+REPLAY_ACCESS_TOKEN = (
+    f"{_b64({'alg': 'none'})}.{_b64({'sub': PLACEHOLDER_USER_ID})}.replay"
+)
 
 
 def recording_enabled() -> bool:
@@ -65,7 +67,9 @@ def cassette_path(name: str) -> Path:
     return CASSETTE_DIR / f"{name}.json"
 
 
-def describe_request(request: httpx2.Request, body: bytes, user_id: str | None = None) -> dict[str, Any]:
+def describe_request(
+    request: httpx2.Request, body: bytes, user_id: str | None = None
+) -> dict[str, Any]:
     """What identifies a request in a cassette: method, path, query and the body (JSON, or the uploaded file names).
 
     When recording, `user_id` (the signed-in user) is replaced by the placeholder, as in responses: a request can carry it,
@@ -83,7 +87,9 @@ def describe_request(request: httpx2.Request, body: bytes, user_id: str | None =
         # The boundary is random, so only the file names are compared.
         described["files"] = [name.decode("utf-8") for name in FILENAME.findall(body)]
     if user_id:
-        described = json.loads(json.dumps(described).replace(user_id, PLACEHOLDER_USER_ID))
+        described = json.loads(
+            json.dumps(described).replace(user_id, PLACEHOLDER_USER_ID)
+        )
     return described
 
 
@@ -91,7 +97,9 @@ def user_id_of(access_token: str) -> str | None:
     """The signed-in user's id (the `sub` claim), or None when the token is not a readable JWT."""
     try:
         payload = access_token.split(".")[1]
-        claims = json.loads(base64.urlsafe_b64decode(payload + "=" * (-len(payload) % 4)))
+        claims = json.loads(
+            base64.urlsafe_b64decode(payload + "=" * (-len(payload) % 4))
+        )
     except (IndexError, ValueError):
         return None
     subject = claims.get("sub")
@@ -106,7 +114,9 @@ def keep_only_projects(text: str, project_ids: set[int]) -> str:
         return text
     if not isinstance(projects, list):
         return text
-    kept = [p for p in projects if isinstance(p, dict) and p.get("projectId") in project_ids]
+    kept = [
+        p for p in projects if isinstance(p, dict) and p.get("projectId") in project_ids
+    ]
     return json.dumps(kept, separators=(",", ":"), ensure_ascii=False)
 
 
@@ -170,7 +180,11 @@ class RecordingTransport(httpx2.BaseTransport):
         body = request.read()
         response = self._inner.handle_request(request)
         response.read()
-        if self._created is not None and request.method == "POST" and request.url.path == "/projects":
+        if (
+            self._created is not None
+            and request.method == "POST"
+            and request.url.path == "/projects"
+        ):
             new_id = created_project_id(response.content.decode("utf-8"))
             if new_id is not None:
                 self._created.add(new_id)
@@ -181,11 +195,19 @@ class RecordingTransport(httpx2.BaseTransport):
             is_project_list=request.method == "GET" and request.url.path == "/projects",
         )
         self._interactions.append(
-            {"request": describe_request(request, body, user_id=self._user_id), "response": described}
+            {
+                "request": describe_request(request, body, user_id=self._user_id),
+                "response": described,
+            }
         )
         # Rebuilt without the encoding headers: the content is already decoded.
         headers = [("content-type", response.headers.get("content-type", ""))]
-        return httpx2.Response(response.status_code, headers=headers, content=response.content, request=request)
+        return httpx2.Response(
+            response.status_code,
+            headers=headers,
+            content=response.content,
+            request=request,
+        )
 
     def close(self) -> None:
         self._inner.close()
@@ -214,13 +236,22 @@ class ReplayTransport(httpx2.BaseTransport):
             self.problems.append(f"{label}: {difference}")
             raise AssertionError(self.problems[-1])
         recorded = entry["response"]
-        headers = [("content-type", recorded["content_type"])] if recorded["content_type"] else []
+        headers = (
+            [("content-type", recorded["content_type"])]
+            if recorded["content_type"]
+            else []
+        )
         return httpx2.Response(
-            recorded["status"], headers=headers, content=recorded["body"].encode("utf-8"), request=request
+            recorded["status"],
+            headers=headers,
+            content=recorded["body"].encode("utf-8"),
+            request=request,
         )
 
 
-def check_cassette_is_clean(text: str, token: str | None, user_id: str | None = None) -> None:
+def check_cassette_is_clean(
+    text: str, token: str | None, user_id: str | None = None
+) -> None:
     """Refuse to keep a cassette that holds a credential or the signed-in user's id."""
     lowered = text.lower()
     assert "authorization" not in lowered, "the cassette holds an Authorization header"
@@ -253,7 +284,10 @@ def scenario_passed(request: pytest.FixtureRequest) -> Callable[[], bool]:
 
 @contextmanager
 def publisher_cassette(
-    path: Path, *, only_projects_created_here: bool = False, keep: Callable[[], bool] | None = None
+    path: Path,
+    *,
+    only_projects_created_here: bool = False,
+    keep: Callable[[], bool] | None = None,
 ) -> Iterator[None]:
     """Record or replay every Publisher request the commands make inside the block.
 
@@ -265,9 +299,13 @@ def publisher_cassette(
     if recording_enabled():
         interactions: list[dict[str, Any]] = []
         tokens: list[str] = []
-        created_projects: set[int] | None = set() if only_projects_created_here else None
+        created_projects: set[int] | None = (
+            set() if only_projects_created_here else None
+        )
 
-        def build_recording(base_url: str, access_token: str, **options: Any) -> PublisherClient:
+        def build_recording(
+            base_url: str, access_token: str, **options: Any
+        ) -> PublisherClient:
             tokens.append(access_token)
             inner = httpx2.HTTPTransport(verify=options.get("verify", True))
             options["transport"] = RecordingTransport(
@@ -284,9 +322,19 @@ def publisher_cassette(
         if keep is not None and not keep():
             return
         assert interactions, f"nothing was recorded into {path}"
-        text = json.dumps({"interactions": interactions}, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
+        text = (
+            json.dumps(
+                {"interactions": interactions},
+                indent=2,
+                sort_keys=True,
+                ensure_ascii=False,
+            )
+            + "\n"
+        )
         first_token = tokens[0] if tokens else None
-        check_cassette_is_clean(text, first_token, user_id_of(first_token) if first_token else None)
+        check_cassette_is_clean(
+            text, first_token, user_id_of(first_token) if first_token else None
+        )
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(text, encoding="utf-8", newline="\n")
         return
@@ -295,14 +343,18 @@ def publisher_cassette(
     interactions = json.loads(path.read_text(encoding="utf-8-sig"))["interactions"]
     transport = ReplayTransport(interactions)
 
-    def build_replay(base_url: str, access_token: str, **options: Any) -> PublisherClient:
+    def build_replay(
+        base_url: str, access_token: str, **options: Any
+    ) -> PublisherClient:
         options["transport"] = transport
         return PublisherClient(base_url, access_token, **options)
 
     with patch(CLIENT_TARGET, side_effect=build_replay):
         yield
 
-    assert not transport.problems, "requests that do not match the cassette:\n" + "\n".join(transport.problems)
+    assert not transport.problems, (
+        "requests that do not match the cassette:\n" + "\n".join(transport.problems)
+    )
     assert transport.unused == 0, (
         f"{transport.unused} recorded request(s) were not made: the command now sends fewer requests than were recorded"
     )

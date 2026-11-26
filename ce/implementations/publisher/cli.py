@@ -10,7 +10,7 @@ from typing import Any, NoReturn
 
 import click
 
-from ce.auth.token_manager import require_login
+from ce.auth.api_session import require_api_token
 from ce.config.context import DEFAULT_ENVIRONMENTS, require_environment
 from ce.implementations.publisher import service
 from ce.implementations.publisher.client import (
@@ -35,7 +35,11 @@ def publisher_url_option(f):  # type: ignore[no-untyped-def]
 
 def project_option(f):  # type: ignore[no-untyped-def]
     return click.option(
-        "--project-id", "project_id", required=True, type=int, help="The project's number."
+        "--project-id",
+        "project_id",
+        required=True,
+        type=int,
+        help="The project's number.",
     )(f)
 
 
@@ -54,10 +58,12 @@ def output_option(f):  # type: ignore[no-untyped-def]
 @contextmanager
 def publisher_client(publisher_url: str | None) -> Iterator[PublisherClient]:
     """A Publisher client for the signed-in user, or exit 1 with the reason."""
-    token = require_login()
     name, env = require_environment()
+    token = require_api_token(name)
     default = DEFAULT_ENVIRONMENTS.get(name)
-    environment_url = env.publisher_api_base or (default.publisher_api_base if default else "")
+    environment_url = env.publisher_api_base or (
+        default.publisher_api_base if default else ""
+    )
 
     try:
         url = resolve_publisher_url(publisher_url, environment_url, name)
@@ -65,6 +71,9 @@ def publisher_client(publisher_url: str | None) -> Iterator[PublisherClient]:
         fail(str(exc))
 
     with PublisherClient(url, token, verify=env.ssl_verify) as client:
+        client.token_provider = lambda *, force_refresh=False: require_api_token(
+            name, force_refresh=force_refresh
+        )
         try:
             yield client
         except PublisherApiError as exc:
@@ -90,7 +99,9 @@ def echo_json(value: Any) -> None:
     click.echo(json.dumps(value, indent=2))
 
 
-def print_validation_status(summary: service.ValidationSummary, *, verbose: bool) -> None:
+def print_validation_status(
+    summary: service.ValidationSummary, *, verbose: bool
+) -> None:
     if not summary.validated:
         hint = (
             "Validation is running."

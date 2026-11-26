@@ -21,15 +21,21 @@ from ce.implementations.publisher import service
 from ce.implementations.publisher.client import (
     PublisherApiError,
     PublisherClient,
-    resolve_publisher_url,
     project_kind_label,
+    resolve_publisher_url,
 )
 from ce.publisher import main as publisher_group
 
 
 def _load_keep_json_content():
     """prepare_openapi.py sits beside the SDK's swagger.json, outside the ce package."""
-    path = Path(__file__).resolve().parents[1] / "src" / "sdks" / "publisher-api" / "prepare_openapi.py"
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "src"
+        / "sdks"
+        / "publisher-api"
+        / "prepare_openapi.py"
+    )
     spec = importlib.util.spec_from_file_location("publisher_prepare_openapi", path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -46,12 +52,16 @@ OTHER_USER_ID = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
 
 def make_token(subject: str = USER_ID) -> str:
     def part(value: dict[str, Any]) -> str:
-        return base64.urlsafe_b64encode(json.dumps(value).encode()).rstrip(b"=").decode()
+        return (
+            base64.urlsafe_b64encode(json.dumps(value).encode()).rstrip(b"=").decode()
+        )
 
     return f"{part({'alg': 'none'})}.{part({'sub': subject})}.signature"
 
 
-def finding(message: str = "No resource with this CTID was found.", column: str = "Offered By") -> dict[str, Any]:
+def finding(
+    message: str = "No resource with this CTID was found.", column: str = "Offered By"
+) -> dict[str, Any]:
     return {"row": 3, "column": column, "value": "ce-1", "message": message}
 
 
@@ -67,16 +77,31 @@ class FakePublisher:
             "status": "Active",
             "publishStatus": "NotPublished",
             "reviewers": [],
-            "publishingJobs": [{"jobId": "1", "stage": "ChangesetGeneration", "status": "Succeeded"}],
+            "publishingJobs": [
+                {"jobId": "1", "stage": "ChangesetGeneration", "status": "Succeeded"}
+            ],
         }
-        self.iterations: list[dict[str, Any]] = [{"iterationId": 1, "status": "Validated"}]
-        self.files: list[dict[str, Any]] = [{"fileName": "credentials.csv"}, {"fileName": "jobs.csv"}]
+        self.iterations: list[dict[str, Any]] = [
+            {"iterationId": 1, "status": "Validated"}
+        ]
+        self.files: list[dict[str, Any]] = [
+            {"fileName": "credentials.csv"},
+            {"fileName": "jobs.csv"},
+        ]
         self.findings: dict[str, Any] = {}
         self.audit: list[dict[str, Any]] = [
-            {"id": 2, "createdAt": "2026-11-12T10:00:05.1234567Z", "eventType": "IterationFilesAdded",
-             "description": "Added 2 file(s) to Iteration 1."},
-            {"id": 1, "createdAt": "2026-11-12T10:00:00Z", "eventType": "ProjectCreated",
-             "description": "Created project 'Welding'"},
+            {
+                "id": 2,
+                "createdAt": "2026-11-12T10:00:05.1234567Z",
+                "eventType": "IterationFilesAdded",
+                "description": "Added 2 file(s) to Iteration 1.",
+            },
+            {
+                "id": 1,
+                "createdAt": "2026-11-12T10:00:00Z",
+                "eventType": "ProjectCreated",
+                "description": "Created project 'Welding'",
+            },
         ]
 
     def handler(self, request: httpx2.Request) -> httpx2.Response:
@@ -97,7 +122,10 @@ class FakePublisher:
             return httpx2.Response(200, json=self.findings)
         if path == "/projects/7/audit":
             return httpx2.Response(200, json=self.audit)
-        if path in ("/projects/7/iterations/upload", "/projects/7/iterations/upload-jsonld"):
+        if path in (
+            "/projects/7/iterations/upload",
+            "/projects/7/iterations/upload-jsonld",
+        ):
             return httpx2.Response(200, json={"iterationId": 2, "status": "Created"})
         if path == "/projects/7/iterations/1/validation/start":
             self.iterations[0]["status"] = "Validating"
@@ -106,7 +134,9 @@ class FakePublisher:
             self.iterations[0]["status"] = "Transformed"
             return httpx2.Response(200)
         if path == "/projects/7/reviewers" and method == "POST":
-            self.project["reviewers"].append({"userId": json.loads(request.content)["userId"]})
+            self.project["reviewers"].append(
+                {"userId": json.loads(request.content)["userId"]}
+            )
             return httpx2.Response(204)
         if path == "/projects/7/approve":
             self.project["status"] = "Approved"
@@ -119,9 +149,13 @@ class FakePublisher:
             return httpx2.Response(200)
         return httpx2.Response(404, json={"title": "Not Found"})
 
-    def client(self, base_url: str = "http://publisher", token: str = "", **_: Any) -> PublisherClient:
+    def client(
+        self, base_url: str = "http://publisher", token: str = "", **_: Any
+    ) -> PublisherClient:
         return PublisherClient(
-            base_url, token or make_token(), transport=httpx2.MockTransport(self.handler)
+            base_url,
+            token or make_token(),
+            transport=httpx2.MockTransport(self.handler),
         )
 
     def paths(self) -> list[str]:
@@ -139,10 +173,21 @@ def cli(publisher: FakePublisher):
     env.publisher_api_base = "http://publisher"
     env.ssl_verify = True
 
-    with patch("ce.implementations.publisher.cli.require_login", return_value=make_token()), \
-            patch("ce.implementations.publisher.cli.require_environment", return_value=("dev", env)), \
-            patch("ce.implementations.publisher.cli.PublisherClient", side_effect=publisher.client), \
-            patch("ce.implementations.publisher.service.time.sleep"):
+    with (
+        patch(
+            "ce.implementations.publisher.cli.require_api_token",
+            return_value=make_token(),
+        ),
+        patch(
+            "ce.implementations.publisher.cli.require_environment",
+            return_value=("dev", env),
+        ),
+        patch(
+            "ce.implementations.publisher.cli.PublisherClient",
+            side_effect=publisher.client,
+        ),
+        patch("ce.implementations.publisher.service.time.sleep"),
+    ):
         yield CliRunner()
 
 
@@ -178,7 +223,9 @@ def run(cli: CliRunner, *args: str, input: str | None = None):
         ("ceterms:Assessment", "ceterms:Assessment"),
     ],
 )
-def test_resolve_resource_class_takes_template_names_short_names_and_classes(name: str, uri: str) -> None:
+def test_resolve_resource_class_takes_template_names_short_names_and_classes(
+    name: str, uri: str
+) -> None:
     assert service.resolve_resource_class(name) == uri
 
 
@@ -189,7 +236,9 @@ def test_resolve_resource_class_needs_a_template(name: str | None) -> None:
 
 
 @pytest.mark.parametrize("name", ["spaceships", "ceterms:Spaceship"])
-def test_resolve_resource_class_names_the_templates_when_it_does_not_know_one(name: str) -> None:
+def test_resolve_resource_class_names_the_templates_when_it_does_not_know_one(
+    name: str,
+) -> None:
     with pytest.raises(PublisherApiError, match="credentials, learning-opportunities"):
         service.resolve_resource_class(name)
 
@@ -198,7 +247,9 @@ def test_every_template_has_a_distinct_class_and_a_name_that_resolves_to_it() ->
     for route, (uri, aliases) in service.CSV_CLASSES.items():
         assert service.resolve_resource_class(route) == uri
         assert all(service.resolve_resource_class(alias) == uri for alias in aliases)
-    assert len({uri for uri, _ in service.CSV_CLASSES.values()}) == len(service.CSV_CLASSES)
+    assert len({uri for uri, _ in service.CSV_CLASSES.values()}) == len(
+        service.CSV_CLASSES
+    )
 
 
 def test_extensions_follow_the_kind_of_project() -> None:
@@ -206,7 +257,10 @@ def test_extensions_follow_the_kind_of_project() -> None:
     assert service.extensions_for("ApiPublishing") == (".json", ".jsonld")
     with pytest.raises(PublisherApiError, match="does not take files"):
         service.extensions_for("Other")
-    with pytest.raises(PublisherApiError, match="Ruby Registry sync project is made by the Ruby Registry"):
+    with pytest.raises(
+        PublisherApiError,
+        match="Ruby Registry sync project is made by the Ruby Registry",
+    ):
         service.extensions_for("RubyRegistrySync")
 
 
@@ -223,7 +277,17 @@ def test_a_ruby_registry_sync_project_takes_no_work_from_ce_cli(
 ) -> None:
     publisher.project["projectType"] = "RubyRegistrySync"
 
-    added = run(cli, "project", "add", "--project-id", "7", "--file", str(csv_file(tmp_path)), "--type", "credentials")
+    added = run(
+        cli,
+        "project",
+        "add",
+        "--project-id",
+        "7",
+        "--file",
+        str(csv_file(tmp_path)),
+        "--type",
+        "credentials",
+    )
     validated = run(cli, "project", "validation", "run", "--project-id", "7")
     completed = run(cli, "project", "complete", "--project-id", "7")
 
@@ -240,11 +304,16 @@ def test_collect_files_takes_the_right_files_from_a_folder(tmp_path: Path) -> No
     (tmp_path / "sub").mkdir()
     (tmp_path / "sub" / "c.csv").write_text("x")
 
-    assert sorted(p.name for p in service.collect_files([tmp_path], (".csv",))) == ["B.CSV", "a.csv"]
+    assert sorted(p.name for p in service.collect_files([tmp_path], (".csv",))) == [
+        "B.CSV",
+        "a.csv",
+    ]
     assert len(service.collect_files([tmp_path], (".csv",), recursive=True)) == 3
 
 
-def test_collect_files_refuses_a_file_of_the_wrong_kind_a_missing_file_and_nothing(tmp_path: Path) -> None:
+def test_collect_files_refuses_a_file_of_the_wrong_kind_a_missing_file_and_nothing(
+    tmp_path: Path,
+) -> None:
     with pytest.raises(PublisherApiError, match="is not a .csv file"):
         service.collect_files([jsonld_file(tmp_path)], (".csv",))
     with pytest.raises(PublisherApiError, match="does not exist"):
@@ -266,7 +335,9 @@ def test_user_id_is_the_subject_of_the_access_token() -> None:
     assert service.user_id_from_token(make_token()) == USER_ID
 
 
-@pytest.mark.parametrize("token", ["", "abc", "a.b.c", "a." + base64.b64encode(b"[]").decode() + ".c"])
+@pytest.mark.parametrize(
+    "token", ["", "abc", "a.b.c", "a." + base64.b64encode(b"[]").decode() + ".c"]
+)
 def test_user_id_from_a_token_that_is_not_a_jwt_is_an_error(token: str) -> None:
     with pytest.raises(PublisherApiError, match="ce login"):
         service.user_id_from_token(token)
@@ -276,14 +347,24 @@ def test_user_id_from_a_token_that_is_not_a_jwt_is_an_error(token: str) -> None:
 
 
 def test_format_finding_names_the_file_row_column_and_value() -> None:
-    item = service.flatten_findings({"credentials.csv": {"CtidReference": [finding("Missing.")]}})[0]
+    item = service.flatten_findings(
+        {"credentials.csv": {"CtidReference": [finding("Missing.")]}}
+    )[0]
 
-    assert service.format_finding(item) == "credentials.csv:3: Offered By: error: Missing. (ce-1)"
-    assert service.format_finding(item, with_file=False) == "row 3: Offered By: error: Missing. (ce-1)"
+    assert (
+        service.format_finding(item)
+        == "credentials.csv:3: Offered By: error: Missing. (ce-1)"
+    )
+    assert (
+        service.format_finding(item, with_file=False)
+        == "row 3: Offered By: error: Missing. (ce-1)"
+    )
 
 
 def test_a_spell_check_finding_is_a_warning() -> None:
-    item = service.flatten_findings({"jobs.csv": {"SpellCheck": [finding("Typo.", "Name")]}})[0]
+    item = service.flatten_findings(
+        {"jobs.csv": {"SpellCheck": [finding("Typo.", "Name")]}}
+    )[0]
 
     assert not item.blocking
     assert "warning" in service.format_finding(item)
@@ -299,8 +380,12 @@ def test_latest_stage_jobs_keeps_the_newest_attempt() -> None:
     assert service.latest_stage_jobs(jobs, {"2"}) == [jobs[0]]
 
 
-def test_validation_summary_counts_files_with_and_without_errors(publisher: FakePublisher) -> None:
-    publisher.findings = {"credentials.csv": {"CtidReference": [finding(), finding("Wrong class.")]}}
+def test_validation_summary_counts_files_with_and_without_errors(
+    publisher: FakePublisher,
+) -> None:
+    publisher.findings = {
+        "credentials.csv": {"CtidReference": [finding(), finding("Wrong class.")]}
+    }
 
     summary = service.validation_summary(publisher.client(), 7)
 
@@ -311,13 +396,17 @@ def test_validation_summary_counts_files_with_and_without_errors(publisher: Fake
     assert summary.as_dict()["findings"][0]["file"] == "credentials.csv"
 
 
-def test_a_transformed_iteration_still_has_its_validation_results(publisher: FakePublisher) -> None:
+def test_a_transformed_iteration_still_has_its_validation_results(
+    publisher: FakePublisher,
+) -> None:
     publisher.iterations = [{"iterationId": 1, "status": "Transformed"}]
 
     assert service.validation_summary(publisher.client(), 7).validated
 
 
-def test_validation_summary_has_no_findings_before_validation(publisher: FakePublisher) -> None:
+def test_validation_summary_has_no_findings_before_validation(
+    publisher: FakePublisher,
+) -> None:
     publisher.iterations = [{"iterationId": 1, "status": "Created"}]
 
     summary = service.validation_summary(publisher.client(), 7)
@@ -343,7 +432,12 @@ def test_wait_for_validation_times_out_with_a_hint(publisher: FakePublisher) -> 
 
     with pytest.raises(PublisherApiError, match="may have failed"):
         service.wait_for_validation(
-            publisher.client(), 7, 1, timeout_seconds=5, sleep=lambda _: None, clock=lambda: next(ticks)
+            publisher.client(),
+            7,
+            1,
+            timeout_seconds=5,
+            sleep=lambda _: None,
+            clock=lambda: next(ticks),
         )
 
 
@@ -353,25 +447,44 @@ def test_wait_for_transform_times_out_with_a_hint(publisher: FakePublisher) -> N
 
     with pytest.raises(PublisherApiError, match="transform job may have failed"):
         service.wait_for_transform(
-            publisher.client(), 7, 1, timeout_seconds=5, sleep=lambda _: None, clock=lambda: next(ticks)
+            publisher.client(),
+            7,
+            1,
+            timeout_seconds=5,
+            sleep=lambda _: None,
+            clock=lambda: next(ticks),
         )
 
 
 def test_wait_for_publish_reports_a_failed_publish(publisher: FakePublisher) -> None:
-    publisher.project = {"projectId": 7, "status": "Approved", "publishStatus": "PublishFailed"}
+    publisher.project = {
+        "projectId": 7,
+        "status": "Approved",
+        "publishStatus": "PublishFailed",
+    }
 
-    outcome = service.wait_for_publish(publisher.client(), 7, timeout_seconds=5, sleep=lambda _: None)
+    outcome = service.wait_for_publish(
+        publisher.client(), 7, timeout_seconds=5, sleep=lambda _: None
+    )
 
     assert outcome.result == "failed"
 
 
 def test_wait_for_publish_times_out(publisher: FakePublisher) -> None:
-    publisher.project = {"projectId": 7, "status": "Approved", "publishStatus": "Publishing"}
+    publisher.project = {
+        "projectId": 7,
+        "status": "Approved",
+        "publishStatus": "Publishing",
+    }
     ticks = iter([0.0, 10.0])
 
     with pytest.raises(PublisherApiError, match="still not published"):
         service.wait_for_publish(
-            publisher.client(), 7, timeout_seconds=5, sleep=lambda _: None, clock=lambda: next(ticks)
+            publisher.client(),
+            7,
+            timeout_seconds=5,
+            sleep=lambda _: None,
+            clock=lambda: next(ticks),
         )
 
 
@@ -381,7 +494,12 @@ def test_wait_for_publish_times_out(publisher: FakePublisher) -> None:
 def complete(publisher: FakePublisher, user_id: str = USER_ID) -> tuple[int, list[str]]:
     steps: list[str] = []
     iteration = service.complete_project(
-        publisher.client(), 7, user_id, timeout_seconds=5, on_step=steps.append, sleep=lambda _: None
+        publisher.client(),
+        7,
+        user_id,
+        timeout_seconds=5,
+        on_step=steps.append,
+        sleep=lambda _: None,
     )
     return iteration, steps
 
@@ -399,7 +517,9 @@ def test_completing_a_csv_project_transforms_makes_you_a_reviewer_approves_and_p
         "POST /projects/7/approve",
         "POST /projects/7/publish/start",
     ]
-    assert json.loads(next(r for r in publisher.requests if r.url.path.endswith("/reviewers")).content) == {
+    assert json.loads(
+        next(r for r in publisher.requests if r.url.path.endswith("/reviewers")).content
+    ) == {
         "userId": USER_ID,
         "isRequired": True,
     }
@@ -416,7 +536,9 @@ def test_a_reviewer_is_not_added_twice(publisher: FakePublisher) -> None:
     assert "POST /projects/7/reviewers" not in publisher.paths()
 
 
-def test_a_csv_project_that_is_already_transformed_is_not_transformed_again(publisher: FakePublisher) -> None:
+def test_a_csv_project_that_is_already_transformed_is_not_transformed_again(
+    publisher: FakePublisher,
+) -> None:
     publisher.iterations = [{"iterationId": 1, "status": "Transformed"}]
 
     complete(publisher)
@@ -425,17 +547,28 @@ def test_a_csv_project_that_is_already_transformed_is_not_transformed_again(publ
     assert "POST /projects/7/approve" in publisher.paths()
 
 
-def test_completing_a_json_ld_project_approves_and_publishes_without_a_transform(publisher: FakePublisher) -> None:
+def test_completing_a_json_ld_project_approves_and_publishes_without_a_transform(
+    publisher: FakePublisher,
+) -> None:
     publisher.project["projectType"] = "ApiPublishing"
 
     complete(publisher)
 
-    assert publisher.paths()[-2:] == ["POST /projects/7/approve", "POST /projects/7/publish/start"]
-    assert not any(path.endswith(("/transform", "/reviewers")) for path in publisher.paths())
+    assert publisher.paths()[-2:] == [
+        "POST /projects/7/approve",
+        "POST /projects/7/publish/start",
+    ]
+    assert not any(
+        path.endswith(("/transform", "/reviewers")) for path in publisher.paths()
+    )
 
 
-def test_completing_is_refused_while_validation_found_errors(publisher: FakePublisher) -> None:
-    publisher.findings = {"credentials.csv": {"CsvStructure": [finding("Bad header.", "Name")]}}
+def test_completing_is_refused_while_validation_found_errors(
+    publisher: FakePublisher,
+) -> None:
+    publisher.findings = {
+        "credentials.csv": {"CsvStructure": [finding("Bad header.", "Name")]}
+    }
 
     with pytest.raises(PublisherApiError, match="found 1 error"):
         complete(publisher)
@@ -456,14 +589,18 @@ def test_completing_is_refused_before_validation_has_finished(
         complete(publisher)
 
 
-def test_completing_a_project_that_has_no_files_is_refused(publisher: FakePublisher) -> None:
+def test_completing_a_project_that_has_no_files_is_refused(
+    publisher: FakePublisher,
+) -> None:
     publisher.iterations = []
 
     with pytest.raises(PublisherApiError, match="no files yet"):
         complete(publisher)
 
 
-def test_completing_again_after_a_failed_publish_only_starts_publishing(publisher: FakePublisher) -> None:
+def test_completing_again_after_a_failed_publish_only_starts_publishing(
+    publisher: FakePublisher,
+) -> None:
     publisher.project.update({"status": "Approved", "publishStatus": "PublishFailed"})
     publisher.iterations = [{"iterationId": 1, "status": "Transformed"}]
 
@@ -496,7 +633,10 @@ def test_completing_a_project_that_is_past_that_is_refused(
 def test_resolve_publisher_url_prefers_the_command_line() -> None:
     env = {"CE_PUBLISHER_API_URL": "http://from-env/"}
 
-    assert resolve_publisher_url("http://cli/", "http://config", "dev", env) == "http://cli"
+    assert (
+        resolve_publisher_url("http://cli/", "http://config", "dev", env)
+        == "http://cli"
+    )
     assert resolve_publisher_url(None, "http://config", "dev", env) == "http://from-env"
     assert resolve_publisher_url(None, "http://config/", "dev", {}) == "http://config"
 
@@ -506,7 +646,9 @@ def test_resolve_publisher_url_needs_an_address() -> None:
         resolve_publisher_url(None, "", "custom", {})
 
 
-def test_create_project_makes_a_csv_project_unless_asked_for_json_ld(publisher: FakePublisher) -> None:
+def test_create_project_makes_a_csv_project_unless_asked_for_json_ld(
+    publisher: FakePublisher,
+) -> None:
     assert publisher.client().create_project("Welding") == 7
     assert publisher.client().create_project("Welding", jsonld=True) == 7
 
@@ -517,7 +659,9 @@ def test_create_project_makes_a_csv_project_unless_asked_for_json_ld(publisher: 
     ]
 
 
-def test_upload_csv_sends_the_files_and_what_each_holds(publisher: FakePublisher, tmp_path: Path) -> None:
+def test_upload_csv_sends_the_files_and_what_each_holds(
+    publisher: FakePublisher, tmp_path: Path
+) -> None:
     first, second = csv_file(tmp_path, "a.csv"), csv_file(tmp_path, "b.csv")
 
     result = publisher.client().upload_csv(7, [first, second], "ceterms:Credential")
@@ -533,9 +677,14 @@ def test_upload_csv_sends_the_files_and_what_each_holds(publisher: FakePublisher
     assert 'name="Classifications[1].ResourceClass"' in body
     assert body.count("ceterms:Credential") == 2
     assert request.headers["Authorization"].startswith("Bearer ")
+    from ce.utils.user_agent import USER_AGENT
+
+    assert request.headers["User-Agent"] == USER_AGENT
 
 
-def test_upload_jsonld_sends_the_files(publisher: FakePublisher, tmp_path: Path) -> None:
+def test_upload_jsonld_sends_the_files(
+    publisher: FakePublisher, tmp_path: Path
+) -> None:
     publisher.client().upload_jsonld(7, [jsonld_file(tmp_path)])
 
     request = publisher.requests[0]
@@ -543,11 +692,17 @@ def test_upload_jsonld_sends_the_files(publisher: FakePublisher, tmp_path: Path)
     assert 'name="Files"; filename="welding.json"' in request.content.decode()
 
 
-def test_a_refused_upload_raises_with_the_reason(publisher: FakePublisher, tmp_path: Path) -> None:
+def test_a_refused_upload_raises_with_the_reason(
+    publisher: FakePublisher, tmp_path: Path
+) -> None:
     def refuse(request: httpx2.Request) -> httpx2.Response:
-        return httpx2.Response(403, json="Only the project's author can change an API publishing project.")
+        return httpx2.Response(
+            403, json="Only the project's author can change an API publishing project."
+        )
 
-    client = PublisherClient("http://publisher", make_token(), transport=httpx2.MockTransport(refuse))
+    client = PublisherClient(
+        "http://publisher", make_token(), transport=httpx2.MockTransport(refuse)
+    )
 
     with pytest.raises(PublisherApiError, match="Only the project's author") as error:
         client.upload_jsonld(7, [jsonld_file(tmp_path)])
@@ -565,7 +720,9 @@ def test_other_failures_raise_with_the_status(publisher: FakePublisher) -> None:
 def test_the_client_has_no_call_for_the_legacy_registry_assistant() -> None:
     names = set(dir(PublisherClient))
 
-    assert names.isdisjoint({"assistant", "format_resource", "add_resource", "complete"})
+    assert names.isdisjoint(
+        {"assistant", "format_resource", "add_resource", "complete"}
+    )
 
 
 def test_keep_json_content_drops_the_other_content_types() -> None:
@@ -573,9 +730,13 @@ def test_keep_json_content_drops_the_other_content_types() -> None:
         "paths": {
             "/a": {
                 "post": {
-                    "requestBody": {"content": {"text/json": {}, "application/json": {"x": 1}}},
+                    "requestBody": {
+                        "content": {"text/json": {}, "application/json": {"x": 1}}
+                    },
                     "responses": {
-                        "200": {"content": {"text/plain": {}, "application/json": {"y": 2}}},
+                        "200": {
+                            "content": {"text/plain": {}, "application/json": {"y": 2}}
+                        },
                         "204": {},
                         "415": {"content": {"application/zip": {}}},
                     },
@@ -594,15 +755,23 @@ def test_keep_json_content_drops_the_other_content_types() -> None:
 # --- commands -----------------------------------------------------------------
 
 
-def test_the_commands_do_not_offer_the_legacy_registry_assistant(cli: CliRunner) -> None:
-    help_text = run(cli).output + run(cli, "project", "--help").output + run(cli, "project", "add", "--help").output
+def test_the_commands_do_not_offer_the_legacy_registry_assistant(
+    cli: CliRunner,
+) -> None:
+    help_text = (
+        run(cli).output
+        + run(cli, "project", "--help").output
+        + run(cli, "project", "add", "--help").output
+    )
 
     assert run(cli, "format", "x.json").exit_code == 2
     assert "Registry Assistant" not in help_text
     assert "format" not in run(cli).output.split("Commands:")[1]
 
 
-def test_create_makes_a_csv_project_by_default(cli: CliRunner, publisher: FakePublisher) -> None:
+def test_create_makes_a_csv_project_by_default(
+    cli: CliRunner, publisher: FakePublisher
+) -> None:
     result = run(cli, "project", "create", "--name", "Welding")
 
     assert result.exit_code == 0, result.output
@@ -610,21 +779,35 @@ def test_create_makes_a_csv_project_by_default(cli: CliRunner, publisher: FakePu
     assert json.loads(publisher.requests[0].content)["projectType"] == "BulkUpload"
 
 
-def test_create_with_jsonld_makes_a_json_ld_project(cli: CliRunner, publisher: FakePublisher) -> None:
+def test_create_with_jsonld_makes_a_json_ld_project(
+    cli: CliRunner, publisher: FakePublisher
+) -> None:
     run(cli, "project", "create", "--name", "Welding", "--jsonld")
 
     assert json.loads(publisher.requests[0].content)["projectType"] == "ApiPublishing"
 
 
-def test_list_shows_the_kind_of_each_project(cli: CliRunner, publisher: FakePublisher) -> None:
+def test_list_shows_the_kind_of_each_project(
+    cli: CliRunner, publisher: FakePublisher
+) -> None:
     result = run(cli, "project", "list")
 
     assert "BU" in result.output and "Welding" in result.output
 
 
-def test_add_sends_csv_files_with_their_template(cli: CliRunner, publisher: FakePublisher, tmp_path: Path) -> None:
+def test_add_sends_csv_files_with_their_template(
+    cli: CliRunner, publisher: FakePublisher, tmp_path: Path
+) -> None:
     result = run(
-        cli, "project", "add", "--project-id", "7", "--file", str(csv_file(tmp_path)), "--type", "credentials"
+        cli,
+        "project",
+        "add",
+        "--project-id",
+        "7",
+        "--file",
+        str(csv_file(tmp_path)),
+        "--type",
+        "credentials",
     )
 
     assert result.exit_code == 0, result.output
@@ -634,17 +817,31 @@ def test_add_sends_csv_files_with_their_template(cli: CliRunner, publisher: Fake
     assert "1 file(s) in iteration 2. Validation has started." in result.output
 
 
-def test_add_needs_the_template_of_csv_files(cli: CliRunner, publisher: FakePublisher, tmp_path: Path) -> None:
-    result = run(cli, "project", "add", "--project-id", "7", "--file", str(csv_file(tmp_path)))
+def test_add_needs_the_template_of_csv_files(
+    cli: CliRunner, publisher: FakePublisher, tmp_path: Path
+) -> None:
+    result = run(
+        cli, "project", "add", "--project-id", "7", "--file", str(csv_file(tmp_path))
+    )
 
     assert result.exit_code == 1
     assert "--type" in result.output
     assert "POST /projects/7/iterations/upload" not in publisher.paths()
 
 
-def test_add_refuses_json_ld_files_for_a_csv_project(cli: CliRunner, publisher: FakePublisher, tmp_path: Path) -> None:
+def test_add_refuses_json_ld_files_for_a_csv_project(
+    cli: CliRunner, publisher: FakePublisher, tmp_path: Path
+) -> None:
     result = run(
-        cli, "project", "add", "--project-id", "7", "--file", str(jsonld_file(tmp_path)), "--type", "credentials"
+        cli,
+        "project",
+        "add",
+        "--project-id",
+        "7",
+        "--file",
+        str(jsonld_file(tmp_path)),
+        "--type",
+        "credentials",
     )
 
     assert result.exit_code == 1
@@ -656,7 +853,9 @@ def test_add_sends_json_ld_files_to_a_json_ld_project(
 ) -> None:
     publisher.project["projectType"] = "ApiPublishing"
 
-    result = run(cli, "project", "add", "--project-id", "7", "--file", str(jsonld_file(tmp_path)))
+    result = run(
+        cli, "project", "add", "--project-id", "7", "--file", str(jsonld_file(tmp_path))
+    )
 
     assert result.exit_code == 0, result.output
     assert "POST /projects/7/iterations/upload-jsonld" in publisher.paths()
@@ -668,9 +867,19 @@ def test_add_refuses_csv_files_and_a_template_for_a_json_ld_project(
 ) -> None:
     publisher.project["projectType"] = "ApiPublishing"
 
-    csv_result = run(cli, "project", "add", "--project-id", "7", "--file", str(csv_file(tmp_path)))
+    csv_result = run(
+        cli, "project", "add", "--project-id", "7", "--file", str(csv_file(tmp_path))
+    )
     type_result = run(
-        cli, "project", "add", "--project-id", "7", "--file", str(jsonld_file(tmp_path)), "--type", "credentials"
+        cli,
+        "project",
+        "add",
+        "--project-id",
+        "7",
+        "--file",
+        str(jsonld_file(tmp_path)),
+        "--type",
+        "credentials",
     )
 
     assert "is not a .json or .jsonld file" in csv_result.output
@@ -736,7 +945,9 @@ def test_run_validation_starts_a_json_ld_iteration_that_has_not_started(
     assert "2 succeeded" in result.output
 
 
-def test_run_validation_exits_1_when_it_finds_errors(cli: CliRunner, publisher: FakePublisher) -> None:
+def test_run_validation_exits_1_when_it_finds_errors(
+    cli: CliRunner, publisher: FakePublisher
+) -> None:
     publisher.findings = {"jobs.csv": {"CtidReference": [finding("Missing.")]}}
 
     result = run(cli, "project", "validation", "run", "--project-id", "7")
@@ -745,7 +956,9 @@ def test_run_validation_exits_1_when_it_finds_errors(cli: CliRunner, publisher: 
     assert "1 succeeded, 1 with errors." in result.output
 
 
-def test_run_validation_no_wait_returns_while_it_is_running(cli: CliRunner, publisher: FakePublisher) -> None:
+def test_run_validation_no_wait_returns_while_it_is_running(
+    cli: CliRunner, publisher: FakePublisher
+) -> None:
     publisher.iterations = [{"iterationId": 1, "status": "Validating"}]
 
     result = run(cli, "project", "validation", "run", "--project-id", "7", "--no-wait")
@@ -763,12 +976,33 @@ def test_run_validation_needs_files(cli: CliRunner, publisher: FakePublisher) ->
     assert "no files yet" in result.output
 
 
-def test_show_validation_status_as_json(cli: CliRunner, publisher: FakePublisher) -> None:
+def test_show_validation_status_as_json(
+    cli: CliRunner, publisher: FakePublisher
+) -> None:
     publisher.findings = {"jobs.csv": {"CtidReference": [finding()]}}
 
-    plain = run(cli, "project", "validation", "status", "show", "--project-id", "7", "-o", "json")
+    plain = run(
+        cli,
+        "project",
+        "validation",
+        "status",
+        "show",
+        "--project-id",
+        "7",
+        "-o",
+        "json",
+    )
     verbose = run(
-        cli, "project", "validation", "status", "show", "--project-id", "7", "-o", "json", "--verbose"
+        cli,
+        "project",
+        "validation",
+        "status",
+        "show",
+        "--project-id",
+        "7",
+        "-o",
+        "json",
+        "--verbose",
     )
 
     summary = json.loads(plain.output)
@@ -777,17 +1011,23 @@ def test_show_validation_status_as_json(cli: CliRunner, publisher: FakePublisher
     assert json.loads(verbose.output)["findings"][0]["column"] == "Offered By"
 
 
-def test_show_validation_status_verbose_lists_each_file(cli: CliRunner, publisher: FakePublisher) -> None:
+def test_show_validation_status_verbose_lists_each_file(
+    cli: CliRunner, publisher: FakePublisher
+) -> None:
     publisher.findings = {"jobs.csv": {"CtidReference": [finding("Missing.")]}}
 
-    result = run(cli, "project", "validation", "status", "show", "--project-id", "7", "--verbose")
+    result = run(
+        cli, "project", "validation", "status", "show", "--project-id", "7", "--verbose"
+    )
 
     assert "  FAIL  jobs.csv" in result.output
     assert "  ok    credentials.csv" in result.output
     assert "      row 3: Offered By: error: Missing." in result.output
 
 
-def test_show_validation_status_says_when_validation_has_not_run(cli: CliRunner, publisher: FakePublisher) -> None:
+def test_show_validation_status_says_when_validation_has_not_run(
+    cli: CliRunner, publisher: FakePublisher
+) -> None:
     publisher.iterations = [{"iterationId": 1, "status": "Created"}]
 
     result = run(cli, "project", "validation", "status", "show", "--project-id", "7")
@@ -795,13 +1035,28 @@ def test_show_validation_status_says_when_validation_has_not_run(cli: CliRunner,
     assert "Validation has not been run on it yet." in result.output
 
 
-def test_show_validation_errors_lists_only_blocking_findings(cli: CliRunner, publisher: FakePublisher) -> None:
+def test_show_validation_errors_lists_only_blocking_findings(
+    cli: CliRunner, publisher: FakePublisher
+) -> None:
     publisher.findings = {
-        "jobs.csv": {"CtidReference": [finding("Missing.")], "SpellCheck": [finding("Typo.", "Name")]}
+        "jobs.csv": {
+            "CtidReference": [finding("Missing.")],
+            "SpellCheck": [finding("Typo.", "Name")],
+        }
     }
 
     text = run(cli, "project", "validation", "errors", "show", "--project-id", "7")
-    as_json = run(cli, "project", "validation", "errors", "show", "--project-id", "7", "-o", "json")
+    as_json = run(
+        cli,
+        "project",
+        "validation",
+        "errors",
+        "show",
+        "--project-id",
+        "7",
+        "-o",
+        "json",
+    )
 
     assert "jobs.csv:3: Offered By: error: Missing." in text.output
     assert "Typo." not in text.output
@@ -809,7 +1064,9 @@ def test_show_validation_errors_lists_only_blocking_findings(cli: CliRunner, pub
     assert [item["message"] for item in json.loads(as_json.output)] == ["Missing."]
 
 
-def test_show_audit_prints_the_log_oldest_first(cli: CliRunner, publisher: FakePublisher) -> None:
+def test_show_audit_prints_the_log_oldest_first(
+    cli: CliRunner, publisher: FakePublisher
+) -> None:
     result = run(cli, "project", "audit", "show", "--project-id", "7")
 
     lines = [line for line in result.output.splitlines() if line.strip()]
@@ -828,7 +1085,9 @@ def test_show_status_as_json(cli: CliRunner, publisher: FakePublisher) -> None:
     assert status["stages"][0]["stage"] == "ChangesetGeneration"
 
 
-def test_complete_walks_a_csv_project_through_to_published(cli: CliRunner, publisher: FakePublisher) -> None:
+def test_complete_walks_a_csv_project_through_to_published(
+    cli: CliRunner, publisher: FakePublisher
+) -> None:
     result = run(cli, "project", "complete", "--project-id", "7")
 
     assert result.exit_code == 0, result.output
@@ -839,7 +1098,9 @@ def test_complete_walks_a_csv_project_through_to_published(cli: CliRunner, publi
     assert "Project 7 is published." in result.output
 
 
-def test_complete_exits_1_and_says_why_it_was_refused(cli: CliRunner, publisher: FakePublisher) -> None:
+def test_complete_exits_1_and_says_why_it_was_refused(
+    cli: CliRunner, publisher: FakePublisher
+) -> None:
     publisher.findings = {"jobs.csv": {"CtidReference": [finding("Missing.")]}}
 
     result = run(cli, "project", "complete", "--project-id", "7")
@@ -849,7 +1110,9 @@ def test_complete_exits_1_and_says_why_it_was_refused(cli: CliRunner, publisher:
     assert "POST /projects/7/approve" not in publisher.paths()
 
 
-def test_complete_exits_1_when_publishing_fails(cli: CliRunner, publisher: FakePublisher) -> None:
+def test_complete_exits_1_when_publishing_fails(
+    cli: CliRunner, publisher: FakePublisher
+) -> None:
     publisher.project.update({"status": "Approved", "publishStatus": "PublishFailed"})
     publisher.iterations = [{"iterationId": 1, "status": "Transformed"}]
 
@@ -878,9 +1141,13 @@ def test_abandon_asks_first(cli: CliRunner, publisher: FakePublisher) -> None:
     assert publisher.paths() == ["POST /projects/7/abandon"]
 
 
-def test_a_403_shows_the_reason_the_publisher_gave(cli: CliRunner, publisher: FakePublisher) -> None:
+def test_a_403_shows_the_reason_the_publisher_gave(
+    cli: CliRunner, publisher: FakePublisher
+) -> None:
     def forbidden(request: httpx2.Request) -> httpx2.Response:
-        return httpx2.Response(403, json="Only the project's author can change or complete it.")
+        return httpx2.Response(
+            403, json="Only the project's author can change or complete it."
+        )
 
     publisher.handler = forbidden  # type: ignore[method-assign]
 

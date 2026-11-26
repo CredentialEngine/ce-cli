@@ -10,15 +10,15 @@ indexed form fields.
 
 from __future__ import annotations
 
+import logging
 import os
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from pathlib import Path
 from types import ModuleType
 from typing import Any
 from uuid import UUID
 
 import httpx2
-
 from publisher_client import AuthenticatedClient
 from publisher_client.api.project import (
     get_projects,
@@ -41,6 +41,8 @@ from publisher_client.models.add_project_reviewer_dto import (
 )
 from publisher_client.models.project_create_dto import ProjectCreateDto
 from publisher_client.models.project_type import ProjectType
+
+from ce.utils.user_agent import USER_AGENT
 
 PUBLISHER_URL_ENV_VAR = "CE_PUBLISHER_API_URL"
 
@@ -65,7 +67,9 @@ def project_kind_label(project_type: str | None) -> str:
 class PublisherApiError(Exception):
     """The Publisher API refused a request or could not be reached."""
 
-    def __init__(self, message: str, status_code: int | None = None, detail: str = "") -> None:
+    def __init__(
+        self, message: str, status_code: int | None = None, detail: str = ""
+    ) -> None:
         super().__init__(message)
         self.status_code = status_code
         # The text the Publisher returned with the error, empty if it returned none.
@@ -108,13 +112,16 @@ class PublisherClient:
         timeout: float = _DEFAULT_TIMEOUT_SECONDS,
     ) -> None:
         self.access_token = access_token
-        httpx_args: dict[str, Any] = {} if transport is None else {"transport": transport}
+        self.token_provider: Callable[..., str] | None = None
+        httpx_args: dict[str, Any] = (
+            {} if transport is None else {"transport": transport}
+        )
         self._api = AuthenticatedClient(
             base_url=base_url.rstrip("/"),
             token=access_token,
             verify_ssl=verify,
             timeout=httpx2.Timeout(timeout),
-            headers={"Accept": "application/json", "User-Agent": "ce-cli"},
+            headers={"Accept": "application/json", "User-Agent": USER_AGENT},
             httpx_args=httpx_args,
         )
 
@@ -140,9 +147,13 @@ class PublisherClient:
         by the Registry, not by a user.)
         """
         project_type = ProjectType.APIPUBLISHING if jsonld else ProjectType.BULKUPLOAD
-        created = self._json(post_projects, body=ProjectCreateDto(name=name, project_type=project_type))
+        created = self._json(
+            post_projects, body=ProjectCreateDto(name=name, project_type=project_type)
+        )
         if not isinstance(created, dict) or "projectId" not in created:
-            raise PublisherApiError("The Publisher did not return the new project's id.")
+            raise PublisherApiError(
+                "The Publisher did not return the new project's id."
+            )
         return int(created["projectId"])
 
     def list_projects(self) -> list[dict[str, Any]]:
@@ -161,10 +172,14 @@ class PublisherClient:
             return None
         return max(iterations, key=lambda item: int(item["iterationId"]))
 
-    def get_iteration_files(self, project_id: int, iteration_id: int) -> list[dict[str, Any]]:
+    def get_iteration_files(
+        self, project_id: int, iteration_id: int
+    ) -> list[dict[str, Any]]:
         return (
             self._json(
-                get_projects_project_id_iterations_iteration_id_files, project_id, iteration_id
+                get_projects_project_id_iterations_iteration_id_files,
+                project_id,
+                iteration_id,
             )
             or []
         )
@@ -201,7 +216,9 @@ class PublisherClient:
 
         The Publisher starts validating the new iteration at once.
         """
-        parts = [("Files", (path.name, path.read_bytes(), "text/csv")) for path in files]
+        parts = [
+            ("Files", (path.name, path.read_bytes(), "text/csv")) for path in files
+        ]
         form = {}
         for index, path in enumerate(files):
             form[f"Classifications[{index}].FileName"] = path.name
@@ -210,8 +227,13 @@ class PublisherClient:
 
     def upload_jsonld(self, project_id: int, files: Sequence[Path]) -> dict[str, Any]:
         """Add JSON-LD files to an API publishing project, or replace the files of the same name."""
-        parts = [("Files", (path.name, path.read_bytes(), "application/ld+json")) for path in files]
-        return self._upload(f"/projects/{project_id}/iterations/upload-jsonld", parts, {})
+        parts = [
+            ("Files", (path.name, path.read_bytes(), "application/ld+json"))
+            for path in files
+        ]
+        return self._upload(
+            f"/projects/{project_id}/iterations/upload-jsonld", parts, {}
+        )
 
     # ------------------------------------------------------------------
     # Steps
@@ -223,7 +245,9 @@ class PublisherClient:
     def start_transform(self, project_id: int, iteration_id: int) -> None:
         self._request(start_transform, project_id, iteration_id)
 
-    def add_reviewer(self, project_id: int, user_id: str, *, required: bool = True) -> None:
+    def add_reviewer(
+        self, project_id: int, user_id: str, *, required: bool = True
+    ) -> None:
         self._request(
             post_projects_project_id_reviewers,
             project_id,
@@ -244,11 +268,16 @@ class PublisherClient:
     # ------------------------------------------------------------------
 
     def _upload(
-        self, path: str, parts: list[tuple[str, tuple[str, bytes, str]]], form: dict[str, str]
+        self,
+        path: str,
+        parts: list[tuple[str, tuple[str, bytes, str]]],
+        form: dict[str, str],
     ) -> dict[str, Any]:
         label = f"POST {path}"
         try:
-            response = self._api.get_httpx_client().request("POST", path, files=parts, data=form)
+            response = self._authenticated_request(
+                method="POST", url=path, files=parts, data=form
+            )
         except httpx2.HTTPError as exc:
             raise PublisherApiError(
                 f"Could not reach the Publisher at {self._api._base_url}: {exc}"
@@ -278,10 +307,37 @@ class PublisherClient:
             )
         return payload
 
-    def _request(self, endpoint: ModuleType, *args: Any, **kwargs: Any) -> httpx2.Response:
+    def _request(
+        self, endpoint: ModuleType, *args: Any, **kwargs: Any
+    ) -> httpx2.Response:
         response, label = self._send(endpoint, *args, **kwargs)
         _raise_for_status(label, response)
         return response
+
+    def _authenticated_request(self, **request: Any) -> httpx2.Response:
+        logging.getLogger(__name__).debug(
+            "Publisher API request: %s", request.get("method")
+        )
+        client = self._api.get_httpx_client()
+        if self.token_provider is None:
+            return client.request(**request)
+        for refresh in (False, True):
+            self.access_token = self.token_provider(force_refresh=refresh)
+            headers = httpx2.Headers(request.get("headers") or {})
+            headers["Authorization"] = f"Bearer {self.access_token}"
+            response = client.request(**{**request, "headers": headers})
+            if response.status_code != 401:
+                return response
+            if refresh:
+                from ce.auth.api_session import rejected_token
+
+                response.close()
+                raise rejected_token()
+            response.close()
+            logging.getLogger(__name__).debug(
+                "Publisher API returned HTTP 401; refreshing token"
+            )
+        raise AssertionError("unreachable")
 
     def _send(
         self, endpoint: ModuleType, *args: Any, **kwargs: Any
@@ -291,7 +347,7 @@ class PublisherClient:
         label = f"{str(request['method']).upper()} {request['url']}"
 
         try:
-            return self._api.get_httpx_client().request(**request), label
+            return self._authenticated_request(**request), label
         except httpx2.HTTPError as exc:
             raise PublisherApiError(
                 f"Could not reach the Publisher at {self._api._base_url}: {exc}"

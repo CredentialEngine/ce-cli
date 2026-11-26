@@ -17,17 +17,19 @@ from __future__ import annotations
 import base64
 import binascii
 from pathlib import Path
-from typing import Any, Dict, Tuple
+from typing import Any
 from urllib.parse import quote, unquote
 
 import base58
 import click
+import httpx2
 import jwt
-import requests
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey, RSAPublicKey
 from jwt.algorithms import RSAAlgorithm
 from rich.console import Console
+
+from ce.utils.user_agent import USER_AGENT
 
 console = Console()
 err_console = Console(stderr=True)
@@ -41,10 +43,10 @@ VERIFICATION_METHOD_TYPE = "JsonWebKey2020"
 ACCEPTED_RELATIONSHIPS = ("authentication",)
 
 
-
 # Multibase + multicodec helpers
 
-def _parse_uvarint(data: bytes) -> Tuple[int, int]:
+
+def _parse_uvarint(data: bytes) -> tuple[int, int]:
     x = 0
     s = 0
     for i, b in enumerate(data):
@@ -61,15 +63,15 @@ def _decode_multibase_base58btc(z_value: str) -> bytes:
     return base58.b58decode(z_value[1:])
 
 
-def _split_did_url(did_url: str) -> Tuple[str, str]:
+def _split_did_url(did_url: str) -> tuple[str, str]:
     """Return (did, fragment) for 'did:...#fragment'; fragment is '' when absent."""
     did_url = did_url.strip()
     did, _, fragment = did_url.partition("#")
     return did, fragment
 
 
-
 # Private key loading
+
 
 def _load_private_key_bytes(data: bytes) -> RSAPrivateKey:
     """Load an unencrypted PEM or DER RSA private key (PKCS#8 or PKCS#1)."""
@@ -83,7 +85,7 @@ def _load_private_key_bytes(data: bytes) -> RSAPrivateKey:
         raise ValueError(f"Private key could not be loaded: {e}") from e
 
     if not isinstance(key, RSAPrivateKey):
-        raise ValueError(
+        raise ValueError(  # noqa: TRY004 - preserve key validation contract.
             f"Expected an RSA private key, got {type(key).__name__}. "
             "Use --algorithm Ed25519 for Ed25519 keys."
         )
@@ -107,7 +109,9 @@ def _load_private_key_from_text(text: str) -> RSAPrivateKey:
     return _load_private_key_bytes(der)
 
 
-def _load_signing_key(private_key_file: str | None, private_key_pem: str | None) -> RSAPrivateKey:
+def _load_signing_key(
+    private_key_file: str | None, private_key_pem: str | None
+) -> RSAPrivateKey:
     if bool(private_key_file) == bool(private_key_pem):
         raise click.ClickException(
             "Give the RSA private key as either a file path or the key text, not both."
@@ -130,15 +134,15 @@ def _load_signing_key(private_key_file: str | None, private_key_pem: str | None)
     return key
 
 
-
 # did:key resolution (offline)
+
 
 def _public_key_from_did_key(did_or_kid: str) -> RSAPublicKey:
     did, fragment = _split_did_url(did_or_kid)
     if not did.startswith("did:key:"):
         raise ValueError("Not a did:key DID")
 
-    identifier = did[len("did:key:"):]
+    identifier = did[len("did:key:") :]
     if fragment and fragment != identifier:
         raise ValueError("did:key fragment must equal the key identifier")
 
@@ -161,25 +165,27 @@ def _public_key_from_did_key(did_or_kid: str) -> RSAPublicKey:
         raise ValueError(f"did:key RSA key is not valid PKCS#1 DER: {e}") from e
 
     if not isinstance(key, RSAPublicKey):
-        raise ValueError("did:key RSA payload is not an RSA public key")
+        raise ValueError("did:key RSA payload is not an RSA public key")  # noqa: TRY004 - invalid DID key data.
 
     # PKCS#1 is required; SubjectPublicKeyInfo would also load, so check the round trip.
-    pkcs1 = key.public_bytes(serialization.Encoding.DER, serialization.PublicFormat.PKCS1)
+    pkcs1 = key.public_bytes(
+        serialization.Encoding.DER, serialization.PublicFormat.PKCS1
+    )
     if pkcs1 != key_bytes:
         raise ValueError("did:key RSA key must be PKCS#1 RSAPublicKey DER")
 
     return key
 
 
-
 # did:web resolution (HTTPS using OS trust)
+
 
 def _did_web_to_url(did_web: str) -> str:
     """did:web:host[:path...] -> https URL. A percent-encoded port (%3A) is decoded."""
     if not did_web.startswith("did:web:"):
         raise ValueError("Not a did:web DID")
 
-    parts = did_web[len("did:web:"):].split(":")
+    parts = did_web[len("did:web:") :].split(":")
     host = unquote(parts[0])
     if not host or any(c in host for c in "/?#@"):
         raise ValueError("Invalid did:web host")
@@ -194,19 +200,23 @@ def _did_web_to_url(did_web: str) -> str:
     return f"https://{host}/{'/'.join(path_parts)}/did.json"
 
 
-def _fetch_did_json(did_web: str) -> Dict[str, Any]:
+def _fetch_did_json(did_web: str) -> dict[str, Any]:
     url = _did_web_to_url(did_web)
 
-    r = requests.get(
+    r = httpx2.get(
         url,
-        headers={"Accept": "application/did+json, application/json"},
+        headers={
+            "Accept": "application/did+json, application/json",
+            "User-Agent": USER_AGENT,
+        },
         timeout=15,
+        follow_redirects=True,
     )
     r.raise_for_status()
 
     doc = r.json()
     if not isinstance(doc, dict):
-        raise ValueError("did.json must be a JSON object")
+        raise ValueError("did.json must be a JSON object")  # noqa: TRY004 - malformed remote data.
     return doc
 
 
@@ -215,10 +225,10 @@ def _normalize(vm_id: str, did: str) -> str:
 
 
 def _find_verification_method(
-    did_doc: Dict[str, Any], did: str, kid: str
-) -> Tuple[Dict[str, Any] | None, bool]:
+    did_doc: dict[str, Any], did: str, kid: str
+) -> tuple[dict[str, Any] | None, bool]:
     """Return (verification method, listed in an accepted relationship)."""
-    found: Dict[str, Any] | None = None
+    found: dict[str, Any] | None = None
     in_relationship = False
 
     for relationship in ACCEPTED_RELATIONSHIPS:
@@ -228,25 +238,31 @@ def _find_verification_method(
         for entry in entries:
             if isinstance(entry, str) and _normalize(entry, did) == kid:
                 in_relationship = True
-            elif isinstance(entry, dict) and isinstance(entry.get("id"), str):
-                if _normalize(entry["id"], did) == kid:
-                    in_relationship = True
-                    found = entry
+            elif (
+                isinstance(entry, dict)
+                and isinstance(entry.get("id"), str)
+                and _normalize(entry["id"], did) == kid
+            ):
+                in_relationship = True
+                found = entry
 
     if found is None:
         vms = did_doc.get("verificationMethod", [])
         if not isinstance(vms, list):
             raise ValueError("verificationMethod must be a list")
         for vm in vms:
-            if isinstance(vm, dict) and isinstance(vm.get("id"), str):
-                if _normalize(vm["id"], did) == kid:
-                    found = vm
-                    break
+            if (
+                isinstance(vm, dict)
+                and isinstance(vm.get("id"), str)
+                and _normalize(vm["id"], did) == kid
+            ):
+                found = vm
+                break
 
     return found, in_relationship
 
 
-def _public_key_from_verification_method(vm: Dict[str, Any]) -> RSAPublicKey:
+def _public_key_from_verification_method(vm: dict[str, Any]) -> RSAPublicKey:
     vm_type = vm.get("type")
     if vm_type != VERIFICATION_METHOD_TYPE:
         raise ValueError(
@@ -255,7 +271,7 @@ def _public_key_from_verification_method(vm: Dict[str, Any]) -> RSAPublicKey:
 
     jwk = vm.get("publicKeyJwk")
     if not isinstance(jwk, dict):
-        raise ValueError("Verification method has no publicKeyJwk")
+        raise TypeError("Verification method has no publicKeyJwk")
 
     if jwk.get("kty") != "RSA":
         raise ValueError(f"publicKeyJwk 'kty' is '{jwk.get('kty')}', expected 'RSA'")
@@ -271,12 +287,12 @@ def _public_key_from_verification_method(vm: Dict[str, Any]) -> RSAPublicKey:
 
     key = RSAAlgorithm.from_jwk(jwk)
     if not isinstance(key, RSAPublicKey):
-        raise ValueError("publicKeyJwk is not an RSA public key")
+        raise TypeError("publicKeyJwk is not an RSA public key")
 
     return key
 
 
-def _public_key_from_did_doc(*, kid: str, did_doc: Dict[str, Any]) -> RSAPublicKey:
+def _public_key_from_did_doc(*, kid: str, did_doc: dict[str, Any]) -> RSAPublicKey:
     did, _ = _split_did_url(kid)
     kid = kid.strip()
 
@@ -309,10 +325,12 @@ def _resolve_public_key_for_kid(kid: str) -> RSAPublicKey:
     raise ValueError(f"Unsupported DID method: {did}")
 
 
-
 # Signing + verification
 
-def _sign_payload(private_key: RSAPrivateKey, kid: str, payload_obj: Dict[str, Any]) -> str:
+
+def _sign_payload(
+    private_key: RSAPrivateKey, kid: str, payload_obj: dict[str, Any]
+) -> str:
     headers = {"typ": "JWT", "alg": ALG, "kid": kid}
 
     token = jwt.encode(
@@ -367,8 +385,8 @@ def _assert_signature_verifiable(token: str, kid: str) -> None:
     )
 
 
-
 # Entry point used by `ce iir challenge sign --algorithm RS256`
+
 
 def load_private_key_argument(value: str) -> RSAPrivateKey:
     """--private-key for RS256: a path to a PEM/DER key file, or the PEM text itself."""
@@ -413,7 +431,9 @@ def _looks_like_base64(value: str) -> bool:
     return True
 
 
-def sign_and_verify(private_key_value: str, kid: str, payload_obj: Dict[str, Any]) -> str:
+def sign_and_verify(
+    private_key_value: str, kid: str, payload_obj: dict[str, Any]
+) -> str:
     """Load the RSA key, sign the challenge with RS256, and verify it against the DID."""
     signing_key = load_private_key_argument(private_key_value)
 
@@ -424,9 +444,9 @@ def sign_and_verify(private_key_value: str, kid: str, payload_obj: Dict[str, Any
 
     try:
         _assert_signature_verifiable(token, kid)
-    except requests.RequestException as e:
+    except httpx2.HTTPError as e:
         raise click.ClickException(f"Failed to fetch did.json: {e}")
-    except ValueError as e:
+    except (ValueError, TypeError) as e:
         raise click.ClickException(f"DID resolution error: {e}")
 
     return token

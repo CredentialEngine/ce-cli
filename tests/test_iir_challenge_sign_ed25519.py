@@ -12,10 +12,8 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import click
+import httpx2
 import pytest
-import requests
-
-
 
 pytestmark = pytest.mark.unit
 
@@ -35,12 +33,10 @@ from ce.implementations.iir_challenge_sign_ed25519 import (
     sign_and_verify,
 )
 
-
-
 CHALLENGE_UUID = "11111111-2222-3333-4444-555555555555"
 CTID = "ce-12345678-1234-1234-1234-123456789abc"
 ED25519_DID_KEY = "did:key:z6MkhaXgBZDvf7gKKWXjGmgkbQXyrXYY4uZmTaTzPhRgg9Wm"
-ED25519_KID = f"{ED25519_DID_KEY}#{ED25519_DID_KEY[len('did:key:'):]}"
+ED25519_KID = f"{ED25519_DID_KEY}#{ED25519_DID_KEY[len('did:key:') :]}"
 
 
 @pytest.fixture(scope="session")
@@ -74,7 +70,7 @@ def ed25519_keypair():
     )
 
     did_key = "did:key:z" + base58.b58encode(bytes([0xED, 0x01]) + pub).decode()
-    kid = f"{did_key}#{did_key[len('did:key:'):]}"
+    kid = f"{did_key}#{did_key[len('did:key:') :]}"
 
     priv_multibase = "z" + base58.b58encode(seed).decode()
 
@@ -98,7 +94,6 @@ def _write_json(path: Path, obj) -> Path:
     return path
 
 
-
 class TestParseUvarint:
     def test_single_byte_value(self):
         value, used = _parse_uvarint(bytes([0x7F]))
@@ -120,6 +115,7 @@ class TestParseUvarint:
 class TestDecodeMultibaseBase58btc:
     def test_round_trip(self):
         import base58
+
         raw = b"hello world"
         encoded = "z" + base58.b58encode(raw).decode()
         assert _decode_multibase_base58btc(encoded) == raw
@@ -131,7 +127,6 @@ class TestDecodeMultibaseBase58btc:
     def test_empty_string_raises(self):
         with pytest.raises(ValueError):
             _decode_multibase_base58btc("")
-
 
 
 class TestExtractEd25519Seed:
@@ -147,6 +142,7 @@ class TestExtractEd25519Seed:
 
     def test_33_byte_with_leading_zero(self):
         import base58
+
         raw = bytes([0x00]) + (b"\x01" * 32)
         priv_mb = "z" + base58.b58encode(raw).decode()
         seed = _extract_ed25519_seed_from_private_key(priv_mb)
@@ -154,6 +150,7 @@ class TestExtractEd25519Seed:
 
     def test_34_byte_with_leading_00_20(self):
         import base58
+
         raw = bytes([0x00, 0x20]) + (b"\x02" * 32)
         priv_mb = "z" + base58.b58encode(raw).decode()
         seed = _extract_ed25519_seed_from_private_key(priv_mb)
@@ -161,6 +158,7 @@ class TestExtractEd25519Seed:
 
     def test_multicodec_0x1300_prefix(self):
         import base58
+
         raw = bytes([0x80, 0x26]) + (b"\x03" * 32)
         priv_mb = "z" + base58.b58encode(raw).decode()
         seed = _extract_ed25519_seed_from_private_key(priv_mb)
@@ -168,6 +166,7 @@ class TestExtractEd25519Seed:
 
     def test_unknown_encoding_raises(self):
         import base58
+
         raw = bytes([0x01]) + (b"\x99" * 16)
         priv_mb = "z" + base58.b58encode(raw).decode()
         with pytest.raises(ValueError, match="Unrecognized privateKey"):
@@ -176,7 +175,6 @@ class TestExtractEd25519Seed:
     def test_non_multibase_input_raises(self):
         with pytest.raises(ValueError):
             _extract_ed25519_seed_from_private_key("not-multibase")
-
 
 
 class TestExtractEd25519PubFromDidKey:
@@ -199,6 +197,7 @@ class TestExtractEd25519PubFromDidKey:
 
     def test_invalid_multicodec_raises(self):
         import base58
+
         raw = bytes([0x80, 0x24]) + (b"\x00" * 32)
         bad_did = "did:key:z" + base58.b58encode(raw).decode()
         with pytest.raises(ValueError, match="Invalid did:key"):
@@ -236,7 +235,7 @@ class TestFetchDidJson:
         mock_resp.raise_for_status = MagicMock()
 
         with patch(
-            "ce.implementations.iir_challenge_sign_ed25519.requests.get",
+            "ce.implementations.iir_challenge_sign_ed25519.httpx2.get",
             return_value=mock_resp,
         ) as mock_get:
             result = _fetch_did_json("did:web:example.com")
@@ -248,26 +247,30 @@ class TestFetchDidJson:
 
     def test_http_error_propagates(self):
         mock_resp = MagicMock()
-        mock_resp.raise_for_status.side_effect = requests.HTTPError("404 Not Found")
+        mock_resp.raise_for_status.side_effect = httpx2.HTTPError("404 Not Found")
 
-        with patch(
-            "ce.implementations.iir_challenge_sign_ed25519.requests.get",
-            return_value=mock_resp,
+        with (
+            patch(
+                "ce.implementations.iir_challenge_sign_ed25519.httpx2.get",
+                return_value=mock_resp,
+            ),
+            pytest.raises(httpx2.HTTPError),
         ):
-            with pytest.raises(requests.HTTPError):
-                _fetch_did_json("did:web:example.com")
+            _fetch_did_json("did:web:example.com")
 
     def test_non_object_response_raises(self):
         mock_resp = MagicMock()
         mock_resp.json.return_value = ["not", "an", "object"]
         mock_resp.raise_for_status = MagicMock()
 
-        with patch(
-            "ce.implementations.iir_challenge_sign_ed25519.requests.get",
-            return_value=mock_resp,
+        with (
+            patch(
+                "ce.implementations.iir_challenge_sign_ed25519.httpx2.get",
+                return_value=mock_resp,
+            ),
+            pytest.raises(ValueError, match="must be a JSON object"),
         ):
-            with pytest.raises(ValueError, match="must be a JSON object"):
-                _fetch_did_json("did:web:example.com")
+            _fetch_did_json("did:web:example.com")
 
     def test_passes_through_path_segments_in_url(self):
         mock_resp = MagicMock()
@@ -275,7 +278,7 @@ class TestFetchDidJson:
         mock_resp.raise_for_status = MagicMock()
 
         with patch(
-            "ce.implementations.iir_challenge_sign_ed25519.requests.get",
+            "ce.implementations.iir_challenge_sign_ed25519.httpx2.get",
             return_value=mock_resp,
         ) as mock_get:
             _fetch_did_json("did:web:example.com:users:alice")
@@ -332,6 +335,7 @@ class TestPublicKeyFromDidDoc:
 
     def test_raw_32_byte_pub_multibase_accepted(self):
         import base58
+
         pub = b"\x05" * 32
         pub_mb = "z" + base58.b58encode(pub).decode()
         did = "did:web:example.com"
@@ -375,7 +379,7 @@ class TestPublicKeyFromDidDoc:
         doc = {
             "id": did,
             "verificationMethod": [
-                {"publicKeyMultibase": "zSomething"},  
+                {"publicKeyMultibase": "zSomething"},
                 {"id": kid, "publicKeyMultibase": pub_mb},
             ],
         }
@@ -399,6 +403,7 @@ class TestPublicKeyFromDidDoc:
 
     def test_unrecognized_pub_key_encoding_raises(self):
         import base58
+
         raw = bytes([0x01]) + (b"\x99" * 16)
         bad_mb = "z" + base58.b58encode(raw).decode()
         did = "did:web:example.com"
@@ -437,7 +442,7 @@ class TestResolvePublicKeyBytesForKid:
         mock_resp.json.return_value = doc
         mock_resp.raise_for_status = MagicMock()
         with patch(
-            "ce.implementations.iir_challenge_sign_ed25519.requests.get",
+            "ce.implementations.iir_challenge_sign_ed25519.httpx2.get",
             return_value=mock_resp,
         ):
             result = _resolve_public_key_bytes_for_kid(kid)
@@ -448,15 +453,18 @@ class TestResolvePublicKeyBytesForKid:
             _resolve_public_key_bytes_for_kid("did:ethr:0x123#key-1")
 
 
-
 class TestSignPayload:
-    def test_returns_three_part_jwt_string(self, ed25519_keypair, valid_challenge_payload):
+    def test_returns_three_part_jwt_string(
+        self, ed25519_keypair, valid_challenge_payload
+    ):
         priv, _, kid = ed25519_keypair
         token = _sign_payload(priv, kid, valid_challenge_payload)
         assert isinstance(token, str)
         assert token.count(".") == 2
 
-    def test_header_includes_alg_typ_kid(self, ed25519_keypair, valid_challenge_payload):
+    def test_header_includes_alg_typ_kid(
+        self, ed25519_keypair, valid_challenge_payload
+    ):
         priv, _, kid = ed25519_keypair
         token = _sign_payload(priv, kid, valid_challenge_payload)
         header_b64 = token.split(".")[0]
@@ -480,7 +488,9 @@ class TestSignPayload:
 
 
 class TestVerifySignatureOnly:
-    def test_valid_signature_returns_none(self, ed25519_keypair, valid_challenge_payload):
+    def test_valid_signature_returns_none(
+        self, ed25519_keypair, valid_challenge_payload
+    ):
         from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
         priv, _, kid = ed25519_keypair
@@ -560,7 +570,9 @@ class TestSignAndVerify:
         token = sign_and_verify(priv, kid, payload)
 
         header_b64 = token.split(".")[0]
-        header = json.loads(base64.urlsafe_b64decode(header_b64 + "=" * (-len(header_b64) % 4)))
+        header = json.loads(
+            base64.urlsafe_b64decode(header_b64 + "=" * (-len(header_b64) % 4))
+        )
         assert header == {"typ": "JWT", "alg": "EdDSA", "kid": kid}
 
     def test_did_web(self, valid_challenge_payload):
@@ -586,7 +598,8 @@ class TestSignAndVerify:
                 {
                     "id": kid,
                     "type": "Multikey",
-                    "publicKeyMultibase": "z" + base58.b58encode(bytes([0xED, 0x01]) + pub).decode(),
+                    "publicKeyMultibase": "z"
+                    + base58.b58encode(bytes([0xED, 0x01]) + pub).decode(),
                 }
             ],
         }
@@ -595,10 +608,14 @@ class TestSignAndVerify:
         mock_resp.raise_for_status = MagicMock()
 
         with patch(
-            "ce.implementations.iir_challenge_sign_ed25519.requests.get",
+            "ce.implementations.iir_challenge_sign_ed25519.httpx2.get",
             return_value=mock_resp,
         ):
-            token = sign_and_verify("z" + base58.b58encode(seed).decode(), kid, dict(valid_challenge_payload, did=kid))
+            token = sign_and_verify(
+                "z" + base58.b58encode(seed).decode(),
+                kid,
+                dict(valid_challenge_payload, did=kid),
+            )
 
         assert token.count(".") == 2
 
@@ -615,14 +632,16 @@ class TestSignAndVerify:
     def test_did_web_fetch_error(self, ed25519_keypair, valid_challenge_payload):
         priv, _, _ = ed25519_keypair
         mock_resp = MagicMock()
-        mock_resp.raise_for_status.side_effect = requests.HTTPError("404 Not Found")
+        mock_resp.raise_for_status.side_effect = httpx2.HTTPError("404 Not Found")
 
-        with patch(
-            "ce.implementations.iir_challenge_sign_ed25519.requests.get",
-            return_value=mock_resp,
+        with (
+            patch(
+                "ce.implementations.iir_challenge_sign_ed25519.httpx2.get",
+                return_value=mock_resp,
+            ),
+            pytest.raises(click.ClickException, match="Failed to fetch did.json"),
         ):
-            with pytest.raises(click.ClickException, match="Failed to fetch did.json"):
-                sign_and_verify(priv, "did:web:example.com#key-1", valid_challenge_payload)
+            sign_and_verify(priv, "did:web:example.com#key-1", valid_challenge_payload)
 
     def test_unsupported_did_method(self, ed25519_keypair, valid_challenge_payload):
         priv, _, _ = ed25519_keypair

@@ -2,15 +2,16 @@
 
 from __future__ import annotations
 
+import logging
 import time
 from dataclasses import dataclass
-from typing import Optional
 
 _REFRESH_BUFFER = 60  # refresh if token expires within this many seconds
 
 NOT_LOGGED_IN = "not_logged_in"
 SESSION_EXPIRED = "session_expired"
 UNREACHABLE = "unreachable"
+CLIENT_CONFIGURATION = "client_configuration"
 
 
 @dataclass
@@ -22,18 +23,21 @@ class TokenResult:
     sign-in service could not be reached; the saved session is kept).
     """
 
-    access_token: Optional[str] = None
-    reason: Optional[str] = None
+    access_token: str | None = None
+    reason: str | None = None
     detail: str = ""
 
 
-def resolve_access_token(env_name: Optional[str] = None, *, force_refresh: bool = False) -> TokenResult:
+def resolve_access_token(
+    env_name: str | None = None, *, force_refresh: bool = False
+) -> TokenResult:
     """Return a valid access token for an environment (the active one by default).
 
     The token is renewed silently when it is about to expire, or when
     force_refresh is set (after the API answered 401, for example).
     """
     from ce.auth.device_flow import (
+        ClientConfigurationError,
         DeviceFlowError,
         KeycloakDeviceFlowClient,
         RefreshRejectedError,
@@ -63,9 +67,12 @@ def resolve_access_token(env_name: Optional[str] = None, *, force_refresh: bool 
         delete_tokens(env_name)
         return TokenResult(reason=SESSION_EXPIRED)
 
+    logging.getLogger(__name__).debug("Renewing saved session for %s", env_name)
     client = KeycloakDeviceFlowClient(env)
     try:
         tr = client.refresh_access_token(tokens.refresh_token)
+    except ClientConfigurationError as exc:
+        return TokenResult(reason=CLIENT_CONFIGURATION, detail=str(exc))
     except RefreshRejectedError as exc:
         # The session ended at Keycloak; the saved tokens can never work again.
         delete_tokens(env_name)
@@ -79,12 +86,14 @@ def resolve_access_token(env_name: Optional[str] = None, *, force_refresh: bool 
     return TokenResult(access_token=new_tokens.access_token)
 
 
-def get_valid_access_token(env_name: Optional[str] = None, *, force_refresh: bool = False) -> Optional[str]:
+def get_valid_access_token(
+    env_name: str | None = None, *, force_refresh: bool = False
+) -> str | None:
     """Return a valid access token, refreshing silently if needed."""
     return resolve_access_token(env_name, force_refresh=force_refresh).access_token
 
 
-def is_logged_in(env_name: Optional[str] = None) -> bool:
+def is_logged_in(env_name: str | None = None) -> bool:
     return get_valid_access_token(env_name) is not None
 
 
@@ -92,6 +101,8 @@ def login_required_message(result: TokenResult) -> str:
     """What to tell the user when there is no access token."""
     if result.reason == SESSION_EXPIRED:
         return "Your session has expired. Run 'ce login' to sign in again."
+    if result.reason == CLIENT_CONFIGURATION:
+        return f"{result.detail} Saved session retained."
     if result.reason == UNREACHABLE:
         return f"Could not renew your session ({result.detail}). You are still signed in; try again."
     return "You are not logged in. Run 'ce login' to authenticate."
@@ -102,7 +113,7 @@ def require_login() -> str:
 
     result = resolve_access_token()
     if not result.access_token:
-        if result.reason == UNREACHABLE:
+        if result.reason in (UNREACHABLE, CLIENT_CONFIGURATION):
             raise click.ClickException(login_required_message(result))
         raise click.UsageError(login_required_message(result))
     return result.access_token

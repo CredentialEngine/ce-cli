@@ -26,25 +26,46 @@ JSONLD_EXTENSIONS = (".json", ".jsonld")
 # the resources in it and the other spellings of the name that are accepted.
 CSV_CLASSES: dict[str, tuple[str, tuple[str, ...]]] = {
     "credentials": ("ceterms:Credential", ("credential",)),
-    "learning-opportunities": ("ceterms:LearningOpportunity", ("learningopportunity", "learningopportunities", "lopp")),
+    "learning-opportunities": (
+        "ceterms:LearningOpportunity",
+        ("learningopportunity", "learningopportunities", "lopp"),
+    ),
     "occupations": ("ceterms:Occupation", ("occupation",)),
     "assessments": ("ceterms:Assessment", ("assessment",)),
     "industries": ("ceterms:Industry", ("industry",)),
     "tasks": ("ceterms:Task", ("task",)),
     "jobs": ("ceterms:Job", ("job",)),
     "collections": ("ceterms:Collection", ("collection",)),
-    "organization-augmentations": ("ceterms:Organization", ("organization", "organizations")),
+    "organization-augmentations": (
+        "ceterms:Organization",
+        ("organization", "organizations"),
+    ),
     "work-roles": ("ceterms:WorkRole", ("workrole", "workroles")),
     "metrics": ("qdata:Metric", ("metric",)),
     "cost-manifests": ("ceterms:CostManifest", ("costmanifest", "costmanifests")),
-    "transfer-value-profiles": ("ceterms:TransferValueProfile", ("transfervalueprofile", "tvp")),
+    "transfer-value-profiles": (
+        "ceterms:TransferValueProfile",
+        ("transfervalueprofile", "tvp"),
+    ),
     "outcome-data": ("qdata:DataSetProfile", ("outcomedata", "datasetprofile")),
-    "support-services": ("ceterms:SupportService", ("supportservice", "supportservices")),
-    "qualifications-frameworks": ("ceterms:QualificationsFramework", ("qualificationsframework",)),
+    "support-services": (
+        "ceterms:SupportService",
+        ("supportservice", "supportservices"),
+    ),
+    "qualifications-frameworks": (
+        "ceterms:QualificationsFramework",
+        ("qualificationsframework",),
+    ),
     "alignment-maps": ("ceterms:AlignmentMap", ("alignmentmap", "alignmentmaps")),
-    "credential-types": ("ceterms:CredentialType", ("credentialtype", "credentialtypes")),
+    "credential-types": (
+        "ceterms:CredentialType",
+        ("credentialtype", "credentialtypes"),
+    ),
     "rubrics": ("ceasn:Rubric", ("rubric",)),
-    "qa-actions": ("ceterms:CredentialingAction", ("qaaction", "qaactions", "credentialingaction")),
+    "qa-actions": (
+        "ceterms:CredentialingAction",
+        ("qaaction", "qaactions", "credentialingaction"),
+    ),
     "organization-suborganizations": (
         "ceterms:CredentialOrganization",
         ("suborganization", "suborganizations", "organizationsuborganization"),
@@ -152,7 +173,9 @@ def resolve_resource_class(name: str | None) -> str:
         known = {uri for uri, _ in CSV_CLASSES.values()}
         if text in known:
             return text
-        raise PublisherApiError(f"'{text}' is not a class a CSV can hold. Templates: {', '.join(CSV_CLASSES)}.")
+        raise PublisherApiError(
+            f"'{text}' is not a class a CSV can hold. Templates: {', '.join(CSV_CLASSES)}."
+        )
 
     wanted = re.sub(r"[^a-z0-9]", "", text.lower())
     for route, (uri, aliases) in CSV_CLASSES.items():
@@ -160,7 +183,9 @@ def resolve_resource_class(name: str | None) -> str:
         if wanted in names:
             return uri
 
-    raise PublisherApiError(f"'{text}' is not a BU template. Templates: {', '.join(CSV_CLASSES)}.")
+    raise PublisherApiError(
+        f"'{text}' is not a BU template. Templates: {', '.join(CSV_CLASSES)}."
+    )
 
 
 def extensions_for(project_type: str | None) -> tuple[str, ...]:
@@ -173,7 +198,9 @@ def extensions_for(project_type: str | None) -> tuple[str, ...]:
         raise PublisherApiError(
             "A Ruby Registry sync project is made by the Ruby Registry; ce-cli adds no files to it."
         )
-    raise PublisherApiError(f"The project is of type '{project_type}', which ce-cli does not take files for.")
+    raise PublisherApiError(
+        f"The project is of type '{project_type}', which ce-cli does not take files for."
+    )
 
 
 def collect_files(
@@ -211,7 +238,9 @@ def collect_files(
 
     names = [item.name.lower() for item in found]
     if len(set(names)) != len(names):
-        raise PublisherApiError("Two of the files have the same name; a project keeps one file per name.")
+        raise PublisherApiError(
+            "Two of the files have the same name; a project keeps one file per name."
+        )
 
     return found
 
@@ -305,17 +334,22 @@ def validation_summary(
             None,
         )
         if iteration is None:
-            raise PublisherApiError(f"Project {project_id} has no iteration {iteration_id}.")
+            raise PublisherApiError(
+                f"Project {project_id} has no iteration {iteration_id}."
+            )
 
     number = int(iteration["iterationId"])
     files = sorted(
-        str(item.get("fileName", "")) for item in client.get_iteration_files(project_id, number)
+        str(item.get("fileName", ""))
+        for item in client.get_iteration_files(project_id, number)
     )
     status = str(iteration.get("status", ""))
     summary = ValidationSummary(iteration_id=number, status=status, files=files)
 
     if summary.validated:
-        summary.findings = flatten_findings(client.get_validation_results(project_id, number))
+        summary.findings = flatten_findings(
+            client.get_validation_results(project_id, number)
+        )
 
     return summary
 
@@ -483,14 +517,24 @@ def complete_project(
 
     iteration = client.latest_iteration(project_id)
     if iteration is None:
-        raise PublisherApiError(f"Project {project_id} has no files yet. Add some first.")
+        raise PublisherApiError(
+            f"Project {project_id} has no files yet. Add some first."
+        )
     iteration_id = int(iteration["iterationId"])
     iteration_status = str(iteration.get("status", ""))
 
     if status == ACTIVE:
         _prepare_for_approval(
-            client, project, kind, iteration_id, iteration_status, user_id, timeout_seconds,
-            on_step, sleep, clock,
+            client,
+            project,
+            kind,
+            iteration_id,
+            iteration_status,
+            user_id,
+            timeout_seconds,
+            on_step,
+            sleep,
+            clock,
         )
         on_step(f"Approving project {project_id}.")
         client.approve(project_id)
@@ -535,14 +579,23 @@ def _prepare_for_approval(
 
     if kind == BULK_UPLOAD_PROJECT:
         if iteration_status == VALIDATED:
-            on_step(f"Transforming the CSV files of iteration {iteration_id} to JSON-LD.")
+            on_step(
+                f"Transforming the CSV files of iteration {iteration_id} to JSON-LD."
+            )
             client.start_transform(project_id, iteration_id)
             wait_for_transform(
-                client, project_id, iteration_id,
-                timeout_seconds=timeout_seconds, sleep=sleep, clock=clock,
+                client,
+                project_id,
+                iteration_id,
+                timeout_seconds=timeout_seconds,
+                sleep=sleep,
+                clock=clock,
             )
 
-        reviewers = {str(item.get("userId", "")).lower() for item in project.get("reviewers") or []}
+        reviewers = {
+            str(item.get("userId", "")).lower()
+            for item in project.get("reviewers") or []
+        }
         if user_id.lower() not in reviewers:
             on_step("Adding you as the project's reviewer, so you can approve it.")
             client.add_reviewer(project_id, user_id)

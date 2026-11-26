@@ -19,11 +19,22 @@ from ce.implementations.publisher.client import BULK_UPLOAD_PROJECT, PublisherAp
 
 @click.command("add")
 @project_option
-@click.option("--file", "paths", multiple=True, required=True, type=click.Path(path_type=Path),
-              help="A file, or a folder of them. Repeat for several.")
-@click.option("--type", "template", default=None, metavar="TEMPLATE",
-              help="What the CSV files hold, by BU template: credentials, learning-opportunities, "
-                   "assessments, ... A command adds files of one template.")
+@click.option(
+    "--file",
+    "paths",
+    multiple=True,
+    required=True,
+    type=click.Path(path_type=Path),
+    help="A file, or a folder of them. Repeat for several.",
+)
+@click.option(
+    "--type",
+    "template",
+    default=None,
+    metavar="TEMPLATE",
+    help="What the CSV files hold, by BU template: credentials, learning-opportunities, "
+    "assessments, ... A command adds files of one template.",
+)
 @click.option("--recursive", "-r", is_flag=True, help="Include files in subfolders.")
 @publisher_url_option
 def main(
@@ -50,11 +61,15 @@ def main(
         kind = project.get("projectType")
 
         try:
-            files = service.collect_files(paths, service.extensions_for(kind), recursive=recursive)
+            files = service.collect_files(
+                paths, service.extensions_for(kind), recursive=recursive
+            )
             if kind == BULK_UPLOAD_PROJECT:
                 resource_class = service.resolve_resource_class(template)
             elif template:
-                raise PublisherApiError("--type applies to CSV files; an API publishing project does not take it.")
+                raise PublisherApiError(
+                    "--type applies to CSV files; an API publishing project does not take it."
+                )
         except PublisherApiError as exc:
             fail(str(exc))
 
@@ -66,7 +81,11 @@ def main(
     for path in files:
         console.print(f"Added {path.name}", highlight=False, soft_wrap=True)
 
-    note = " Validation has started." if kind == BULK_UPLOAD_PROJECT else " Run validation when you have added everything."
+    note = (
+        " Validation has started."
+        if kind == BULK_UPLOAD_PROJECT
+        else " Run validation when you have added everything."
+    )
     console.print(
         f"{len(files)} file(s) in iteration {result.get('iterationId')}.{note}",
         highlight=False,

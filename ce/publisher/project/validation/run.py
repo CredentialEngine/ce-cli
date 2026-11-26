@@ -15,17 +15,29 @@ from ce.implementations.publisher.cli import (
     publisher_client,
     publisher_url_option,
 )
-from ce.implementations.publisher.client import BULK_UPLOAD_PROJECT, REGISTRY_SYNC_PROJECT
+from ce.implementations.publisher.client import (
+    BULK_UPLOAD_PROJECT,
+    REGISTRY_SYNC_PROJECT,
+)
 
 _VALIDATION_WAIT_SECONDS = 600
 
 
 @click.command("run")
 @project_option
-@click.option("--wait/--no-wait", default=True, show_default=True,
-              help="Wait until validation has finished.")
-@click.option("--timeout", default=_VALIDATION_WAIT_SECONDS, show_default=True, type=int,
-              help="Seconds to wait for validation.")
+@click.option(
+    "--wait/--no-wait",
+    default=True,
+    show_default=True,
+    help="Wait until validation has finished.",
+)
+@click.option(
+    "--timeout",
+    default=_VALIDATION_WAIT_SECONDS,
+    show_default=True,
+    type=int,
+    help="Seconds to wait for validation.",
+)
 @publisher_url_option
 def main(project_id: int, wait: bool, timeout: int, publisher_url: str | None) -> None:
     """Validate the project's latest iteration, including the CTIDs it refers to.
@@ -38,7 +50,9 @@ def main(project_id: int, wait: bool, timeout: int, publisher_url: str | None) -
     with publisher_client(publisher_url) as client:
         project_kind = client.get_project(project_id).get("projectType")
         if project_kind == REGISTRY_SYNC_PROJECT:
-            fail(f"Project {project_id} is a Ruby Registry sync, which has no validation step.")
+            fail(
+                f"Project {project_id} is a Ruby Registry sync, which has no validation step."
+            )
 
         iteration = client.latest_iteration(project_id)
         if iteration is None:
@@ -49,11 +63,15 @@ def main(project_id: int, wait: bool, timeout: int, publisher_url: str | None) -
 
         if status == "Created":
             client.start_validation(project_id, iteration_id)
-            console.print(f"Started validation of iteration {iteration_id}.", highlight=False)
+            console.print(
+                f"Started validation of iteration {iteration_id}.", highlight=False
+            )
         elif status == service.VALIDATING:
             console.print(_validating_note(project_kind, iteration_id), highlight=False)
         else:
-            console.print(_already_validated_note(project_kind, iteration_id), highlight=False)
+            console.print(
+                _already_validated_note(project_kind, iteration_id), highlight=False
+            )
 
         if not wait and status in ("Created", service.VALIDATING):
             return

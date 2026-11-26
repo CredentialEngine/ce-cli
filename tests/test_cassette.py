@@ -43,6 +43,7 @@ from ce.publisher import main as publisher_group
 
 pytestmark = pytest.mark.unit
 
+
 def b64(value: dict[str, str]) -> str:
     return base64.urlsafe_b64encode(json.dumps(value).encode()).decode().rstrip("=")
 
@@ -60,7 +61,12 @@ PROJECT = {
     "authorId": USER_ID,
 }
 # Another project of the signed-in user, which a scenario did not create.
-OTHER_PROJECT = {**PROJECT, "projectId": 8, "name": "test bearer token", "createdBy": "other@example.org"}
+OTHER_PROJECT = {
+    **PROJECT,
+    "projectId": 8,
+    "name": "test bearer token",
+    "createdBy": "other@example.org",
+}
 
 
 class ThrowawayPublisher(BaseHTTPRequestHandler):
@@ -74,10 +80,12 @@ class ThrowawayPublisher(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
-    def do_GET(self) -> None:  # noqa: N802 - the name http.server looks for
-        self._send(200, [PROJECT, OTHER_PROJECT]) if self.path == "/projects" else self._send(404, {"title": "Not Found"})
+    def do_GET(self) -> None:
+        self._send(
+            200, [PROJECT, OTHER_PROJECT]
+        ) if self.path == "/projects" else self._send(404, {"title": "Not Found"})
 
-    def do_POST(self) -> None:  # noqa: N802
+    def do_POST(self) -> None:
         self.rfile.read(int(self.headers.get("Content-Length", 0)))
         self._send(200, {"projectId": 7})
 
@@ -100,8 +108,13 @@ def throwaway_server() -> Iterator[str]:
 @contextmanager
 def signed_in(base_url: str) -> Iterator[None]:
     env = SimpleNamespace(publisher_api_base=base_url, ssl_verify=True)
-    with patch("ce.implementations.publisher.cli.require_login", return_value=TOKEN), \
-            patch("ce.implementations.publisher.cli.require_environment", return_value=("test", env)):
+    with (
+        patch("ce.implementations.publisher.cli.require_api_token", return_value=TOKEN),
+        patch(
+            "ce.implementations.publisher.cli.require_environment",
+            return_value=("test", env),
+        ),
+    ):
         yield
 
 
@@ -118,12 +131,16 @@ def record(path: Path, monkeypatch: pytest.MonkeyPatch) -> str:
     with throwaway_server() as url, signed_in(url), publisher_cassette(path):
         listed = run("project", "list")
         created = run("project", "create", "--name", "Welding")
-    assert listed.exit_code == 0 and created.exit_code == 0, listed.output + created.output
+    assert listed.exit_code == 0 and created.exit_code == 0, (
+        listed.output + created.output
+    )
     monkeypatch.delenv(RECORD_ENV)
     return listed.output
 
 
-def test_a_missing_cassette_skips_on_a_developer_machine_and_fails_in_ci(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_a_missing_cassette_skips_on_a_developer_machine_and_fails_in_ci(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.delenv("CI", raising=False)
     with pytest.raises(pytest.skip.Exception, match="No cassette for test_x"):
         _cassette.report_missing_cassette("test_x")
@@ -133,10 +150,16 @@ def test_a_missing_cassette_skips_on_a_developer_machine_and_fails_in_ci(monkeyp
         _cassette.report_missing_cassette("test_x")
 
 
-def test_a_recording_that_is_not_kept_writes_no_cassette(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_a_recording_that_is_not_kept_writes_no_cassette(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     path = tmp_path / "scenario.json"
     monkeypatch.setenv(RECORD_ENV, "true")
-    with throwaway_server() as url, signed_in(url), publisher_cassette(path, keep=lambda: False):
+    with (
+        throwaway_server() as url,
+        signed_in(url),
+        publisher_cassette(path, keep=lambda: False),
+    ):
         assert run("project", "list").exit_code == 0
 
     assert not path.exists()
@@ -150,7 +173,11 @@ def test_a_recording_that_is_not_kept_leaves_the_existing_cassette_alone(
     recorded = path.read_bytes()
 
     monkeypatch.setenv(RECORD_ENV, "true")
-    with throwaway_server() as url, signed_in(url), publisher_cassette(path, keep=lambda: False):
+    with (
+        throwaway_server() as url,
+        signed_in(url),
+        publisher_cassette(path, keep=lambda: False),
+    ):
         assert run("project", "list").exit_code == 0
 
     assert path.read_bytes() == recorded
@@ -174,7 +201,9 @@ def test_only_a_scenario_that_passed_is_written_to_a_cassette(tmp_path: Path) ->
     cassettes = tmp_path / "cassettes"
     nested.mkdir()
     cassettes.mkdir()
-    (nested / "pytest.ini").write_text("[pytest]\n", encoding="utf-8")
+    (nested / "pytest.ini").write_text(
+        "[pytest]\nmarkers =\n    unit: mark test as a unit test\n", encoding="utf-8"
+    )
     (nested / "conftest.py").write_text(
         "import pytest\n"
         "from _cassette import remember_outcome\n"
@@ -215,15 +244,30 @@ def test_only_a_scenario_that_passed_is_written_to_a_cassette(tmp_path: Path) ->
     }
 
     result = subprocess.run(
-        [sys.executable, "-m", "pytest", "-p", "no:cacheprovider", "-q", "-c", str(nested / "pytest.ini")],
-        cwd=nested, env=env, capture_output=True, text=True, check=False,
+        [
+            sys.executable,
+            "-m",
+            "pytest",
+            "-p",
+            "no:cacheprovider",
+            "-q",
+            "-c",
+            str(nested / "pytest.ini"),
+        ],
+        cwd=nested,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
     )
 
     assert "1 failed, 1 passed" in result.stdout, result.stdout + result.stderr
     assert [item.name for item in cassettes.iterdir()] == ["test_passes.json"]
 
 
-def test_a_recording_replays_with_no_server(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_a_recording_replays_with_no_server(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     path = tmp_path / "scenario.json"
     printed = record(path, monkeypatch)
 
@@ -237,7 +281,9 @@ def test_a_recording_replays_with_no_server(tmp_path: Path, monkeypatch: pytest.
     assert "Created project 7" in created.output
 
 
-def test_a_cassette_edited_in_powershell_still_replays(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_a_cassette_edited_in_powershell_still_replays(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     path = tmp_path / "scenario.json"
     record(path, monkeypatch)
     # Windows PowerShell 5 saves edited files with a byte order mark.
@@ -248,7 +294,9 @@ def test_a_cassette_edited_in_powershell_still_replays(tmp_path: Path, monkeypat
         assert run("project", "create", "--name", "Welding").exit_code == 0
 
 
-def test_the_cassette_holds_the_exchange_and_no_credentials(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_the_cassette_holds_the_exchange_and_no_credentials(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     path = tmp_path / "scenario.json"
     record(path, monkeypatch)
 
@@ -270,7 +318,11 @@ def test_recording_trims_the_project_list_and_hides_the_user_id(
 ) -> None:
     path = tmp_path / "scenario.json"
     monkeypatch.setenv(RECORD_ENV, "true")
-    with throwaway_server() as url, signed_in(url), publisher_cassette(path, only_projects_created_here=True):
+    with (
+        throwaway_server() as url,
+        signed_in(url),
+        publisher_cassette(path, only_projects_created_here=True),
+    ):
         assert run("project", "create", "--name", "Welding").exit_code == 0
         assert run("project", "list").exit_code == 0
 
@@ -283,43 +335,65 @@ def test_recording_trims_the_project_list_and_hides_the_user_id(
     assert USER_ID not in text and PLACEHOLDER_USER_ID in text
 
 
-def test_a_command_that_sends_another_request_fails_the_replay(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_a_command_that_sends_another_request_fails_the_replay(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     path = tmp_path / "scenario.json"
     record(path, monkeypatch)
 
-    with pytest.raises(AssertionError, match="path: recorded '/projects', sent '/projects/7'"):
-        with signed_in("http://publisher.recorded.invalid"), publisher_cassette(path):
-            run("project", "status", "show", "--project-id", "7")
+    with (
+        pytest.raises(
+            AssertionError, match="path: recorded '/projects', sent '/projects/7'"
+        ),
+        signed_in("http://publisher.recorded.invalid"),
+        publisher_cassette(path),
+    ):
+        run("project", "status", "show", "--project-id", "7")
 
 
-def test_a_changed_request_body_fails_the_replay(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_a_changed_request_body_fails_the_replay(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     path = tmp_path / "scenario.json"
     record(path, monkeypatch)
 
-    with pytest.raises(AssertionError, match="json: recorded"):
-        with signed_in("http://publisher.recorded.invalid"), publisher_cassette(path):
-            run("project", "list")
-            run("project", "create", "--name", "Brazing")
+    with (
+        pytest.raises(AssertionError, match="json: recorded"),
+        signed_in("http://publisher.recorded.invalid"),
+        publisher_cassette(path),
+    ):
+        run("project", "list")
+        run("project", "create", "--name", "Brazing")
 
 
-def test_a_command_that_sends_fewer_requests_fails_the_replay(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_a_command_that_sends_fewer_requests_fails_the_replay(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     path = tmp_path / "scenario.json"
     record(path, monkeypatch)
 
-    with pytest.raises(AssertionError, match="1 recorded request"):
-        with signed_in("http://publisher.recorded.invalid"), publisher_cassette(path):
-            run("project", "list")
+    with (
+        pytest.raises(AssertionError, match="1 recorded request"),
+        signed_in("http://publisher.recorded.invalid"),
+        publisher_cassette(path),
+    ):
+        run("project", "list")
 
 
-def test_a_command_that_sends_more_requests_fails_the_replay(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_a_command_that_sends_more_requests_fails_the_replay(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     path = tmp_path / "scenario.json"
     record(path, monkeypatch)
 
-    with pytest.raises(AssertionError, match="no more recorded requests"):
-        with signed_in("http://publisher.recorded.invalid"), publisher_cassette(path):
-            run("project", "list")
-            run("project", "create", "--name", "Welding")
-            run("project", "list")
+    with (
+        pytest.raises(AssertionError, match="no more recorded requests"),
+        signed_in("http://publisher.recorded.invalid"),
+        publisher_cassette(path),
+    ):
+        run("project", "list")
+        run("project", "create", "--name", "Welding")
+        run("project", "list")
 
 
 @pytest.mark.parametrize(
@@ -345,7 +419,9 @@ def test_a_cassette_with_the_user_id_is_refused() -> None:
 
 
 def test_a_request_that_carries_the_user_id_is_recorded_with_the_placeholder() -> None:
-    request = httpx2.Request("POST", "http://publisher/projects/7/reviewers", json={"userId": USER_ID})
+    request = httpx2.Request(
+        "POST", "http://publisher/projects/7/reviewers", json={"userId": USER_ID}
+    )
 
     described = describe_request(request, request.read(), user_id=USER_ID)
 
