@@ -11,8 +11,8 @@ from ce.auth.device_flow import (
     TokenExpiredError,
 )
 from ce.auth.token_manager import (
+    CLIENT_CONFIGURATION,
     UNREACHABLE,
-    is_logged_in,
     login_required_message,
     resolve_access_token,
 )
@@ -31,9 +31,15 @@ def auth_group() -> None:
 
 # ce login
 
+
 @click.command("login")
-@click.option("--env", "env_name", default=None, metavar="NAME",
-              help="Environment to log in to (default: active environment).")
+@click.option(
+    "--env",
+    "env_name",
+    default=None,
+    metavar="NAME",
+    help="Environment to log in to (default: active environment).",
+)
 def login(env_name: str | None) -> None:
     """Sign in to Credential Engine via Keycloak device authorization.
 
@@ -44,8 +50,10 @@ def login(env_name: str | None) -> None:
 
     if env_name:
         if env_name not in config.environments:
-            err_console.print(f"Unknown environment {env_name}. "
-                              f"Run ce env list to see available environments.")
+            err_console.print(
+                f"Unknown environment {env_name}. "
+                f"Run ce env list to see available environments."
+            )
             raise SystemExit(1)
         env = config.environments[env_name]
         active_name = env_name
@@ -58,11 +66,17 @@ def login(env_name: str | None) -> None:
 
     # Reuse this environment's session rather than starting a second sign-in.
     # An expired access token is renewed here; if it cannot be, sign-in goes ahead.
-    if is_logged_in(active_name):
-        console.print(f"Already signed in to {active_name} "
-                      f"({env.label}). Run ce account show for details.")
+    session = resolve_access_token(active_name)
+    if session.access_token:
+        console.print(
+            f"Already signed in to {active_name} "
+            f"({env.label}). Run ce account show for details."
+        )
         console.print("  To switch accounts, run ce account logout first.")
         return
+
+    if session.reason in (UNREACHABLE, CLIENT_CONFIGURATION):
+        raise click.ClickException(login_required_message(session))
 
     client = KeycloakDeviceFlowClient(env)
 
@@ -86,7 +100,9 @@ def login(env_name: str | None) -> None:
     console.print()
 
     try:
-        with console.status("Waiting for you to approve in the browser...", spinner="dots"):
+        with console.status(
+            "Waiting for you to approve in the browser...", spinner="dots"
+        ):
             token_resp = client.poll_for_token(
                 device_code=device_auth.device_code,
                 interval=device_auth.interval,
@@ -112,7 +128,7 @@ def login(env_name: str | None) -> None:
         userinfo = client.get_userinfo(stored.access_token)
         name = userinfo.get("name") or userinfo.get("preferred_username") or "there"
         email = userinfo.get("email", "")
-    except Exception:
+    except DeviceFlowError:
         name, email = "there", ""
 
     console.print()
@@ -126,6 +142,7 @@ def login(env_name: str | None) -> None:
 
 
 # ce account logout
+
 
 @click.command("logout")
 @click.option("--yes", "-y", is_flag=True, help="Skip confirmation prompt.")
@@ -143,7 +160,9 @@ def logout(yes: bool) -> None:
     if result and tokens.refresh_token:
         _, env = result
         try:
-            KeycloakDeviceFlowClient(env).revoke_token(tokens.refresh_token, "refresh_token")
+            KeycloakDeviceFlowClient(env).revoke_token(
+                tokens.refresh_token, "refresh_token"
+            )
         except DeviceFlowError as exc:
             err_console.print(
                 f"Warning: the session could not be ended at the sign-in service: {exc}",
@@ -156,6 +175,7 @@ def logout(yes: bool) -> None:
 
 
 # ce account show
+
 
 @click.command("show")
 def account_show() -> None:
@@ -174,8 +194,10 @@ def account_show() -> None:
     session = resolve_access_token()
     token = session.access_token
     if not token:
-        err_console.print(login_required_message(session), highlight=False, soft_wrap=True)
-        if session.reason == UNREACHABLE:
+        err_console.print(
+            login_required_message(session), highlight=False, soft_wrap=True
+        )
+        if session.reason in (UNREACHABLE, CLIENT_CONFIGURATION):
             raise SystemExit(1)
         return
 
@@ -185,7 +207,7 @@ def account_show() -> None:
     client = KeycloakDeviceFlowClient(env)
     try:
         userinfo = client.get_userinfo(token)
-    except Exception as exc:
+    except DeviceFlowError as exc:
         err_console.print(f"Error fetching account info: {exc}")
         return
 
@@ -201,7 +223,10 @@ def account_show() -> None:
         rows.append(("Scopes", tokens.scope))
     if tokens.expires_at:
         import datetime
-        exp = datetime.datetime.fromtimestamp(tokens.expires_at).strftime("%Y-%m-%d %H:%M:%S")
+
+        exp = datetime.datetime.fromtimestamp(tokens.expires_at).strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
         rows.append(("Token expires", exp))
 
     console.print()

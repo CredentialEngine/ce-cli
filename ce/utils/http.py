@@ -1,13 +1,15 @@
-
 from __future__ import annotations
 
+import time
+from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Any, Generator
+from typing import Any, Self
 
 import httpx2
 
 from ce.auth.token_manager import require_login
 from ce.utils.logging import get_logger
+from ce.utils.user_agent import USER_AGENT
 
 log = get_logger(__name__)
 
@@ -29,7 +31,7 @@ class CEHTTPClient:
                 "Authorization": f"Bearer {access_token}",
                 "Accept": "application/json",
                 "Content-Type": "application/json",
-                "User-Agent": "ce-cli/0.1.0",
+                "User-Agent": USER_AGENT,
             },
             timeout=timeout,
         )
@@ -51,10 +53,14 @@ class CEHTTPClient:
         return self._request("DELETE", path, **kwargs)
 
     def _request(self, method: str, path: str, **kwargs: Any) -> httpx2.Response:
-        url = f"{self._base_url}{path}"
-        start = log.http_request(method, url)
+        start = time.monotonic()
+        log.debug("HTTP request: %s", method)
         resp = self._client.request(method, path, **kwargs)
-        log.http_response(resp.status_code, start)
+        log.debug(
+            "HTTP response: %s (%d ms)",
+            resp.status_code,
+            (time.monotonic() - start) * 1000,
+        )
         self._raise_for_status(resp)
         return resp
 
@@ -70,17 +76,17 @@ class CEHTTPClient:
                 or body.get("error")
                 or resp.text
             )
-        except Exception:
+        except (ValueError, AttributeError, TypeError):
             message = resp.text or f"HTTP {resp.status_code}"
         raise APIError(resp.status_code, message)
 
     def close(self) -> None:
         self._client.close()
 
-    def __enter__(self) -> "CEHTTPClient":
+    def __enter__(self) -> Self:
         return self
 
-    def __exit__(self, *_: Any) -> None:
+    def __exit__(self, *_: object) -> None:
         self.close()
 
 
@@ -96,9 +102,10 @@ def api_client(timeout: float = 30.0) -> Generator[CEHTTPClient, None, None]:
     """
     access_token = require_login()
     from ce.config.context import require_environment
+
     _, _env = require_environment()
-    base_url = _env.publisher_base.rstrip('/')
-    log.debug("api_client ready", base_url=base_url)
+    base_url = _env.publisher_base.rstrip("/")
+    log.debug("Authenticated HTTP client ready")
     client = CEHTTPClient(base_url, access_token, timeout=timeout)
     try:
         yield client

@@ -19,7 +19,7 @@ public key resolved from the DID (did:key or did:web). No login required.
 from __future__ import annotations
 
 import json
-from typing import Any, Dict
+from typing import Any
 
 import click
 from rich.console import Console
@@ -35,10 +35,10 @@ ALGORITHM_RS256 = "RS256"
 REQUIRED_FIELDS = ["did", "challenge", "aud", "iat", "exp"]
 
 
-
 # Input checks
 
-def read_challenge(challenge_file: str) -> Dict[str, Any]:
+
+def read_challenge(challenge_file: str) -> dict[str, Any]:
     """Load the challenge JSON and check it has the fields a Proof JWT needs."""
     try:
         with open(challenge_file, "r", encoding="utf-8") as f:
@@ -71,8 +71,8 @@ def looks_like_rsa_key(value: str) -> bool:
     return _rs256.is_existing_file(value)
 
 
-
 # Click command
+
 
 @click.command(name="sign")
 @click.option(
@@ -101,7 +101,8 @@ def looks_like_rsa_key(value: str) -> bool:
     help="Path to CE-generated challenge JSON file.",
 )
 @click.option(
-    "--output", "-o",
+    "--output",
+    "-o",
     "out_path",
     default=None,
     type=click.Path(dir_okay=False, writable=True),

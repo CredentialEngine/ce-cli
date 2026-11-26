@@ -11,7 +11,8 @@ Mirrors az's --output / -o flag:
 from __future__ import annotations
 
 import json
-from typing import Any, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 import click
 
@@ -19,7 +20,7 @@ from ce.utils.display import new_console, plain_table
 
 console = new_console()
 
-OutputFormat = str   # "table" | "json" | "yaml" | "tsv" | "none"
+OutputFormat = str  # "table" | "json" | "yaml" | "tsv" | "none"
 
 OUTPUT_FORMATS = ("table", "json", "yaml", "tsv", "none")
 
@@ -42,7 +43,6 @@ def print_output(
         _print_tsv(data, columns=columns)
     else:
         _print_table(data, columns=columns, title=title)
-
 
 
 def _print_json(data: Any) -> None:
@@ -91,7 +91,6 @@ def _print_table(
     console.print()
 
 
-
 def _to_rows(data: Any) -> list[dict]:
     """Normalise data to a list of dicts."""
     if isinstance(data, list):
@@ -101,15 +100,14 @@ def _to_rows(data: Any) -> list[dict]:
     return [{"value": data}]
 
 
-
-
 def output_option(f):  # type: ignore[no-untyped-def]
     """Decorator that adds ``-o / --output`` to a Click command."""
     return click.option(
-        "-o", "--output",
+        "-o",
+        "--output",
         "output_fmt",
         type=click.Choice(OUTPUT_FORMATS, case_sensitive=False),
-        default=None,     
+        default=None,
         show_default=True,
         help="Output format.",
         envvar="CE_OUTPUT",
@@ -121,4 +119,5 @@ def resolve_output_fmt(output_fmt: str | None) -> OutputFormat:
     if output_fmt:
         return output_fmt
     from ce.config.context import load_cli_config
+
     return load_cli_config().output_format or "table"

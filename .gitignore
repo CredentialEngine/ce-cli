@@ -27,3 +27,4 @@ build/
 # Misc
 .env
 *.log
+node_modules

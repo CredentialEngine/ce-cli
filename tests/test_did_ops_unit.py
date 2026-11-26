@@ -5,18 +5,20 @@ Run with:
 """
 
 from __future__ import annotations
+
 import base64
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from types import SimpleNamespace
+from typing import ClassVar
 from unittest.mock import patch
 
 import pytest
 
-
 pytestmark = pytest.mark.unit
 
 
+from ce.iir.api.iir_client.types import UNSET
 from ce.iir.did_ops import (
     IIR_TASK,
     _client,
@@ -45,10 +47,8 @@ from ce.iir.did_ops import (
     validate_verification_method,
     verify_proof_jwt,
 )
-from ce.iir.api.iir_client.types import UNSET
 
-
-#Test parameters
+# Test parameters
 PUBLISHER_BASE = "https://fake-publisher.test"
 ACCESS_TOKEN = "fake-token-for-unit-tests"
 USER_ID = "00000000-0000-0000-0000-000000000001"
@@ -56,7 +56,8 @@ CTID = "ce-12345678-1234-1234-1234-123456789abc"
 CHALLENGE_UUID = "11111111-2222-3333-4444-555555555555"
 
 ED25519_DID_KEY = "did:key:z6MkhaXgBZDvf7gKKWXjGmgkbQXyrXYY4uZmTaTzPhRgg9Wm"
-ED25519_KID = f"{ED25519_DID_KEY}#{ED25519_DID_KEY[len('did:key:'):]}"
+ED25519_KID = f"{ED25519_DID_KEY}#{ED25519_DID_KEY[len('did:key:') :]}"
+
 
 def _fake_response(status_code: int, parsed=None) -> SimpleNamespace:
     return SimpleNamespace(status_code=status_code, parsed=parsed)
@@ -120,13 +121,14 @@ def ed25519_keypair():
     priv_multicodec = bytes([0x80, 0x26]) + seed  # 0x8026 = Ed25519 priv multicodec
     priv_multibase = "z" + base58.b58encode(priv_multicodec).decode()
 
-    kid = f"{did_key}#{did_key[len('did:key:'):]}"
+    kid = f"{did_key}#{did_key[len('did:key:') :]}"
     return priv_multibase, did_key, kid
 
 
 # ---------------------------------------------------------------------------
 # Client construction
 # ---------------------------------------------------------------------------
+
 
 class TestClient:
     def test_client_strips_trailing_slash(self):
@@ -143,11 +145,14 @@ class TestParsedToDict:
         assert _parsed_to_dict({"valid": True}) == {"valid": True}
 
     def test_object_with_to_dict(self):
-        assert _parsed_to_dict(_ParsedObj(valid=True, name="x")) == {"valid": True, "name": "x"}
+        assert _parsed_to_dict(_ParsedObj(valid=True, name="x")) == {
+            "valid": True,
+            "name": "x",
+        }
 
     def test_object_with_only_additional_properties(self):
         class Bare:
-            additional_properties = {"valid": False}
+            additional_properties: ClassVar[dict[str, bool]] = {"valid": False}
 
         assert _parsed_to_dict(Bare()) == {"valid": False}
 
@@ -200,7 +205,6 @@ class TestValidateDate:
 
 
 class TestValidateDateRange:
-
     def test_both_empty_is_ok(self):
         ok, err = validate_date_range("", "")
         assert ok and err == ""
@@ -300,12 +304,16 @@ class TestValidateVerificationMethod:
         assert "not found" in err
 
     def test_vm_belonging_to_wrong_did_fails(self):
-        ok, err = validate_verification_method("did:key:zOTHER#key-1", ED25519_DID_KEY, [])
+        ok, err = validate_verification_method(
+            "did:key:zOTHER#key-1", ED25519_DID_KEY, []
+        )
         assert not ok
         assert "does not belong" in err
 
     def test_empty_api_list_skips_membership_check(self):
-        ok, _ = validate_verification_method(f"{ED25519_DID_KEY}#key-1", ED25519_DID_KEY, [])
+        ok, _ = validate_verification_method(
+            f"{ED25519_DID_KEY}#key-1", ED25519_DID_KEY, []
+        )
         assert ok
 
 
@@ -313,31 +321,43 @@ class TestCallIsUserMember:
     def test_returns_true_when_valid_dict_payload(self):
         with patch("ce.iir.did_ops.is_user_member_sync") as mock_sync:
             mock_sync.return_value = _fake_response(200, {"valid": True})
-            ok, err = call_is_user_member(USER_ID, CTID, ACCESS_TOKEN, PUBLISHER_BASE, False)
+            ok, err = call_is_user_member(
+                USER_ID, CTID, ACCESS_TOKEN, PUBLISHER_BASE, False
+            )
         assert ok and err == ""
 
     def test_object_payload_with_valid_true_succeeds(self):
         with patch("ce.iir.did_ops.is_user_member_sync") as mock_sync:
             mock_sync.return_value = _fake_response(200, _ParsedObj(valid=True))
-            ok, err = call_is_user_member(USER_ID, CTID, ACCESS_TOKEN, PUBLISHER_BASE, False)
+            ok, err = call_is_user_member(
+                USER_ID, CTID, ACCESS_TOKEN, PUBLISHER_BASE, False
+            )
         assert ok and err == ""
 
     def test_object_payload_with_valid_false_fails(self):
         with patch("ce.iir.did_ops.is_user_member_sync") as mock_sync:
             mock_sync.return_value = _fake_response(200, _ParsedObj(valid=False))
-            ok, err = call_is_user_member(USER_ID, CTID, ACCESS_TOKEN, PUBLISHER_BASE, False)
+            ok, err = call_is_user_member(
+                USER_ID, CTID, ACCESS_TOKEN, PUBLISHER_BASE, False
+            )
         assert not ok
         assert "not a member" in err.lower()
 
     def test_http_error_yields_not_member_message(self):
         with patch("ce.iir.did_ops.is_user_member_sync") as mock_sync:
             mock_sync.return_value = _fake_response(403, None)
-            ok, err = call_is_user_member(USER_ID, CTID, ACCESS_TOKEN, PUBLISHER_BASE, False)
+            ok, err = call_is_user_member(
+                USER_ID, CTID, ACCESS_TOKEN, PUBLISHER_BASE, False
+            )
         assert not ok and err != ""
 
     def test_handles_exception_gracefully(self):
-        with patch("ce.iir.did_ops.is_user_member_sync", side_effect=RuntimeError("timeout")):
-            ok, err = call_is_user_member(USER_ID, CTID, ACCESS_TOKEN, PUBLISHER_BASE, False)
+        with patch(
+            "ce.iir.did_ops.is_user_member_sync", side_effect=RuntimeError("timeout")
+        ):
+            ok, err = call_is_user_member(
+                USER_ID, CTID, ACCESS_TOKEN, PUBLISHER_BASE, False
+            )
         assert not ok and "timeout" in err
 
     def test_default_task_is_iir(self):
@@ -363,14 +383,18 @@ class TestCallGetRegistryResource:
         body = _ParsedObj(ExistsInRegistry=True, Name="Acme", LegalName="Acme Corp")
         with patch("ce.iir.did_ops.get_registry_resource_sync") as mock_sync:
             mock_sync.return_value = _fake_response(200, body)
-            ok, data, err = call_get_registry_resource(CTID, ACCESS_TOKEN, PUBLISHER_BASE, False)
+            ok, data, err = call_get_registry_resource(
+                CTID, ACCESS_TOKEN, PUBLISHER_BASE, False
+            )
         assert ok and err == ""
         assert data["Name"] == "Acme"
 
     def test_returns_false_when_ctid_not_in_registry_dict_payload(self):
         with patch("ce.iir.did_ops.get_registry_resource_sync") as mock_sync:
             mock_sync.return_value = _fake_response(200, {"ExistsInRegistry": False})
-            ok, data, err = call_get_registry_resource(CTID, ACCESS_TOKEN, PUBLISHER_BASE, False)
+            ok, data, err = call_get_registry_resource(
+                CTID, ACCESS_TOKEN, PUBLISHER_BASE, False
+            )
         assert not ok
         assert data == {"ExistsInRegistry": False}
         assert "not found" in err
@@ -378,7 +402,9 @@ class TestCallGetRegistryResource:
     def test_400_falls_through_to_not_found_message(self):
         with patch("ce.iir.did_ops.get_registry_resource_sync") as mock_sync:
             mock_sync.return_value = _fake_response(400, None)
-            ok, data, err = call_get_registry_resource(CTID, ACCESS_TOKEN, PUBLISHER_BASE, False)
+            ok, data, err = call_get_registry_resource(
+                CTID, ACCESS_TOKEN, PUBLISHER_BASE, False
+            )
         assert not ok and data == {}
         assert "not found" in err
 
@@ -387,7 +413,9 @@ class TestCallGetRegistryResource:
             "ce.iir.did_ops.get_registry_resource_sync",
             side_effect=RuntimeError("conn refused"),
         ):
-            ok, data, err = call_get_registry_resource(CTID, ACCESS_TOKEN, PUBLISHER_BASE, False)
+            ok, data, err = call_get_registry_resource(
+                CTID, ACCESS_TOKEN, PUBLISHER_BASE, False
+            )
         assert not ok and data == {}
         assert "conn refused" in err
 
@@ -410,7 +438,7 @@ class TestCallGetOrganizationIIRDetail:
     def test_valid_false_returns_failure(self):
         with patch("ce.iir.did_ops.get_organization_iir_detail_sync") as mock_sync:
             mock_sync.return_value = _fake_response(200, {"valid": False})
-            ok, data, err = call_get_organization_iir_detail(
+            ok, _data, err = call_get_organization_iir_detail(
                 CTID, ACCESS_TOKEN, PUBLISHER_BASE, False
             )
         assert not ok
@@ -559,7 +587,7 @@ class TestCallValidateDid:
         body = _ParsedObj(VerificationMethodIds=["did:web:example.com#key-1"])
         with patch("ce.iir.did_ops.validate_did_web_sync") as mock_sync:
             mock_sync.return_value = _fake_response(200, body)
-            ok, vm_ids, data, err = call_validate_did(
+            ok, vm_ids, _data, err = call_validate_did(
                 "did:web:example.com", "", ACCESS_TOKEN, PUBLISHER_BASE, False
             )
         assert ok and err == ""
@@ -616,7 +644,9 @@ class TestCallCreateChallenges:
             ok, data, err = call_create_challenges(
                 CTID,
                 [f"{ED25519_DID_KEY}#k1", f"{ED25519_DID_KEY}#k2"],
-                ACCESS_TOKEN, PUBLISHER_BASE, False,
+                ACCESS_TOKEN,
+                PUBLISHER_BASE,
+                False,
             )
         assert ok and err == ""
         assert isinstance(data, list)
@@ -709,9 +739,15 @@ class TestCallSaveChallengeToken:
 class TestCallSubmitToIir:
     def _base_args(self):
         return (
-            CTID, ED25519_DID_KEY, "Acme", "Acme Corp",
-            "https://registry.example.com", "https://acme.example.com",
-            ACCESS_TOKEN, PUBLISHER_BASE, False,
+            CTID,
+            ED25519_DID_KEY,
+            "Acme",
+            "Acme Corp",
+            "https://registry.example.com",
+            "https://acme.example.com",
+            ACCESS_TOKEN,
+            PUBLISHER_BASE,
+            False,
         )
 
     def test_success(self):
@@ -738,8 +774,8 @@ class TestCallSubmitToIir:
             body = kwargs["body"]
             assert isinstance(body.valid_from, datetime)
             assert isinstance(body.valid_until, datetime)
-            assert body.valid_from == datetime(2024, 1, 1, tzinfo=timezone.utc)
-            assert body.valid_until == datetime(2025, 1, 1, tzinfo=timezone.utc)
+            assert body.valid_from == datetime(2024, 1, 1, tzinfo=UTC)
+            assert body.valid_until == datetime(2025, 1, 1, tzinfo=UTC)
 
     def test_yyyy_mm_dd_dates_also_parse(self):
         with patch("ce.iir.did_ops.submit_to_iir_sync") as mock_sync:
@@ -798,14 +834,16 @@ class TestHelpers:
         assert len(pub) == 32
 
     def test_did_web_to_url_without_path(self):
-        assert _did_web_to_url("did:web:example.com") == "https://example.com/.well-known/did.json"
+        assert (
+            _did_web_to_url("did:web:example.com")
+            == "https://example.com/.well-known/did.json"
+        )
 
     def test_did_web_to_url_with_path(self):
         assert (
             _did_web_to_url("did:web:example.com:users:alice")
             == "https://example.com/users/alice/did.json"
         )
-
 
 
 class TestJwtCrypto:
@@ -842,14 +880,16 @@ class TestJwtCrypto:
 
     def test_bad_private_key_raises(self, ed25519_keypair):
         _, _, kid = ed25519_keypair
-        with pytest.raises(Exception):
+        with pytest.raises(ValueError):
             sign_proof_jwt("zNOTVALID", kid, self._make_payload(ED25519_DID_KEY))
 
 
 class TestExtractUserIdFromToken:
     def _make_token(self, payload: dict) -> str:
         header = base64.urlsafe_b64encode(b'{"alg":"RS256"}').rstrip(b"=").decode()
-        body = base64.urlsafe_b64encode(json.dumps(payload).encode()).rstrip(b"=").decode()
+        body = (
+            base64.urlsafe_b64encode(json.dumps(payload).encode()).rstrip(b"=").decode()
+        )
         return f"{header}.{body}.fakesig"
 
     def test_extracts_uuid_sub_claim(self):

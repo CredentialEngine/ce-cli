@@ -8,26 +8,28 @@ The command is ce.iir.challenge.sign.
 
 from __future__ import annotations
 
-from typing import Any, Dict, Tuple
+from typing import Any
 
 import base58
 import click
+import httpx2
 import jwt
-import requests
 from cryptography.hazmat.primitives.asymmetric.ed25519 import (
     Ed25519PrivateKey,
     Ed25519PublicKey,
 )
+
 from ce.utils.display import new_console
+from ce.utils.user_agent import USER_AGENT
 
 console = new_console()
 err_console = new_console(stderr=True)
 
 
-
 # Multibase + multicodec helpers
 
-def _parse_uvarint(data: bytes) -> Tuple[int, int]:
+
+def _parse_uvarint(data: bytes) -> tuple[int, int]:
     x = 0
     s = 0
     for i, b in enumerate(data):
@@ -42,7 +44,6 @@ def _decode_multibase_base58btc(z_value: str) -> bytes:
     if not z_value.startswith("z"):
         raise ValueError("Expected multibase base58btc string starting with 'z'")
     return base58.b58decode(z_value[1:])
-
 
 
 # Private key to Ed25519 seed
@@ -65,15 +66,15 @@ def _extract_ed25519_seed_from_private_key(private_key_multibase: str) -> bytes:
     raise ValueError("Unrecognized privateKey encoding")
 
 
-
 # did:key resolution (offline)
+
 
 def _extract_ed25519_pub_from_did_key(did_or_kid: str) -> bytes:
     base = did_or_kid.split("#", 1)[0].strip()
     if not base.startswith("did:key:"):
         raise ValueError("Not a did:key DID")
 
-    mb = base[len("did:key:"):]
+    mb = base[len("did:key:") :]
     raw = _decode_multibase_base58btc(mb)
 
     if len(raw) == 32:
@@ -86,14 +87,14 @@ def _extract_ed25519_pub_from_did_key(did_or_kid: str) -> bytes:
     raise ValueError("Invalid did:key encoding (expected Ed25519 public key)")
 
 
-
 # did:web resolution (HTTPS using OS trust)
+
 
 def _did_web_to_url(did_web: str) -> str:
     if not did_web.startswith("did:web:"):
         raise ValueError("Not a did:web DID")
 
-    method_specific = did_web[len("did:web:"):]
+    method_specific = did_web[len("did:web:") :]
     parts = method_specific.split(":")
     host = parts[0]
     path_parts = parts[1:]
@@ -104,29 +105,33 @@ def _did_web_to_url(did_web: str) -> str:
     return f"https://{host}/{'/'.join(path_parts)}/did.json"
 
 
-def _fetch_did_json(did_web_base: str) -> Dict[str, Any]:
+def _fetch_did_json(did_web_base: str) -> dict[str, Any]:
     url = _did_web_to_url(did_web_base)
 
-    r = requests.get(
+    r = httpx2.get(
         url,
-        headers={"Accept": "application/did+json, application/json"},
+        headers={
+            "Accept": "application/did+json, application/json",
+            "User-Agent": USER_AGENT,
+        },
         timeout=15,
+        follow_redirects=True,
     )
     r.raise_for_status()
 
     doc = r.json()
     if not isinstance(doc, dict):
-        raise ValueError("did.json must be a JSON object")
+        raise ValueError("did.json must be a JSON object")  # noqa: TRY004 - malformed remote data.
     return doc
 
 
-def _public_key_from_did_doc(*, kid: str, did_doc: Dict[str, Any]) -> bytes:
+def _public_key_from_did_doc(*, kid: str, did_doc: dict[str, Any]) -> bytes:
     did_base = kid.split("#", 1)[0].strip()
     kid = kid.strip()
 
     vms = did_doc.get("verificationMethod", [])
     if not isinstance(vms, list):
-        raise ValueError("verificationMethod must be a list")
+        raise ValueError("verificationMethod must be a list")  # noqa: TRY004 - malformed remote data.
 
     def normalize(vm_id: str) -> str:
         return did_base + vm_id if vm_id.startswith("#") else vm_id
@@ -174,10 +179,10 @@ def _resolve_public_key_bytes_for_kid(kid: str) -> bytes:
     raise ValueError(f"Unsupported DID method: {base}")
 
 
-
 # Signing + verification
 
-def _sign_payload(private_key_mb: str, kid: str, payload_obj: Dict[str, Any]) -> str:
+
+def _sign_payload(private_key_mb: str, kid: str, payload_obj: dict[str, Any]) -> str:
     seed = _extract_ed25519_seed_from_private_key(private_key_mb)
     private_key = Ed25519PrivateKey.from_private_bytes(seed)
 
@@ -225,15 +230,15 @@ def _assert_signature_verifiable(token: str, kid: str) -> None:
     except jwt.PyJWTError as e:
         raise click.ClickException(f"JWT verification error: {e}") from e
 
-    err_console.print(
-        "Signature verification: OK (matches DID public key)"
-    )
-
+    err_console.print("Signature verification: OK (matches DID public key)")
 
 
 # Entry point used by `ce iir challenge sign --algorithm Ed25519`
 
-def sign_and_verify(private_key_value: str, kid: str, payload_obj: Dict[str, Any]) -> str:
+
+def sign_and_verify(
+    private_key_value: str, kid: str, payload_obj: dict[str, Any]
+) -> str:
     """Sign the challenge with the Ed25519 seed (EdDSA) and verify it against the DID."""
     try:
         token = _sign_payload(private_key_value, kid, payload_obj)
@@ -242,7 +247,7 @@ def sign_and_verify(private_key_value: str, kid: str, payload_obj: Dict[str, Any
 
     try:
         _assert_signature_verifiable(token, kid)
-    except requests.RequestException as e:
+    except httpx2.HTTPError as e:
         raise click.ClickException(f"Failed to fetch did.json: {e}")
     except ValueError as e:
         raise click.ClickException(f"DID resolution error: {e}")

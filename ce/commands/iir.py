@@ -1,24 +1,23 @@
 """IIR command group:
 
-    ce iir challenge sign           # single challenge (--algorithm Ed25519 | RS256)
-    ce iir challenge bulk-sign      # bulk DID challenge signing
-    ce iir issuer-did publish       # publish signed challenges to IIR
+ce iir challenge sign           # single challenge (--algorithm Ed25519 | RS256)
+ce iir challenge bulk-sign      # bulk DID challenge signing
+ce iir issuer-did publish       # publish signed challenges to IIR
 """
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import click
-from ce.utils.display import new_console
-
-from ce.iir.challenge.sign import main as sign_command
 
 from ce.auth.token_manager import require_login
 from ce.config.context import require_environment
+from ce.iir.challenge.sign import main as sign_command
 from ce.iir.csv_processor import run_generate, run_upload
 from ce.iir.did_ops import extract_user_id_from_token
+from ce.utils.display import new_console
 from ce.utils.errors import handle_api_errors
 
 console = new_console()
@@ -32,12 +31,14 @@ def iir_group() -> None:
 
 # ce iir challenge ...
 
+
 @iir_group.group("challenge")
 def challenge_group() -> None:
     """Sign IIR challenges (single or bulk)."""
 
 
 # ce iir issuer-did ...
+
 
 @iir_group.group("issuer-did")
 def issuer_did_group() -> None:
@@ -51,20 +52,25 @@ challenge_group.add_command(sign_command, name="sign")
 
 # ce iir challenge bulk-sign
 
+
 @challenge_group.command("bulk-sign")
 @click.option(
-    "--csv", "csv_path",
+    "--csv",
+    "csv_path",
     required=True,
     type=click.Path(exists=True, dir_okay=False, readable=True),
     help="Input CSV file (columns: CTID, DID, VerificationMethod, Algorithm, PrivateKey, ValidFrom, ValidUntil).",
 )
 @click.option(
-    "--output", "-o", "output_path",
+    "--output",
+    "-o",
+    "output_path",
     default=None,
     help="Output CSV path. Default: Output-<stem>-<UTC>.csv",
 )
 @click.option(
-    "--errors", "errors_path",
+    "--errors",
+    "errors_path",
     default=None,
     help="Errors CSV path. Default: Errors-<stem>-<UTC>.csv",
 )
@@ -113,7 +119,7 @@ def bulk_sign(csv_path: str, output_path: str | None, errors_path: str | None) -
         raise SystemExit(1)
 
     stem = Path(csv_path).stem
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
 
     resolved_output = output_path or f"Output-{stem}-{timestamp}.csv"
     resolved_errors = errors_path or f"Errors-{stem}-{timestamp}.csv"
@@ -121,7 +127,7 @@ def bulk_sign(csv_path: str, output_path: str | None, errors_path: str | None) -
     console.print(f"\nEnvironment: {env.label}  ({env.publisher_base})")
     console.print(f"User ID:      {user_id}")
 
-    ok, errors = run_generate(
+    ok, _errors = run_generate(
         input_path=csv_path,
         output_path=resolved_output,
         errors_path=resolved_errors,
@@ -132,27 +138,30 @@ def bulk_sign(csv_path: str, output_path: str | None, errors_path: str | None) -
 
     if ok > 0:
         console.print(
-            f"\nNext step: "
-            f"ce iir issuer-did publish --input \"{resolved_output}\""
+            f'\nNext step: ce iir issuer-did publish --input "{resolved_output}"'
         )
 
 
 # ce iir issuer-did publish
 
+
 @issuer_did_group.command("publish")
 @click.option(
-    "--input", "input_path",
+    "--input",
+    "input_path",
     required=True,
     type=click.Path(exists=True, dir_okay=False, readable=True),
     help="Signed-challenges CSV produced by `ce iir challenge bulk-sign`.",
 )
 @click.option(
-    "--publish-errors", "publish_errors_path",
+    "--publish-errors",
+    "publish_errors_path",
     default=None,
     help="Publish errors CSV path. Default: PublishErrors-<stem>-<UTC>.csv",
 )
 @click.option(
-    "--yes", "-y",
+    "--yes",
+    "-y",
     is_flag=True,
     default=False,
     help="Skip confirmation prompt.",
@@ -176,7 +185,7 @@ def publish(input_path: str, publish_errors_path: str | None, yes: bool) -> None
     _, env = require_environment()
 
     stem = Path(input_path).stem
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     resolved_pub_errors = publish_errors_path or f"PublishErrors-{stem}-{timestamp}.csv"
 
     console.print(f"\nEnvironment: {env.label}  ({env.publisher_base})")

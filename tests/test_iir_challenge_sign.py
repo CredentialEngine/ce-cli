@@ -14,13 +14,10 @@ from unittest.mock import MagicMock, patch
 import pytest
 from click.testing import CliRunner
 
-
-
 pytestmark = pytest.mark.unit
 
 
 from ce.iir.challenge.sign import main as sign_command
-
 
 RS256_MODULE = "ce.implementations.iir_challenge_sign_rs256"
 
@@ -30,8 +27,8 @@ DID_WEB = "did:web:example.com"
 DID_WEB_KID = f"{DID_WEB}#key-1"
 
 
-
 # Helpers
+
 
 def _run(args):
     result = CliRunner().invoke(sign_command, args)
@@ -66,8 +63,8 @@ def _b64url_uint(value: int) -> str:
     return base64.urlsafe_b64encode(raw).rstrip(b"=").decode()
 
 
-
 # Fixtures
+
 
 @pytest.fixture(scope="session")
 def ed25519_keys():
@@ -77,11 +74,17 @@ def ed25519_keys():
     from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
     sk = Ed25519PrivateKey.generate()
-    seed = sk.private_bytes(serialization.Encoding.Raw, serialization.PrivateFormat.Raw, serialization.NoEncryption())
-    pub = sk.public_key().public_bytes(serialization.Encoding.Raw, serialization.PublicFormat.Raw)
+    seed = sk.private_bytes(
+        serialization.Encoding.Raw,
+        serialization.PrivateFormat.Raw,
+        serialization.NoEncryption(),
+    )
+    pub = sk.public_key().public_bytes(
+        serialization.Encoding.Raw, serialization.PublicFormat.Raw
+    )
     did = "did:key:z" + base58.b58encode(bytes([0xED, 0x01]) + pub).decode()
 
-    return "z" + base58.b58encode(seed).decode(), f"{did}#{did[len('did:key:'):]}"
+    return "z" + base58.b58encode(seed).decode(), f"{did}#{did[len('did:key:') :]}"
 
 
 @pytest.fixture(scope="session")
@@ -96,9 +99,11 @@ def rsa_kid(rsa_key):
     import base58
     from cryptography.hazmat.primitives import serialization
 
-    pkcs1 = rsa_key.public_key().public_bytes(serialization.Encoding.DER, serialization.PublicFormat.PKCS1)
+    pkcs1 = rsa_key.public_key().public_bytes(
+        serialization.Encoding.DER, serialization.PublicFormat.PKCS1
+    )
     did = "did:key:z" + base58.b58encode(bytes([0x85, 0x24]) + pkcs1).decode()
-    return f"{did}#{did[len('did:key:'):]}"
+    return f"{did}#{did[len('did:key:') :]}"
 
 
 @pytest.fixture
@@ -119,11 +124,17 @@ def rsa_pem_file(rsa_pem_text, tmp_path) -> Path:
     return path
 
 
-
 class TestAlgorithmOption:
     def test_algorithm_is_required(self, ed25519_keys, tmp_path):
         priv, kid = ed25519_keys
-        code, output = _run(["--private-key", priv, "--challenge-file", str(_write_challenge(tmp_path, kid))])
+        code, output = _run(
+            [
+                "--private-key",
+                priv,
+                "--challenge-file",
+                str(_write_challenge(tmp_path, kid)),
+            ]
+        )
 
         assert code != 0
         assert "--algorithm" in output
@@ -132,7 +143,14 @@ class TestAlgorithmOption:
     def test_only_exact_values_accepted(self, ed25519_keys, tmp_path, value):
         priv, kid = ed25519_keys
         code, output = _run(
-            ["--algorithm", value, "--private-key", priv, "--challenge-file", str(_write_challenge(tmp_path, kid))]
+            [
+                "--algorithm",
+                value,
+                "--private-key",
+                priv,
+                "--challenge-file",
+                str(_write_challenge(tmp_path, kid)),
+            ]
         )
 
         assert code != 0
@@ -145,7 +163,6 @@ class TestAlgorithmOption:
         assert "Ed25519" in output and "RS256" in output
 
 
-
 class TestEd25519:
     def test_signs_eddsa(self, ed25519_keys, tmp_path):
         priv, kid = ed25519_keys
@@ -153,23 +170,34 @@ class TestEd25519:
 
         code, output = _run(
             [
-                "--algorithm", "Ed25519",
-                "--private-key", priv,
-                "--challenge-file", str(_write_challenge(tmp_path, kid)),
-                "-o", str(out_path),
+                "--algorithm",
+                "Ed25519",
+                "--private-key",
+                priv,
+                "--challenge-file",
+                str(_write_challenge(tmp_path, kid)),
+                "-o",
+                str(out_path),
             ]
         )
 
         assert code == 0, output
-        assert _decode_segment(out_path.read_text(encoding="utf-8"), 0) == {"typ": "JWT", "alg": "EdDSA", "kid": kid}
+        assert _decode_segment(out_path.read_text(encoding="utf-8"), 0) == {
+            "typ": "JWT",
+            "alg": "EdDSA",
+            "kid": kid,
+        }
 
     def test_rsa_pem_file_gets_hint(self, rsa_pem_file, ed25519_keys, tmp_path):
         _, kid = ed25519_keys
         code, output = _run(
             [
-                "--algorithm", "Ed25519",
-                "--private-key", str(rsa_pem_file),
-                "--challenge-file", str(_write_challenge(tmp_path, kid)),
+                "--algorithm",
+                "Ed25519",
+                "--private-key",
+                str(rsa_pem_file),
+                "--challenge-file",
+                str(_write_challenge(tmp_path, kid)),
             ]
         )
 
@@ -180,15 +208,17 @@ class TestEd25519:
         _, kid = ed25519_keys
         code, output = _run(
             [
-                "--algorithm", "Ed25519",
-                "--private-key", rsa_pem_text,
-                "--challenge-file", str(_write_challenge(tmp_path, kid)),
+                "--algorithm",
+                "Ed25519",
+                "--private-key",
+                rsa_pem_text,
+                "--challenge-file",
+                str(_write_challenge(tmp_path, kid)),
             ]
         )
 
         assert code != 0
         assert "--algorithm RS256" in output
-
 
 
 class TestRs256:
@@ -197,15 +227,23 @@ class TestRs256:
 
         code, output = _run(
             [
-                "--algorithm", "RS256",
-                "--private-key", str(rsa_pem_file),
-                "--challenge-file", str(_write_challenge(tmp_path, rsa_kid)),
-                "-o", str(out_path),
+                "--algorithm",
+                "RS256",
+                "--private-key",
+                str(rsa_pem_file),
+                "--challenge-file",
+                str(_write_challenge(tmp_path, rsa_kid)),
+                "-o",
+                str(out_path),
             ]
         )
 
         assert code == 0, output
-        assert _decode_segment(out_path.read_text(encoding="utf-8"), 0) == {"typ": "JWT", "alg": "RS256", "kid": rsa_kid}
+        assert _decode_segment(out_path.read_text(encoding="utf-8"), 0) == {
+            "typ": "JWT",
+            "alg": "RS256",
+            "kid": rsa_kid,
+        }
 
     def test_pem_text_did_web(self, rsa_key, rsa_pem_text, tmp_path):
         numbers = rsa_key.public_key().public_numbers()
@@ -216,7 +254,11 @@ class TestRs256:
                     "id": DID_WEB_KID,
                     "type": "JsonWebKey2020",
                     "controller": DID_WEB,
-                    "publicKeyJwk": {"kty": "RSA", "n": _b64url_uint(numbers.n), "e": _b64url_uint(numbers.e)},
+                    "publicKeyJwk": {
+                        "kty": "RSA",
+                        "n": _b64url_uint(numbers.n),
+                        "e": _b64url_uint(numbers.e),
+                    },
                 }
             ],
             "authentication": [DID_WEB_KID],
@@ -225,12 +267,15 @@ class TestRs256:
         response.json.return_value = doc
         response.raise_for_status = MagicMock()
 
-        with patch(f"{RS256_MODULE}.requests.get", return_value=response):
+        with patch(f"{RS256_MODULE}.httpx2.get", return_value=response):
             code, output = _run(
                 [
-                    "--algorithm", "RS256",
-                    "--private-key", rsa_pem_text,
-                    "--challenge-file", str(_write_challenge(tmp_path, DID_WEB_KID)),
+                    "--algorithm",
+                    "RS256",
+                    "--private-key",
+                    rsa_pem_text,
+                    "--challenge-file",
+                    str(_write_challenge(tmp_path, DID_WEB_KID)),
                 ]
             )
 
@@ -242,9 +287,12 @@ class TestRs256:
         priv, _ = ed25519_keys
         code, output = _run(
             [
-                "--algorithm", "RS256",
-                "--private-key", priv,
-                "--challenge-file", str(_write_challenge(tmp_path, rsa_kid)),
+                "--algorithm",
+                "RS256",
+                "--private-key",
+                priv,
+                "--challenge-file",
+                str(_write_challenge(tmp_path, rsa_kid)),
             ]
         )
 
@@ -254,9 +302,12 @@ class TestRs256:
     def test_missing_pem_file(self, rsa_kid, tmp_path):
         code, output = _run(
             [
-                "--algorithm", "RS256",
-                "--private-key", str(tmp_path / "missing.pem"),
-                "--challenge-file", str(_write_challenge(tmp_path, rsa_kid)),
+                "--algorithm",
+                "RS256",
+                "--private-key",
+                str(tmp_path / "missing.pem"),
+                "--challenge-file",
+                str(_write_challenge(tmp_path, rsa_kid)),
             ]
         )
 
@@ -267,9 +318,12 @@ class TestRs256:
         _, kid = ed25519_keys
         code, output = _run(
             [
-                "--algorithm", "RS256",
-                "--private-key", str(rsa_pem_file),
-                "--challenge-file", str(_write_challenge(tmp_path, kid)),
+                "--algorithm",
+                "RS256",
+                "--private-key",
+                str(rsa_pem_file),
+                "--challenge-file",
+                str(_write_challenge(tmp_path, kid)),
             ]
         )
 
@@ -278,13 +332,26 @@ class TestRs256:
 
     def test_missing_required_field(self, rsa_pem_file, rsa_kid, tmp_path):
         path = tmp_path / "challenge.json"
-        path.write_text(json.dumps({"did": rsa_kid, "challenge": CHALLENGE_UUID, "aud": "ce-api", "iat": 1}), encoding="utf-8")
+        path.write_text(
+            json.dumps(
+                {"did": rsa_kid, "challenge": CHALLENGE_UUID, "aud": "ce-api", "iat": 1}
+            ),
+            encoding="utf-8",
+        )
 
-        code, output = _run(["--algorithm", "RS256", "--private-key", str(rsa_pem_file), "--challenge-file", str(path)])
+        code, output = _run(
+            [
+                "--algorithm",
+                "RS256",
+                "--private-key",
+                str(rsa_pem_file),
+                "--challenge-file",
+                str(path),
+            ]
+        )
 
         assert code != 0
         assert "exp" in output
-
 
 
 class TestRegistration:

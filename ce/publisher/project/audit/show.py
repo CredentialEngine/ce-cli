@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import click
 
@@ -26,7 +26,9 @@ def main(project_id: int, output: str, publisher_url: str | None) -> None:
     with publisher_client(publisher_url) as client:
         entries = client.get_audit(project_id)
 
-    entries = sorted(entries, key=lambda item: (str(item.get("createdAt", "")), item.get("id", 0)))
+    entries = sorted(
+        entries, key=lambda item: (str(item.get("createdAt", "")), item.get("id", 0))
+    )
 
     if output == "json":
         echo_json(entries)
@@ -50,5 +52,5 @@ def _short_time(value: str) -> str:
     except ValueError:
         return value
     if moment.tzinfo is None:
-        moment = moment.replace(tzinfo=timezone.utc)
-    return moment.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+        moment = moment.replace(tzinfo=UTC)
+    return moment.astimezone(UTC).strftime("%Y-%m-%d %H:%M:%S UTC")

@@ -6,15 +6,13 @@ import json
 import os
 import re
 from pathlib import Path
-from typing import Optional
 
-from pydantic import BaseModel, Field
-from pydantic_settings import BaseSettings, SettingsConfigDict
-
+from pydantic import BaseModel
 
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
+
 
 def _config_dir() -> Path:
     """Return the CE config directory, honouring $CE_CONFIG_DIR override."""
@@ -29,34 +27,12 @@ CONFIG_FILE = CONFIG_DIR / "config.json"
 TOKEN_FILE = CONFIG_DIR / "tokens.json"
 
 
-class OIDCSettings(BaseSettings):
-    """Keycloak / OIDC connection settings.
+class OIDCSettings(BaseModel):
+    """Compatibility view of the active environment's OIDC settings."""
 
-    These can be overridden by environment variables prefixed with CE_.
-
-    Example .env or shell exports::
-
-        CE_OIDC_ISSUER=https://auth.example.com/realms/myrealm
-        CE_OIDC_CLIENT_ID=ce-cli
-    """
-
-    model_config = SettingsConfigDict(
-        env_prefix="CE_OIDC_",
-        env_file=str(CONFIG_DIR / ".env"),
-        env_file_encoding="utf-8",
-        extra="ignore",
-    )
-
-    issuer: str = Field(
-        default="https://auth.example.com/realms/credential-engine",
-        description="Keycloak realm issuer URL.",
-    )
-    client_id: str = Field(
-        default="ce-cli",
-        description="OIDC public client ID registered in Keycloak.",
-    )
-    scopes: str = Field(default="openid profile email offline_access")
-
+    issuer: str
+    client_id: str
+    scopes: str
 
     @property
     def device_authorization_endpoint(self) -> str:
@@ -79,11 +55,11 @@ class StoredTokens(BaseModel):
     """OIDC tokens persisted to disk."""
 
     access_token: str
-    refresh_token: Optional[str] = None
-    id_token: Optional[str] = None
+    refresh_token: str | None = None
+    id_token: str | None = None
     token_type: str = "Bearer"
-    expires_at: Optional[float] = None   # Unix timestamp
-    scope: Optional[str] = None
+    expires_at: float | None = None  # Unix timestamp
+    scope: str | None = None
 
 
 def ensure_config_dir() -> None:
@@ -91,7 +67,7 @@ def ensure_config_dir() -> None:
     CONFIG_DIR.mkdir(mode=0o700, parents=True, exist_ok=True)
 
 
-def _current_environment_name() -> Optional[str]:
+def _current_environment_name() -> str | None:
     """The active environment's name, or None when none is selected."""
     from ce.config.context import get_current_environment
 
@@ -99,7 +75,7 @@ def _current_environment_name() -> Optional[str]:
     return result[0] if result else None
 
 
-def token_file(env_name: Optional[str] = None) -> Path:
+def token_file(env_name: str | None = None) -> Path:
     """The file that holds one environment's tokens (the active environment by default).
 
     Each environment has its own file, so a session for one environment is
@@ -112,7 +88,7 @@ def token_file(env_name: Optional[str] = None) -> Path:
     return CONFIG_DIR / f"tokens-{safe}.json"
 
 
-def _adopt_legacy_tokens(env_name: Optional[str], path: Path) -> None:
+def _adopt_legacy_tokens(env_name: str | None, path: Path) -> None:
     """Move tokens saved before tokens were kept per environment to the active environment's file."""
     if path == TOKEN_FILE or path.exists() or not TOKEN_FILE.exists():
         return
@@ -120,7 +96,7 @@ def _adopt_legacy_tokens(env_name: Optional[str], path: Path) -> None:
         TOKEN_FILE.replace(path)
 
 
-def load_tokens(env_name: Optional[str] = None) -> Optional[StoredTokens]:
+def load_tokens(env_name: str | None = None) -> StoredTokens | None:
     """Load an environment's stored tokens (the active environment by default), or None if not present."""
     path = token_file(env_name)
     _adopt_legacy_tokens(env_name, path)
@@ -129,11 +105,11 @@ def load_tokens(env_name: Optional[str] = None) -> Optional[StoredTokens]:
     try:
         data = json.loads(path.read_text())
         return StoredTokens(**data)
-    except Exception:
+    except (OSError, ValueError, TypeError):
         return None
 
 
-def save_tokens(tokens: StoredTokens, env_name: Optional[str] = None) -> None:
+def save_tokens(tokens: StoredTokens, env_name: str | None = None) -> None:
     """Persist an environment's tokens to disk with restrictive permissions."""
     ensure_config_dir()
     path = token_file(env_name)
@@ -141,7 +117,7 @@ def save_tokens(tokens: StoredTokens, env_name: Optional[str] = None) -> None:
     path.chmod(0o600)
 
 
-def delete_tokens(env_name: Optional[str] = None) -> None:
+def delete_tokens(env_name: str | None = None) -> None:
     """Remove an environment's stored tokens from disk."""
     path = token_file(env_name)
     _adopt_legacy_tokens(env_name, path)
@@ -150,5 +126,8 @@ def delete_tokens(env_name: Optional[str] = None) -> None:
 
 
 def load_oidc_settings() -> OIDCSettings:
-    """Return OIDC settings, layering env vars over defaults."""
-    return OIDCSettings()
+    """Return OIDC settings from the same environment used by login."""
+    from ce.config.context import require_environment
+
+    _, env = require_environment()
+    return OIDCSettings(issuer=env.issuer, client_id=env.client_id, scopes=env.scopes)

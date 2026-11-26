@@ -13,7 +13,7 @@ Two phases, mirroring the CLI commands:
       - writes Output CSV and Errors CSV
 
   ce iir issuer-did publish
-      - JWT signature verification 
+      - JWT signature verification
       - Save challenge token
       - Submit issuer to IIR
       - writes PublishErrors CSV
@@ -49,8 +49,16 @@ console = new_console()
 err_console = new_console(stderr=True)
 
 
-OUTPUT_FIELDS      = ["CTID", "DID", "VerificationMethod", "Challenge", "ProofJWT", "ValidFrom", "ValidUntil"]
-ERROR_FIELDS       = ["CTID", "DID", "VerificationMethod", "Algorithm", "Error"]
+OUTPUT_FIELDS = [
+    "CTID",
+    "DID",
+    "VerificationMethod",
+    "Challenge",
+    "ProofJWT",
+    "ValidFrom",
+    "ValidUntil",
+]
+ERROR_FIELDS = ["CTID", "DID", "VerificationMethod", "Algorithm", "Error"]
 PUBLISH_ERR_FIELDS = ["CTID", "DID", "VerificationMethod", "Challenge", "Error"]
 
 
@@ -59,7 +67,7 @@ def run_generate(
     output_path: str,
     errors_path: str,
     access_token: str,
-    env,        
+    env,
     user_id: str,
 ) -> tuple[int, int]:
     """Validate membership, registry, DIDs, create challenges, sign JWTs.
@@ -77,7 +85,7 @@ def run_generate(
 
     Returns (ok_count, error_count).
     """
-    input_file  = Path(input_path)
+    input_file = Path(input_path)
     output_file = Path(output_path)
     errors_file = Path(errors_path)
 
@@ -85,16 +93,21 @@ def run_generate(
         raise FileNotFoundError(f"Input file not found: {input_path}")
 
     with input_file.open(newline="", encoding="utf-8-sig") as f:
-        reader   = csv.DictReader(f)
+        reader = csv.DictReader(f)
         norm_map = {field: field.strip().lower() for field in (reader.fieldnames or [])}
-        rows = [{norm_map[k]: (v.strip() if v is not None else "") for k, v in row.items()} for row in reader ]
+        rows = [
+            {norm_map[k]: (v.strip() if v is not None else "") for k, v in row.items()}
+            for row in reader
+        ]
 
-    missing = [c for c in ("ctid", "did", "verificationmethod") if c not in norm_map.values()]
+    missing = [
+        c for c in ("ctid", "did", "verificationmethod") if c not in norm_map.values()
+    ]
     if missing:
         raise ValueError(f"Missing required CSV column(s): {', '.join(missing)}")
 
-    ok_rows    : list[dict] = []
-    error_rows : list[dict] = []
+    ok_rows: list[dict] = []
+    error_rows: list[dict] = []
     total = len(rows)
 
     table = plain_table(
@@ -105,18 +118,17 @@ def run_generate(
     console.print(f"\nProcessing {total} row(s) from '{input_path}'…\n")
 
     for i, row in enumerate(rows, 1):
-        ctid    = row.get("ctid", "")
-        did     = row.get("did", "")
-        vm      = row.get("verificationmethod", "")
-        alg     = row.get("algorithm", "")
+        ctid = row.get("ctid", "")
+        did = row.get("did", "")
+        vm = row.get("verificationmethod", "")
+        alg = row.get("algorithm", "")
         privkey = row.get("privatekey", "")
-        valid_from  = row.get("validfrom", "")
+        valid_from = row.get("validfrom", "")
         valid_until = row.get("validuntil", "")
-        did_type      = "unknown"
-        error         = ""
-        member_icon   = "-"
+        did_type = "unknown"
+        error = ""
+        member_icon = "-"
         registry_icon = "-"
-        registry_data : dict = {}
 
         def fail(reason: str) -> None:
             nonlocal error
@@ -125,7 +137,7 @@ def run_generate(
         ctid_ok, ctid_err = validate_ctid(ctid)
         if not ctid_ok:
             fail(ctid_err)
-        
+
         if not error:
             ok, err, valid_from = validate_date(valid_from, "ValidFrom")
             if not ok:
@@ -144,7 +156,7 @@ def run_generate(
                 fail(err)
 
         if not error:
-            ok, registry_data, err = call_get_registry_resource(
+            ok, _registry_data, err = call_get_registry_resource(
                 ctid, access_token, env.publisher_base, env.ssl_verify
             )
             registry_icon = "ok" if ok else "fail"
@@ -163,20 +175,28 @@ def run_generate(
         api_vm_ids: list[str] = []
         if not error:
             if did_type == "did:key":
-                ok, data, err = call_validate_did_key(did, alg, access_token, env.publisher_base, env.ssl_verify)
+                ok, data, err = call_validate_did_key(
+                    did, alg, access_token, env.publisher_base, env.ssl_verify
+                )
             else:
-                ok, data, err = call_validate_did_web(did, access_token, env.publisher_base, env.ssl_verify)
+                ok, data, err = call_validate_did_web(
+                    did, access_token, env.publisher_base, env.ssl_verify
+                )
             if not ok:
                 fail(err)
             else:
-                api_vm_ids = data.get("VerificationMethodIds") or data.get("verificationMethodIds") or []
+                api_vm_ids = (
+                    data.get("VerificationMethodIds")
+                    or data.get("verificationMethodIds")
+                    or []
+                )
 
         if not error:
             ok, err = validate_verification_method(vm, did, api_vm_ids)
             if not ok:
                 fail(err)
 
-        challenge_uuid    = ""
+        challenge_uuid = ""
         challenge_payload = {}
         if not error:
             ok, challenges_list, err = call_create_challenges(
@@ -188,17 +208,23 @@ def run_generate(
                 fail("createChallenges returned no challenges")
             else:
                 challenge = next(
-                    (c for c in challenges_list if (c.get("Did") or c.get("did")) == vm),
+                    (
+                        c
+                        for c in challenges_list
+                        if (c.get("Did") or c.get("did")) == vm
+                    ),
                     challenges_list[0],
                 )
-                challenge_uuid = challenge.get("Challenge") or challenge.get("challenge", "")
+                challenge_uuid = challenge.get("Challenge") or challenge.get(
+                    "challenge", ""
+                )
                 challenge_payload = {
-                    "did":       challenge.get("Did")       or challenge.get("did", did),
+                    "did": challenge.get("Did") or challenge.get("did", did),
                     "challenge": challenge_uuid,
-                    "aud":       challenge.get("Aud")       or challenge.get("aud", ""),
-                    "iat":       challenge.get("Iat")       or challenge.get("iat", 0),
-                    "exp":       challenge.get("Exp")       or challenge.get("exp", 0),
-                    "ctid":      ctid,
+                    "aud": challenge.get("Aud") or challenge.get("aud", ""),
+                    "iat": challenge.get("Iat") or challenge.get("iat", 0),
+                    "exp": challenge.get("Exp") or challenge.get("exp", 0),
+                    "ctid": ctid,
                 }
 
         proof_jwt = ""
@@ -208,7 +234,7 @@ def run_generate(
             else:
                 try:
                     proof_jwt = sign_proof_jwt(privkey, vm, challenge_payload)
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001 - isolate signing failures to the current CSV row.
                     fail(f"JWT signing failed: {e}")
 
         if not error:
@@ -220,24 +246,28 @@ def run_generate(
 
         if not error:
             result = f"ok {challenge_uuid[:20]}…"
-            ok_rows.append({
-                "CTID":               ctid,
-                "DID":                did,
-                "VerificationMethod": vm,
-                "Challenge":          challenge_uuid,
-                "ProofJWT":           proof_jwt,
-                "ValidFrom":          valid_from,
-                "ValidUntil":         valid_until,
-            })
+            ok_rows.append(
+                {
+                    "CTID": ctid,
+                    "DID": did,
+                    "VerificationMethod": vm,
+                    "Challenge": challenge_uuid,
+                    "ProofJWT": proof_jwt,
+                    "ValidFrom": valid_from,
+                    "ValidUntil": valid_until,
+                }
+            )
         else:
             result = f"fail {error[:36]}"
-            error_rows.append({
-                "CTID":               ctid,
-                "DID":                did,
-                "VerificationMethod": vm,
-                "Algorithm":          alg,
-                "Error":              error,
-            })
+            error_rows.append(
+                {
+                    "CTID": ctid,
+                    "DID": did,
+                    "VerificationMethod": vm,
+                    "Algorithm": alg,
+                    "Error": error,
+                }
+            )
 
         table.add_row(str(i), ctid_short, member_icon, registry_icon, did_type, result)
 
@@ -271,8 +301,8 @@ def run_upload(
     env,
     yes: bool = False,
 ) -> None:
-    
-    output_file      = Path(output_path)
+
+    output_file = Path(output_path)
     publish_err_file = Path(publish_errors_path)
 
     if not output_file.exists() or output_file.stat().st_size == 0:
@@ -288,7 +318,10 @@ def run_upload(
 
     if not yes:
         import click
-        click.confirm(f"\n  Publish {len(rows)} issuer(s) from '{output_path}'?", abort=True)
+
+        click.confirm(
+            f"\n  Publish {len(rows)} issuer(s) from '{output_path}'?", abort=True
+        )
 
     publish_error_rows: list[dict] = []
 
@@ -297,16 +330,16 @@ def run_upload(
     console.print(f"\nPublishing {len(rows)} issuer(s)…\n")
 
     for i, row in enumerate(rows, 1):
-        ctid           = row["CTID"]
-        did            = row["DID"]
-        proof_jwt      = row["ProofJWT"]
+        ctid = row["CTID"]
+        did = row["DID"]
+        proof_jwt = row["ProofJWT"]
         challenge_uuid = row["Challenge"]
-        vm             = row["VerificationMethod"]
-        valid_from     = row.get("ValidFrom", "")
-        valid_until    = row.get("ValidUntil", "")
-        ctid_short     = (ctid[:42] + "…") if len(ctid) > 43 else ctid
-        pub_error      = ""
-        publish_icon   = "-"
+        vm = row["VerificationMethod"]
+        valid_from = row.get("ValidFrom", "")
+        valid_until = row.get("ValidUntil", "")
+        ctid_short = (ctid[:42] + "…") if len(ctid) > 43 else ctid
+        pub_error = ""
+        publish_icon = "-"
 
         def pub_fail(reason: str) -> None:
             nonlocal pub_error
@@ -321,8 +354,12 @@ def run_upload(
 
         if not pub_error:
             ok, err = call_save_challenge_token(
-                ctid, challenge_uuid, proof_jwt,
-                access_token, env.publisher_base, env.ssl_verify,
+                ctid,
+                challenge_uuid,
+                proof_jwt,
+                access_token,
+                env.publisher_base,
+                env.ssl_verify,
             )
             if not ok:
                 pub_fail(err)
@@ -334,7 +371,7 @@ def run_upload(
             if not ok:
                 pub_fail(err)
             else:
-                ok_acc, accounts_data, acc_err = call_get_organization_iir_detail(
+                ok_acc, accounts_data, _acc_err = call_get_organization_iir_detail(
                     ctid, access_token, env.publisher_base, env.ssl_verify
                 )
                 if not ok_acc:
@@ -342,12 +379,15 @@ def run_upload(
 
                 merged = merge_autofill(registry_data, accounts_data)
                 ok, err = call_submit_to_iir(
-                    ctid, did,
+                    ctid,
+                    did,
                     merged["name"],
                     merged["legal_name"],
                     merged["registry_uri"],
                     merged["subject_webpage"],
-                    access_token, env.publisher_base, env.ssl_verify,
+                    access_token,
+                    env.publisher_base,
+                    env.ssl_verify,
                     logo_uri=merged["image"],
                     logo_base64=merged["logo_base64"],
                     valid_from=valid_from,
@@ -358,11 +398,15 @@ def run_upload(
                     pub_fail(err)
 
         if pub_error:
-            publish_error_rows.append({
-                "CTID": ctid, "DID": did,
-                "VerificationMethod": vm, "Challenge": challenge_uuid,
-                "Error": pub_error,
-            })
+            publish_error_rows.append(
+                {
+                    "CTID": ctid,
+                    "DID": did,
+                    "VerificationMethod": vm,
+                    "Challenge": challenge_uuid,
+                    "Error": pub_error,
+                }
+            )
 
         table.add_row(str(i), ctid_short, jwt_icon, publish_icon)
 
@@ -376,6 +420,4 @@ def run_upload(
     ok_count = len(rows) - len(publish_error_rows)
     console.print(f"\n{ok_count} published successfully.")
     if publish_error_rows:
-        console.print(
-            f"{len(publish_error_rows)} error(s): {publish_err_file}"
-        )
+        console.print(f"{len(publish_error_rows)} error(s): {publish_err_file}")

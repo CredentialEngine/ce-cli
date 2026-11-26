@@ -17,7 +17,7 @@ from click.testing import CliRunner
 from rich.console import Console
 
 from ce.commands.env import env_group
-from ce.config.context import CLIConfig, DEFAULT_ENVIRONMENTS
+from ce.config.context import DEFAULT_ENVIRONMENTS, CLIConfig
 from ce.utils.display import new_console, plain_table, print_pairs
 from ce.utils.output import print_output
 
@@ -29,12 +29,25 @@ BOX_CHARS = re.compile("[─-▟]")
 
 CE_SOURCE = Path(__file__).resolve().parent.parent / "ce"
 # Rich pieces that draw boxes or colour text. The generated clients under ce/iir/api are not ours to scan.
-FORBIDDEN = ("rich.panel", "rich.syntax", "rich.box", "box.SIMPLE", "border_style", "header_style=\"bold\"")
+FORBIDDEN = (
+    "rich.panel",
+    "rich.syntax",
+    "rich.box",
+    "box.SIMPLE",
+    "border_style",
+    'header_style="bold"',
+)
 
 
 def terminal_console(buffer: io.StringIO) -> Console:
     """A console that behaves like a colour terminal, so any styling would show up as escape codes."""
-    return Console(file=buffer, force_terminal=True, color_system="truecolor", width=100, highlight=False)
+    return Console(
+        file=buffer,
+        force_terminal=True,
+        color_system="truecolor",
+        width=100,
+        highlight=False,
+    )
 
 
 def assert_plain(text: str) -> None:
@@ -81,7 +94,10 @@ def test_print_pairs_aligns_values_without_styling() -> None:
     console.file = buffer
     print_pairs(console, [("Name", "x"), ("Publisher base", "y")])
 
-    assert buffer.getvalue().splitlines() == ["Name:            x", "Publisher base:  y"]
+    assert buffer.getvalue().splitlines() == [
+        "Name:            x",
+        "Publisher base:  y",
+    ]
 
 
 def test_json_output_is_plain_json(capsys: pytest.CaptureFixture[str]) -> None:
@@ -93,7 +109,9 @@ def test_json_output_is_plain_json(capsys: pytest.CaptureFixture[str]) -> None:
 
 
 def test_table_output_is_plain(capsys: pytest.CaptureFixture[str]) -> None:
-    print_output([{"id": 1, "name": "a"}], "table", columns=["id", "name"], title="Projects")
+    print_output(
+        [{"id": 1, "name": "a"}], "table", columns=["id", "name"], title="Projects"
+    )
 
     out = capsys.readouterr().out
     assert_plain(out)
@@ -101,7 +119,9 @@ def test_table_output_is_plain(capsys: pytest.CaptureFixture[str]) -> None:
 
 
 def test_env_list_and_show_are_plain() -> None:
-    config = CLIConfig(current_environment="sandbox", environments=dict(DEFAULT_ENVIRONMENTS))
+    config = CLIConfig(
+        current_environment="sandbox", environments=dict(DEFAULT_ENVIRONMENTS)
+    )
     runner = CliRunner()
     with patch("ce.commands.env.load_cli_config", return_value=config):
         listed = runner.invoke(env_group, ["list"])
@@ -112,7 +132,7 @@ def test_env_list_and_show_are_plain() -> None:
     assert_plain(listed.output)
     assert_plain(shown.output)
     assert "* " in listed.output
-    assert "Environment: sandbox" in shown.output
+    assert shown.output.strip() == "sandbox"
 
 
 @pytest.mark.parametrize("forbidden", FORBIDDEN)
@@ -120,6 +140,7 @@ def test_the_source_has_no_boxes_or_bold_headers(forbidden: str) -> None:
     offenders = [
         path.relative_to(CE_SOURCE).as_posix()
         for path in CE_SOURCE.rglob("*.py")
-        if "iir/api" not in path.as_posix() and forbidden in path.read_text(encoding="utf-8")
+        if "iir/api" not in path.as_posix()
+        and forbidden in path.read_text(encoding="utf-8")
     ]
     assert offenders == [], f"{forbidden!r} found in {offenders}"

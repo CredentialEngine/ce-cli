@@ -124,12 +124,14 @@ ends the session at the sign-in service as well as on this machine.
 
 ### Environments (`ce env`)
 
-Environments let you switch between `dev`, `sandbox`, and `prod` without touching env vars. Each environment maps a friendly name to an API URL (plus optional OIDC overrides).
+Environments let you switch between `dev`, `test`, `sandbox`, and `prod`. Built-in API and OIDC settings are defined in `ce/config/context.py` (`DEFAULT_ENVIRONMENTS`). Only the selected environment is persisted.
 
 | Command             | Description                                    |
 | ------------------- | ---------------------------------------------- |
-| `ce env list`       | List all environments (● marks the active one) |
+| `ce env list`       | List the four valid environment names |
 | `ce env use <name>` | Switch to a different environment              |
+| `ce env show` | Show the active environment name |
+| `ce env show --verbose` | Show detailed environment configuration |
 
 ```bash
 ce env list
@@ -302,7 +304,7 @@ ce-cli/
     │   └── token_manager.py       # Silent token refresh + require_login()
     ├── commands/
     │   ├── auth.py                # ce login / logout / whoami
-    │   ├── env.py                 # ce env list / use / show / add / remove
+    │   ├── env.py                 # ce env list / use / show
     │   ├── config.py              # ce config set / get / list / reset
     │   ├── iir.py                 # ce iir challenge bulk-sign, ce iir issuer-did publish
     │   ├── iir_sign_challenge.py  # ce iir challenge sign
@@ -357,3 +359,89 @@ holds a token. A scenario that fails while recording writes no cassette and leav
 sends a request that differs from the recording, or fewer requests than were recorded. A scenario with no cassette is skipped on
 your machine, so a new test can be merged before it is recorded, and fails in CI (the `CI` variable is set), so a deleted or renamed
 cassette is never silent.
+
+### Registry downloads
+
+The `ce registry` commands use the Consumer API. Its base URL (`consumer_api_base`) is defined in `ce/config/environment.py` and selected by `ce env use`. There are no URL overrides.
+
+| Environment | Consumer API base URL |
+| --- | --- |
+| dev | `https://localhost:7079` |
+| test | `https://api.consumer.test.credentialengine.org` |
+| sandbox | `https://api.consumer.sandbox.credentialengine.org` |
+| prod | `https://api.consumer.credentialengine.org` |
+
+The `credentialengineregistry.org` domain is used for resource and graph references, not as the Consumer API base URL.
+
+```text
+ce env use dev
+ce login
+ce registry downloads show --version 2026-11-25
+ce registry downloads get --version latest --class-name full --target-location ./exports
+ce registry downloads get --class-name ceterms:Credential --class-name ceterms:Organization
+ce registry downloads get --url "DOWNLOAD_URL"
+ce registry downloads search show JOB_ID
+ce registry downloads search get --url "DOWNLOAD_URL" --target-location ./exports
+```
+
+Registry `show` and `get` accept `--version latest` (the default) or
+`--version YYYY-MM-DD`.
+
+Registry commands use the active environment's API URL, login and TLS settings. Both `get` commands accept
+`--target-location` (defaults to the current directory). Existing files are not
+replaced. Class subdirectories are used only if archive filenames collide.
+Registry `show` displays class labels, schema class names, counts and archive
+links. Download links are short-lived and one-time use; treat them as sensitive.
+Showing does not redeem the links. `get --class` (display label) or `get --class-name` (schema identifier) requests fresh links; `get --url` redeems the supplied one-time links directly. Repeat the chosen option for multiple files or classes; do not combine selectors. No selection means no download. For direct URLs, the version does not validate the archive provenance; the URL itself identifies the archive.
+
+An interrupted download can be retried by obtaining fresh URLs. Existing files are not replaced. Downloads show bytes transferred, speed and elapsed time. Search job creation is available via `ce registry search export`. Search export `show JOB_ID` displays status and one-time links when completed; `get --url` redeems those links without a job ID.
+
+## Logging
+
+Every CLI invocation displays `ce, version <installed-version>` on stderr,
+leaving stdout available for command results and JSON pipelines. `ce --version`
+prints the version once on stdout.
+
+```shell
+ce logging set log-level DEBUG
+ce logging show
+ce registry downloads show
+ce logging set log-level WARNING
+```
+
+Levels are case-insensitive: DEBUG, INFO, WARNING (default), ERROR, CRITICAL.
+The selected level is saved for subsequent commands. Logs use UTC ISO-8601 timestamps
+with milliseconds and module, file, line and function information.
+`LOG_FORMAT` and `LOG_DESTINATIONS` work as in ceops (default: console).
+Optional CloudWatch and Azure destinations require `pip install -e ".[cloudwatch]"`
+or `pip install -e ".[azure-logging]"`, respectively, and the same ceops
+environment variables (`CLOUDWATCH_LOG_GROUP`, `CLOUDWATCH_LOG_STREAM_NAME`,
+`AWS_REGION`, `CLOUDWATCH_ENDPOINT_URL`, `APPLICATIONINSIGHTS_CONNECTION_STRING`,
+`AZURE_SDK_LOG_LEVEL`). Transport debug logging stays restricted to avoid
+exposing tokens or signed archive URLs.
+
+## Registry search
+
+```shell
+ce registry search --query nursing --type ceterms:Credential --view Summary
+ce registry search export --query nursing --type ceterms:Credential
+ce registry downloads search show JOB_ID
+ce registry downloads search get --url "DOWNLOAD_URL"
+ce registry downloads get --class "All Registry Data"
+ce registry downloads get --class-name ceterms:Credential
+```
+
+Search and export accept the same options: `--query`, `--type`, `--language`, `--include-bnodes` / `--no-include-bnodes`, `--index-type`, `--index-id`, `--page`, `--view`, and repeatable `--filters` (JSON object or array). Search prints CTID, Title and Description for one page by default. Use `-o json` or `--output json` to display JSON search results limited to `@id`, `ceterms:ctid`, `ceterms:name`, `ceterms:description`, and `@type`, with only the numeric total and results at the response level. Use `-o tsv` for tab-separated output with the same five column headers. Structured cell values are JSON encoded. Use qualified schema terms for `--type`, filter fields and `@type` filter values, not display labels. The CLI validates term syntax; the API resolves schema terms. The summary API normalizes names and descriptions across vocabularies; the CLI exposes those summary values under the common ceterms column names. Class identifiers are preserved exactly as returned by the API. Export submits a job, prints the returned job ID and status, and does not wait or download. The export worker controls pagination and JSON-LD output. Download selection requires exactly one of `--url`, `--class` or `--class-name`.
+
+
+### Registry point lookups
+
+```shell
+ce registry resources get ce-00000000-0000-0000-0000-000000000001
+ce registry resources get 00000000-0000-0000-0000-000000000001
+ce registry resources get _:00000000-0000-0000-0000-000000000001
+ce registry graphs get ce-00000000-0000-0000-0000-000000000001 --depth 1
+ce registry metadata get ce-00000000-0000-0000-0000-000000000001
+```
+
+Replace the example identifiers with real Registry identifiers. Resource lookups accept CTIDs or blank-node GUIDs (the `_:` prefix is stripped). The installed SDK only provides CTID lookups for graphs and metadata. Point lookup results are JSON. CLI-owned HTTP clients send `User-Agent: ce-cli/<installed-version>`.

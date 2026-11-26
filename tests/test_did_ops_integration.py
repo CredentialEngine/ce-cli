@@ -1,14 +1,14 @@
 """
 Integration tests for ce.iir.did_ops.
 
-Config comes from .env.test — nothing is hard-coded in this file. Load it
-before running, e.g. `set -a && source .env.test && set +a`, or rely on
-python-dotenv (it's loaded below if available).
+Offline replay uses public test identifiers from the checked-in cassettes.
+Live recording alone reads .env.test and requires live credentials.
 
 Two ways to run:
 
-    # Live: hits the real publisher. Use this to (re-)record cassettes.
-    VCR_RECORD_MODE=once pytest -m integration -s
+    # Live: hits the real publisher. Use once for new cassettes or rewrite
+    # to replace existing ones.
+    pytest tests/test_did_ops_integration.py --record-mode=once -s
 
     # Playback (default): replays cassettes, no network, no secrets needed.
     pytest -m integration -s
@@ -16,19 +16,16 @@ Two ways to run:
 
 from __future__ import annotations
 
+import base64
+import json
 import os
+from pathlib import Path
+from urllib.parse import parse_qs, urlsplit
 
+import httpx2
 import pytest
-import requests as req
-
-# Best-effort .env.test loading. If python-dotenv isn't installed we just
-# fall back to whatever's already in os.environ.
-try:
-    from dotenv import load_dotenv
-
-    load_dotenv(".env.test")
-except ImportError:
-    pass
+import yaml
+from dotenv import load_dotenv
 
 from ce.iir.did_ops import (
     call_create_challenges,
@@ -53,75 +50,127 @@ pytestmark = [pytest.mark.integration, pytest.mark.vcr]
 # Environment / config
 # ---------------------------------------------------------------------------
 
-VCR_RECORD_MODE = os.environ.get("VCR_RECORD_MODE", "none").lower()
-PLAYBACK_ONLY = VCR_RECORD_MODE == "none"
+# Public identifiers matching the existing recorded requests (not credentials).
+# Do not override these with local .env.test values in playback mode.
+REPLAY_BASE = "https://localhost:44330"
+REPLAY_CTID = "ce-a4041983-b1ae-4ad4-a43d-284a5b4b2d73"
+REPLAY_USER_ID = "bf95cac3-ca3d-4e93-838c-257a4cdb46a6"
+REPLAY_DID_KEY = "did:key:z6MkfUvJ9QJ7Gh6y9MXUyByLc3bxhuP9yffH8iHSNBmhhBic"
+REPLAY_DID_WEB = "did:web:sandbox.credentialengine.org"
+
+# Initialize to safe offline values; the module fixture replaces them only
+# for an explicitly requested live recording.
+PLAYBACK_ONLY = True
+PUBLISHER_BASE = REPLAY_BASE
+TEST_CTID = REPLAY_CTID
+TEST_DID_KEY = REPLAY_DID_KEY
+TEST_DID_WEB = REPLAY_DID_WEB
+TEST_USER_ID = REPLAY_USER_ID
+TEST_ALG = "Ed25519"
+TEST_VM = f"{TEST_DID_KEY}#{TEST_DID_KEY.split(':')[-1]}"
 
 
-PUBLISHER_BASE = os.environ.get("CE_PUBLISHER_BASE", "").rstrip("/")
-TEST_CTID = os.environ.get("CE_TEST_CTID", "")
-TEST_DID_KEY = os.environ.get("CE_TEST_DID_KEY", "")
-TEST_DID_WEB = os.environ.get("CE_TEST_DID_WEB", "")
-TEST_VM = os.environ.get("CE_TEST_VM", f"{TEST_DID_KEY}#{TEST_DID_KEY.split(':')[-1]}")
-TEST_ALG = os.environ.get("CE_TEST_ALG", "Ed25519")
-TEST_USER_ID = os.environ.get("CE_TEST_USER_ID", "").strip()
+@pytest.fixture(scope="module", autouse=True)
+def _require_env(request):
+    """Use recorded identifiers offline; load local configuration only for recording."""
+    global PLAYBACK_ONLY, PUBLISHER_BASE, TEST_CTID, TEST_DID_KEY
+    global TEST_DID_WEB, TEST_VM, TEST_ALG, TEST_USER_ID
 
-
-# ---------------------------------------------------------------------------
-# Fixtures
-# ---------------------------------------------------------------------------
-
-@pytest.fixture(scope="session", autouse=True)
-def _require_env():
-    """Bail out early — with a useful message — if live mode is missing config."""
+    PLAYBACK_ONLY = (
+        request.config.getoption("record_mode", default=None) or "none"
+    ) == "none"
     if PLAYBACK_ONLY:
+        PUBLISHER_BASE = REPLAY_BASE
+        TEST_CTID = REPLAY_CTID
+        TEST_DID_KEY = REPLAY_DID_KEY
+        TEST_DID_WEB = REPLAY_DID_WEB
+        TEST_USER_ID = REPLAY_USER_ID
+        TEST_ALG = "Ed25519"
+        TEST_VM = f"{TEST_DID_KEY}#{TEST_DID_KEY.split(':')[-1]}"
         return
 
-    required = ("CE_PUBLISHER_BASE", "CE_TEST_ACCESS_TOKEN", "CE_TEST_CTID", "CE_TEST_DID_KEY")
-    missing = [name for name in required if not os.environ.get(name, "").strip()]
+    load_dotenv(Path(__file__).resolve().parents[1] / ".env.test")
+    required = (
+        "CE_PUBLISHER_BASE",
+        "CE_TEST_ACCESS_TOKEN",
+        "CE_TEST_CTID",
+        "CE_TEST_DID_KEY",
+    )
+    missing = [name for name in required if not _live_value(name)]
     if missing:
-        pytest.skip(
-            "Missing required environment variables (load .env.test first): "
-            + ", ".join(missing)
-        )
+        pytest.skip("Missing live recording configuration: " + ", ".join(missing))
+
+    PUBLISHER_BASE = _live_value("CE_PUBLISHER_BASE").rstrip("/")
+    parsed = urlsplit(PUBLISHER_BASE)
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+        pytest.fail("CE_PUBLISHER_BASE must be an HTTP(S) API URL")
+    TEST_CTID = _live_value("CE_TEST_CTID")
+    TEST_DID_KEY = _live_value("CE_TEST_DID_KEY")
+    TEST_DID_WEB = _live_value("CE_TEST_DID_WEB")
+    TEST_USER_ID = _live_value("CE_TEST_USER_ID")
+    TEST_ALG = _live_value("CE_TEST_ALG") or "Ed25519"
+    TEST_VM = (
+        _live_value("CE_TEST_VM") or f"{TEST_DID_KEY}#{TEST_DID_KEY.split(':')[-1]}"
+    )
 
 
-@pytest.fixture(scope="session", autouse=True)
-def server_available():
-    """In live/record mode, skip everything if the publisher isn't up."""
+def _live_value(name: str) -> str:
+    value = os.environ.get(name, "").strip()
+    return "" if value.casefold() == "to be filled to test" else value
+
+
+@pytest.fixture(scope="module", autouse=True)
+def server_available(_require_env):
+    """Only probe the server when live recording was explicitly requested."""
     if PLAYBACK_ONLY:
         return
     try:
-        req.get(f"{PUBLISHER_BASE}/api/iir", timeout=5, verify=False)
-    except (req.exceptions.ConnectionError, req.exceptions.Timeout):
+        httpx2.get(
+            f"{PUBLISHER_BASE}/api/iir", timeout=5, verify=False, follow_redirects=True
+        )
+    except (httpx2.ConnectError, httpx2.TimeoutException):
         pytest.skip(f"API server not reachable at {PUBLISHER_BASE}")
 
 
-@pytest.fixture(scope="session")
-def access_token() -> str:
+@pytest.fixture(scope="module")
+def access_token(_require_env) -> str:
     if PLAYBACK_ONLY:
         return "PLAYBACK_TOKEN"
-    token = os.environ.get("CE_TEST_ACCESS_TOKEN", "").strip()
-    if not token:
-        pytest.skip("CE_TEST_ACCESS_TOKEN not set — skipping integration tests.")
-    return token
+    return _live_value("CE_TEST_ACCESS_TOKEN")
 
 
-@pytest.fixture(scope="session")
-def private_key() -> str:
-    key = os.environ.get("CE_TEST_PRIVKEY_MULTIBASE", "").strip()
+@pytest.fixture(scope="module")
+def private_key(_require_env) -> str | None:
+    if PLAYBACK_ONLY:
+        return None
+    key = _live_value("CE_TEST_PRIVKEY_MULTIBASE")
     if not key:
-        pytest.skip("CE_TEST_PRIVKEY_MULTIBASE not set — skipping crypto tests.")
+        pytest.skip("CE_TEST_PRIVKEY_MULTIBASE is required for live challenge signing")
     return key
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def user_id(access_token) -> str:
-    # Explicit override wins, then playback dummy, then decode the live token.
     if TEST_USER_ID:
         return TEST_USER_ID
-    if PLAYBACK_ONLY:
-        return "00000000-0000-0000-0000-000000000000"
     return extract_user_id_from_token(access_token)
+
+
+def _recorded_challenge_proof() -> str:
+    """Reuse the historical signed challenge, never a private key or login token."""
+    path = (
+        Path(__file__).parent
+        / "cassettes"
+        / ("TestFullChallengeFlowIntegration.test_full_sign_verify_save_flow.yaml")
+    )
+    interactions = yaml.safe_load(path.read_text(encoding="utf-8"))["interactions"]
+    for interaction in interactions:
+        request = interaction["request"]
+        if request["method"] == "POST" and urlsplit(request["uri"]).path.endswith(
+            "/validateJwt"
+        ):
+            return parse_qs(request["body"])["Jwt"][0]
+    pytest.fail("Recorded validateJwt request is missing from the challenge cassette")
 
 
 @pytest.fixture(scope="module")
@@ -133,6 +182,7 @@ def vcr_cassette_dir(request):
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
+
 
 class TestIsUserMemberIntegration:
     def test_member_check_returns_a_bool(self, access_token, user_id):
@@ -150,7 +200,7 @@ class TestIsUserMemberIntegration:
         assert ok, f"Expected user to be a member: {err}"
 
     def test_bogus_ctid_returns_error(self, access_token, user_id):
-        ok, err = call_is_user_member(
+        ok, _err = call_is_user_member(
             user_id,
             "ce-00000000-0000-0000-0000-999999999999",
             access_token,
@@ -213,7 +263,11 @@ class TestValidateDidKeyIntegration:
 
     def test_malformed_did_key_returns_error(self, access_token):
         ok, _data, _err = call_validate_did_key(
-            "did:key:zinvalid", "Ed25519", access_token, PUBLISHER_BASE, ssl_verify=False
+            "did:key:zinvalid",
+            "Ed25519",
+            access_token,
+            PUBLISHER_BASE,
+            ssl_verify=False,
         )
         assert not ok
 
@@ -274,12 +328,24 @@ class TestFullChallengeFlowIntegration:
             "ctid": TEST_CTID,
         }
 
-        proof_jwt = sign_proof_jwt(private_key, TEST_VM, payload)
+        proof_jwt = (
+            _recorded_challenge_proof()
+            if private_key is None
+            else sign_proof_jwt(private_key, TEST_VM, payload)
+        )
         assert proof_jwt
 
         # Verify locally first — cheap sanity check before hitting the API.
         ok, err = verify_proof_jwt(proof_jwt, TEST_VM)
         assert ok, f"Local JWT verification failed: {err}"
+        # Verify that the replayed proof actually belongs to this challenge.
+        encoded_payload = proof_jwt.split(".")[1]
+        decoded = json.loads(
+            base64.urlsafe_b64decode(
+                encoded_payload + "=" * (-len(encoded_payload) % 4)
+            )
+        )
+        assert decoded == payload
 
         ok, err = call_verify_jwt_signature(
             proof_jwt, challenge_uuid, access_token, PUBLISHER_BASE, ssl_verify=False

@@ -21,10 +21,19 @@ _PUBLISH_WAIT_SECONDS = 900
 
 @click.command("complete")
 @project_option
-@click.option("--wait/--no-wait", default=True, show_default=True,
-              help="Wait until publishing has finished.")
-@click.option("--timeout", default=_PUBLISH_WAIT_SECONDS, show_default=True, type=int,
-              help="Seconds to wait for each step.")
+@click.option(
+    "--wait/--no-wait",
+    default=True,
+    show_default=True,
+    help="Wait until publishing has finished.",
+)
+@click.option(
+    "--timeout",
+    default=_PUBLISH_WAIT_SECONDS,
+    show_default=True,
+    type=int,
+    help="Seconds to wait for each step.",
+)
 @publisher_url_option
 def main(project_id: int, wait: bool, timeout: int, publisher_url: str | None) -> None:
     """Approve the project and publish it to the Registry.
@@ -43,7 +52,9 @@ def main(project_id: int, wait: bool, timeout: int, publisher_url: str | None) -
                 project_id,
                 user_id,
                 timeout_seconds=timeout,
-                on_step=lambda message: console.print(message, highlight=False, soft_wrap=True),
+                on_step=lambda message: console.print(
+                    message, highlight=False, soft_wrap=True
+                ),
             )
 
         if wait and not _wait_and_report(client, project_id, timeout):

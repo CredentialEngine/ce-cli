@@ -4,35 +4,57 @@ from __future__ import annotations
 
 import base64
 import json
+import logging
 import re
-from functools import lru_cache
-from pathlib import Path
+from datetime import UTC
 from typing import Any
 
 import base58
+import httpx2
 import jwt
-import requests
 from cryptography.hazmat.primitives.asymmetric.ed25519 import (
     Ed25519PrivateKey,
     Ed25519PublicKey,
 )
 
 from ce.iir.api.iir_client import AuthenticatedClient
-from ce.iir.api.iir_client.models.create_challenges_request import CreateChallengesRequest
-from ce.iir.api.iir_client.models.save_challenge_token_request import SaveChallengeTokenRequest
-from ce.iir.api.iir_client.models.validate_jwt_request import ValidateJwtRequest
+from ce.iir.api.iir_client.api.iir_api.iir_api_create_challenges import (
+    sync_detailed as create_challenges_sync,
+)
+from ce.iir.api.iir_client.api.iir_api.iir_api_get_organization_iir_detail import (
+    sync_detailed as get_organization_iir_detail_sync,
+)
+from ce.iir.api.iir_client.api.iir_api.iir_api_get_registry_resource import (
+    sync_detailed as get_registry_resource_sync,
+)
+from ce.iir.api.iir_client.api.iir_api.iir_api_is_user_a_member import (
+    sync_detailed as is_user_member_sync,
+)
+from ce.iir.api.iir_client.api.iir_api.iir_api_save_challenge_token import (
+    sync_detailed as save_challenge_token_sync,
+)
+from ce.iir.api.iir_client.api.iir_api.iir_api_submit_to_iir import (
+    sync_detailed as submit_to_iir_sync,
+)
+from ce.iir.api.iir_client.api.iir_api.iir_api_validate_jwt_signature import (
+    sync_detailed as validate_jwt_sync,
+)
+from ce.iir.api.iir_client.api.iir_api.iir_api_validate_key import (
+    sync_detailed as validate_did_key_sync,
+)
+from ce.iir.api.iir_client.api.iir_api.iir_api_validate_web import (
+    sync_detailed as validate_did_web_sync,
+)
+from ce.iir.api.iir_client.models.create_challenges_request import (
+    CreateChallengesRequest,
+)
 from ce.iir.api.iir_client.models.pub_issuer_dto import PubIssuerDTO
-
-from ce.iir.api.iir_client.api.iir_api.iir_api_is_user_a_member import sync_detailed as is_user_member_sync
-from ce.iir.api.iir_client.api.iir_api.iir_api_get_registry_resource import sync_detailed as get_registry_resource_sync
-from ce.iir.api.iir_client.api.iir_api.iir_api_get_organization_iir_detail import sync_detailed as get_organization_iir_detail_sync
-from ce.iir.api.iir_client.api.iir_api.iir_api_validate_key import sync_detailed as validate_did_key_sync
-from ce.iir.api.iir_client.api.iir_api.iir_api_validate_web import sync_detailed as validate_did_web_sync
-from ce.iir.api.iir_client.api.iir_api.iir_api_create_challenges import sync_detailed as create_challenges_sync
-from ce.iir.api.iir_client.api.iir_api.iir_api_validate_jwt_signature import sync_detailed as validate_jwt_sync
-from ce.iir.api.iir_client.api.iir_api.iir_api_save_challenge_token import sync_detailed as save_challenge_token_sync
-from ce.iir.api.iir_client.api.iir_api.iir_api_submit_to_iir import sync_detailed as submit_to_iir_sync
+from ce.iir.api.iir_client.models.save_challenge_token_request import (
+    SaveChallengeTokenRequest,
+)
+from ce.iir.api.iir_client.models.validate_jwt_request import ValidateJwtRequest
 from ce.iir.api.iir_client.types import UNSET
+from ce.utils.user_agent import USER_AGENT
 
 CE_GUID_RE = re.compile(
     r"^ce-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
@@ -44,23 +66,25 @@ SUPPORTED_ALGORITHMS = {"Ed25519", "secp256k1", "P-256", "X25519"}
 DID_KEY_PREFIX_MAP = {
     "z6Mk": "Ed25519",
     "zQ3s": "secp256k1",
-    "zDn":  "P-256",
+    "zDn": "P-256",
     "z6LS": "X25519",
 }
 
 IIR_TASK = "IIR"
+
 
 def _client(token: str, base_url: str, ssl_verify: bool) -> AuthenticatedClient:
     return AuthenticatedClient(
         base_url=base_url.rstrip("/"),
         token=token,
         verify_ssl=ssl_verify,
+        headers={"User-Agent": USER_AGENT},
         timeout=60.0,
     )
 
 
 def _parsed_to_dict(parsed: Any) -> dict:
-   
+
     if not parsed:
         return {}
     if isinstance(parsed, dict):
@@ -71,7 +95,9 @@ def _parsed_to_dict(parsed: Any) -> dict:
             if isinstance(d, dict):
                 return d
         except Exception:
-            pass
+            logging.getLogger(__name__).debug(
+                "SDK model conversion failed", exc_info=True
+            )
     return getattr(parsed, "additional_properties", {}) or {}
 
 
@@ -86,10 +112,11 @@ def validate_ctid(ctid: str) -> tuple[bool, str]:
 def validate_date(value: str, field_name: str) -> tuple[bool, str, str]:
     if not value:
         return True, "", ""
-    from datetime import datetime, timezone
+    from datetime import datetime
+
     try:
         parsed = datetime.strptime(value, "%m/%d/%Y")
-        utc_dt = parsed.replace(tzinfo=timezone.utc)
+        utc_dt = parsed.replace(tzinfo=UTC)
         iso_value = utc_dt.strftime("%Y-%m-%dT%H:%M:%SZ")
         return True, "", iso_value
     except ValueError:
@@ -107,7 +134,10 @@ def validate_date_range(valid_from: str, valid_until: str) -> tuple[bool, str]:
     if not vf and not vu:
         return True, ""
     if bool(vf) != bool(vu):
-        return False, "If you provide dates, both Valid From and Valid Until are required."
+        return (
+            False,
+            "If you provide dates, both Valid From and Valid Until are required.",
+        )
 
     ok_vf, err_vf, iso_vf = validate_date(vf, "Valid From")
     if not ok_vf:
@@ -135,21 +165,30 @@ def validate_did_key_prefix(did: str, algorithm: str) -> tuple[bool, str]:
     if not algorithm:
         return False, "Algorithm is required for did:key"
     if algorithm not in SUPPORTED_ALGORITHMS:
-        return False, f"unsupported algorithm '{algorithm}' — must be one of {', '.join(sorted(SUPPORTED_ALGORITHMS))}"
-    key_part = did[len("did:key:"):]
+        return (
+            False,
+            f"unsupported algorithm '{algorithm}' — must be one of {', '.join(sorted(SUPPORTED_ALGORITHMS))}",
+        )
+    key_part = did[len("did:key:") :]
     if not key_part:
         return False, "did:key has no key material after 'did:key:'"
     expected = next(
-        (alg for pfx, alg in DID_KEY_PREFIX_MAP.items() if key_part.startswith(pfx)), None
+        (alg for pfx, alg in DID_KEY_PREFIX_MAP.items() if key_part.startswith(pfx)),
+        None,
     )
     if expected is None:
         return False, f"unrecognised did:key prefix '{key_part[:8]}...'"
     if expected != algorithm:
-        return False, f"algorithm mismatch: key prefix suggests '{expected}' but CSV declares '{algorithm}'"
+        return (
+            False,
+            f"algorithm mismatch: key prefix suggests '{expected}' but CSV declares '{algorithm}'",
+        )
     return True, ""
 
 
-def validate_verification_method(vm: str, did: str, api_vm_ids: list[str]) -> tuple[bool, str]:
+def validate_verification_method(
+    vm: str, did: str, api_vm_ids: list[str]
+) -> tuple[bool, str]:
     if not vm:
         return False, "VerificationMethod is empty"
     if not vm.startswith(did.split("#")[0]):
@@ -176,10 +215,13 @@ def call_is_user_member(
 
         return True, ""
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - preserve the API adapter error contract.
         return False, f"isUserMember request failed: {e}"
 
-def call_get_registry_resource(ctid, token, publisher_base, ssl_verify) -> tuple[bool, dict, str]:
+
+def call_get_registry_resource(
+    ctid, token, publisher_base, ssl_verify
+) -> tuple[bool, dict, str]:
     try:
         client = _client(token, publisher_base, ssl_verify)
         response = get_registry_resource_sync(client=client, ctid=ctid)
@@ -191,7 +233,7 @@ def call_get_registry_resource(ctid, token, publisher_base, ssl_verify) -> tuple
 
         return True, data, ""
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - preserve the API adapter error contract.
         return False, {}, f"Registry API request failed: {e}"
 
 
@@ -215,12 +257,12 @@ def call_get_organization_iir_detail(
 
         return True, inner, ""
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - preserve the API adapter error contract.
         return False, {}, f"getOrganizationIIRDetail request failed: {e}"
 
 
 def merge_autofill(registry: dict, accounts: dict) -> dict:
-   
+
     name = registry.get("Name", "") or ""
     registry_uri = registry.get("CredentialRegistryUri", "") or ""
     subject_webpage = registry.get("SubjectWebpage", "") or ""
@@ -263,7 +305,7 @@ def call_validate_did_key(
 
         return True, _parsed_to_dict(response.parsed), ""
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - preserve the API adapter error contract.
         return False, {}, f"validateDidKey request failed: {e}"
 
 
@@ -287,14 +329,14 @@ def call_validate_did_web(
 
         return True, _parsed_to_dict(response.parsed), ""
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - preserve the API adapter error contract.
         return False, {}, f"validateDidWeb request failed: {e}"
 
 
 def call_validate_did(
     did: str, alg: str, token: str, publisher_base: str, ssl_verify: bool
 ) -> tuple[bool, list[str], dict, str]:
-   
+
     kind, kind_err = classify_did(did)
     if kind == "unknown":
         return False, [], {}, kind_err or "Unsupported DID method"
@@ -303,7 +345,9 @@ def call_validate_did(
         ok_pfx, err_pfx = validate_did_key_prefix(did, alg)
         if not ok_pfx:
             return False, [], {}, err_pfx
-        ok, data, err = call_validate_did_key(did, alg, token, publisher_base, ssl_verify)
+        ok, data, err = call_validate_did_key(
+            did, alg, token, publisher_base, ssl_verify
+        )
     else:
         ok, data, err = call_validate_did_web(did, token, publisher_base, ssl_verify)
 
@@ -354,12 +398,16 @@ def call_create_challenges(
 
         return False, [], "createChallenges returned unexpected shape"
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - preserve the API adapter error contract.
         return False, [], f"createChallenges request failed: {e}"
 
 
 def call_verify_jwt_signature(
-    proof_jwt: str, challenge_uuid: str, token: str, publisher_base: str, ssl_verify: bool
+    proof_jwt: str,
+    challenge_uuid: str,
+    token: str,
+    publisher_base: str,
+    ssl_verify: bool,
 ) -> tuple[bool, str]:
     try:
         client = _client(token, publisher_base, ssl_verify)
@@ -383,13 +431,17 @@ def call_verify_jwt_signature(
 
         return True, ""
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - preserve the API adapter error contract.
         return False, f"validateJwt request failed: {e}"
 
 
 def call_save_challenge_token(
-    ctid: str, challenge_uuid: str, token_jwt: str,
-    token: str, publisher_base: str, ssl_verify: bool
+    ctid: str,
+    challenge_uuid: str,
+    token_jwt: str,
+    token: str,
+    publisher_base: str,
+    ssl_verify: bool,
 ) -> tuple[bool, str]:
     try:
         client = _client(token, publisher_base, ssl_verify)
@@ -412,7 +464,7 @@ def call_save_challenge_token(
 
         return True, ""
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - preserve the API adapter error contract.
         return False, f"saveChallengeToken request failed: {e}"
 
 
@@ -437,7 +489,7 @@ def call_submit_to_iir(
         if not value:
             return UNSET
         try:
-            return datetime.fromisoformat(value.replace("Z", "+00:00"))
+            return datetime.fromisoformat(value)
         except ValueError:
             try:
                 return datetime.strptime(value, "%Y-%m-%d")
@@ -471,9 +523,10 @@ def call_submit_to_iir(
 
         return True, ""
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - preserve the API adapter error contract.
         return False, f"submitToIIR request failed: {e}"
-    
+
+
 def _parse_uvarint(data: bytes) -> tuple[int, int]:
     x, s = 0, 0
     for i, b in enumerate(data):
@@ -508,7 +561,7 @@ def _extract_ed25519_pub_from_did_key(did_or_kid: str) -> bytes:
     base = did_or_kid.split("#", 1)[0].strip()
     if not base.startswith("did:key:"):
         raise ValueError("Not a did:key DID")
-    mb = base[len("did:key:"):]
+    mb = base[len("did:key:") :]
     raw = _decode_multibase_base58btc(mb)
     if len(raw) == 32:
         return raw
@@ -519,7 +572,7 @@ def _extract_ed25519_pub_from_did_key(did_or_kid: str) -> bytes:
 
 
 def _did_web_to_url(did_web: str) -> str:
-    method_specific = did_web[len("did:web:"):]
+    method_specific = did_web[len("did:web:") :]
     parts = method_specific.split(":")
     host = parts[0]
     path_parts = parts[1:]
@@ -530,13 +583,19 @@ def _did_web_to_url(did_web: str) -> str:
 
 def _fetch_did_json(did_web_base: str) -> dict:
     url = _did_web_to_url(did_web_base)
-    r = requests.get(
-        url, headers={"Accept": "application/did+json, application/json"}, timeout=15
+    r = httpx2.get(
+        url,
+        headers={
+            "Accept": "application/did+json, application/json",
+            "User-Agent": USER_AGENT,
+        },
+        timeout=15,
+        follow_redirects=True,
     )
     r.raise_for_status()
     doc = r.json()
     if not isinstance(doc, dict):
-        raise ValueError("did.json must be a JSON object")
+        raise ValueError("did.json must be a JSON object")  # noqa: TRY004 - malformed remote data.
     return doc
 
 
@@ -592,22 +651,33 @@ def verify_proof_jwt(token: str, kid: str) -> tuple[bool, str]:
         pub_bytes = _resolve_public_key_bytes(kid)
         pub_key = Ed25519PublicKey.from_public_bytes(pub_bytes)
         jwt.decode(
-            token, key=pub_key, algorithms=["EdDSA"],
-            options={"verify_signature": True, "verify_aud": False,
-                     "verify_exp": False, "verify_iat": False,
-                     "verify_nbf": False, "verify_iss": False},
+            token,
+            key=pub_key,
+            algorithms=["EdDSA"],
+            options={
+                "verify_signature": True,
+                "verify_aud": False,
+                "verify_exp": False,
+                "verify_iat": False,
+                "verify_nbf": False,
+                "verify_iss": False,
+            },
         )
         return True, ""
     except jwt.exceptions.InvalidSignatureError:
-        return False, "signature verification failed — private key does not match verification method"
+        return (
+            False,
+            "signature verification failed — private key does not match verification method",
+        )
     except jwt.PyJWTError as e:
         return False, f"JWT error: {e}"
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - preserve the API adapter error contract.
         return False, f"verification error: {e}"
 
 
 def extract_user_id_from_token(access_token: str) -> str:
     import uuid
+
     try:
         payload_part = access_token.split(".")[1]
         padding = 4 - len(payload_part) % 4

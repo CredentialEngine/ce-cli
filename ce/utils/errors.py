@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import functools
 import sys
-from typing import Callable
+from collections.abc import Callable
 
 import click
 
@@ -18,7 +18,7 @@ def handle_api_errors(f: Callable) -> Callable:
     """Decorator: catch APIError / httpx2 errors and print a friendly message."""
 
     @functools.wraps(f)
-    def wrapper(*args, **kwargs): 
+    def wrapper(*args, **kwargs):
         try:
             return f(*args, **kwargs)
         except APIError as exc:
@@ -27,19 +27,15 @@ def handle_api_errors(f: Callable) -> Callable:
                     "Error: Unauthorized. Your session may have expired — run ce login."
                 )
             elif exc.status_code == 403:
-                err_console.print(
-                    f"Error: Permission denied: {exc.message}"
-                )
+                err_console.print(f"Error: Permission denied: {exc.message}")
             elif exc.status_code == 404:
-                err_console.print(
-                    f"Error: Not found: {exc.message}"
-                )
+                err_console.print(f"Error: Not found: {exc.message}")
             else:
                 err_console.print(f"API error: {exc.message}")
             sys.exit(1)
         except click.UsageError:
-            raise   
-        except Exception as exc:
+            raise
+        except Exception as exc:  # noqa: BLE001 - CLI boundary reports unexpected failures
             err_console.print(f"Unexpected error: {exc}")
             sys.exit(1)
 

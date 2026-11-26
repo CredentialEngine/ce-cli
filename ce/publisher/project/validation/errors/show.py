@@ -36,4 +36,6 @@ def main(project_id: int, output: str, publisher_url: str | None) -> None:
     for finding in summary.errors:
         console.print(service.format_finding(finding), highlight=False, soft_wrap=True)
     count = len(summary.errors)
-    console.print(f"{count} error{'' if count == 1 else 's'}", highlight=False, soft_wrap=True)
+    console.print(
+        f"{count} error{'' if count == 1 else 's'}", highlight=False, soft_wrap=True
+    )

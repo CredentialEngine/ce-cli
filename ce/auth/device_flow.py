@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import httpx2
 from authlib.common.security import generate_token
@@ -12,6 +12,12 @@ from authlib.integrations.base_client.errors import OAuthError
 from authlib.integrations.httpx_client import OAuth2Client
 from authlib.oauth2.rfc6749.errors import OAuth2Error
 from authlib.oauth2.rfc7636 import create_s256_code_challenge
+
+from ce.utils.user_agent import USER_AGENT
+
+if TYPE_CHECKING:
+    from ce.config.environment import Environment
+    from ce.config.settings import StoredTokens
 
 DEVICE_CODE_GRANT = "urn:ietf:params:oauth:grant-type:device_code"
 
@@ -21,7 +27,7 @@ class DeviceAuthResponse:
     device_code: str
     user_code: str
     verification_uri: str
-    verification_uri_complete: Optional[str]
+    verification_uri_complete: str | None
     expires_in: int
     interval: int
 
@@ -29,27 +35,36 @@ class DeviceAuthResponse:
 @dataclass
 class TokenResponse:
     access_token: str
-    refresh_token: Optional[str]
-    id_token: Optional[str]
+    refresh_token: str | None
+    id_token: str | None
     token_type: str
     expires_in: int
-    scope: Optional[str]
+    scope: str | None
 
 
 class DeviceFlowError(Exception):
     """Raised when the device flow cannot complete."""
 
+
 class AuthorizationPendingError(DeviceFlowError):
     """User has not yet approved, keep polling."""
+
 
 class SlowDownError(DeviceFlowError):
     """Server requested a longer polling interval."""
 
+
 class AccessDeniedError(DeviceFlowError):
     """User denied the authorization request."""
 
+
 class TokenExpiredError(DeviceFlowError):
     """Device code expired before the user approved."""
+
+
+class ClientConfigurationError(DeviceFlowError):
+    """Keycloak rejected the configured OAuth client, not the user session."""
+
 
 class RefreshRejectedError(DeviceFlowError):
     """Keycloak refused the refresh token: the session ended or the token expired.
@@ -70,14 +85,15 @@ class KeycloakDeviceFlowClient:
 
     def __init__(
         self,
-        env: "ce.config.context.Environment",
-        transport: Optional[httpx2.BaseTransport] = None,
+        env: Environment,
+        transport: httpx2.BaseTransport | None = None,
     ) -> None:
         self._env = env
         self._http = httpx2.Client(
             timeout=30,
             verify=env.ssl_verify,
             transport=transport,
+            headers={"User-Agent": USER_AGENT},
         )
         # Token grants (the device code and the refresh) go through Authlib, which sends the
         # form, reads the answer and decodes OAuth errors. ce-cli is a public client: no secret.
@@ -87,10 +103,11 @@ class KeycloakDeviceFlowClient:
             timeout=30,
             verify=env.ssl_verify,
             transport=transport,
+            headers={"User-Agent": USER_AGENT},
         )
         # The verifier of the device code being waited on, so a token can only
         # be collected by the process that started the sign-in.
-        self._device_pkce: Optional[tuple[str, str]] = None
+        self._device_pkce: tuple[str, str] | None = None
 
     def request_device_code(self) -> DeviceAuthResponse:
         self._device_pkce = None
@@ -106,6 +123,11 @@ class KeycloakDeviceFlowClient:
             },
             "Device authorization request",
         )
+        if resp.is_error and self._oauth_error_code(resp) in (
+            "invalid_client",
+            "unauthorized_client",
+        ):
+            raise ClientConfigurationError(self._client_error_message())
         self._raise_for_status(resp)
         body = self._json(resp, "Device authorization request")
         self._device_pkce = (body["device_code"], verifier)
@@ -124,7 +146,7 @@ class KeycloakDeviceFlowClient:
         device_code: str,
         interval: int,
         expires_in: int,
-        on_pending: Optional[callable] = None,
+        on_pending: callable | None = None,
     ) -> TokenResponse:
         deadline = time.monotonic() + expires_in
         poll_interval = interval
@@ -133,7 +155,9 @@ class KeycloakDeviceFlowClient:
         if self._device_pkce is not None:
             pkce_device_code, verifier = self._device_pkce
             if pkce_device_code != device_code:
-                raise DeviceFlowError("Device code does not match the pending PKCE session.")
+                raise DeviceFlowError(
+                    "Device code does not match the pending PKCE session."
+                )
             extra["code_verifier"] = verifier
 
         while time.monotonic() < deadline:
@@ -158,14 +182,26 @@ class KeycloakDeviceFlowClient:
                         on_pending()
                     continue
                 if error == "access_denied":
-                    raise AccessDeniedError("Authorization was denied by the user.") from exc
+                    raise AccessDeniedError(
+                        "Authorization was denied by the user."
+                    ) from exc
                 if error in ("expired_token", "device_code_expired"):
-                    raise TokenExpiredError("The device code has expired. Please try again.") from exc
-                raise DeviceFlowError(f"Unexpected error from token endpoint: {error}") from exc
+                    raise TokenExpiredError(
+                        "The device code has expired. Please try again."
+                    ) from exc
+                if error in ("invalid_client", "unauthorized_client"):
+                    raise ClientConfigurationError(
+                        self._client_error_message()
+                    ) from exc
+                raise DeviceFlowError(
+                    f"Unexpected error from token endpoint: {error}"
+                ) from exc
             except httpx2.HTTPError as exc:
                 raise DeviceFlowError(f"Token request failed: {exc}") from exc
             except ValueError as exc:
-                raise DeviceFlowError(f"Token request failed: the answer was not JSON ({exc}).") from exc
+                raise DeviceFlowError(
+                    f"Token request failed: the answer was not JSON ({exc})."
+                ) from exc
 
             self._device_pkce = None
             return self._parse_token_response(body)
@@ -174,28 +210,47 @@ class KeycloakDeviceFlowClient:
 
     def refresh_access_token(self, refresh_token: str) -> TokenResponse:
         try:
-            body = self._oauth.refresh_token(self._env.token_url, refresh_token=refresh_token)
+            body = self._oauth.refresh_token(
+                self._env.token_url, refresh_token=refresh_token
+            )
         except (OAuthError, OAuth2Error) as exc:
-            # invalid_grant and the like: the refresh token expired or the session was ended.
-            raise RefreshRejectedError(
-                f"Token refresh was refused: {exc.description or exc.error}"
-            ) from exc
+            if exc.error == "invalid_grant":
+                raise RefreshRejectedError(
+                    f"Token refresh was refused: {exc.description or exc.error}"
+                ) from exc
+            if exc.error in ("invalid_client", "unauthorized_client"):
+                raise ClientConfigurationError(self._client_error_message()) from exc
+            raise DeviceFlowError(f"Token refresh failed: {exc.error}") from exc
         except httpx2.HTTPError as exc:
             raise DeviceFlowError(f"Token refresh failed: {exc}") from exc
         except ValueError as exc:
-            raise DeviceFlowError(f"Token refresh failed: the answer was not JSON ({exc}).") from exc
+            raise DeviceFlowError(
+                f"Token refresh failed: the answer was not JSON ({exc})."
+            ) from exc
 
         tokens = self._parse_token_response(body)
-        if tokens.refresh_token is None:
+        if not tokens.refresh_token:
             tokens.refresh_token = refresh_token
         return tokens
 
+    def _client_error_message(self) -> str:
+        return (
+            f"Keycloak rejected OAuth client '{self._env.client_id}' in realm "
+            f"'{self._env.realm}'. Check the client registration and device grant settings."
+        )
+
+    @staticmethod
+    def _oauth_error_code(resp: httpx2.Response) -> str | None:
+        try:
+            body = resp.json()
+        except ValueError:
+            return None
+        return body.get("error") if isinstance(body, dict) else None
+
     def get_userinfo(self, access_token: str) -> dict:
-        base = self._env.token_url.replace("/token", "")
-        userinfo_url = f"{base}/userinfo"
         try:
             resp = self._http.get(
-                userinfo_url,
+                self._env.userinfo_url,
                 headers={"Authorization": f"Bearer {access_token}"},
             )
         except httpx2.HTTPError as exc:
@@ -209,9 +264,8 @@ class KeycloakDeviceFlowClient:
         Raises DeviceFlowError when Keycloak cannot be reached or refuses, so
         the caller can warn; local tokens should be removed either way.
         """
-        revoke_url = self._env.token_url.replace("/token", "/revoke")
         resp = self._post(
-            revoke_url,
+            self._env.revoke_url,
             {
                 "client_id": self._env.client_id,
                 "token": token,
@@ -269,8 +323,9 @@ class KeycloakDeviceFlowClient:
             raise DeviceFlowError(f"HTTP {resp.status_code} from {resp.url}: {detail}")
 
     @staticmethod
-    def to_stored_tokens(tr: TokenResponse) -> "ce.config.settings.StoredTokens":
+    def to_stored_tokens(tr: TokenResponse) -> StoredTokens:
         from ce.config.settings import StoredTokens
+
         return StoredTokens(
             access_token=tr.access_token,
             refresh_token=tr.refresh_token,

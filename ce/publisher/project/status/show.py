@@ -43,7 +43,9 @@ def main(project_id: int, output: str, publisher_url: str | None) -> None:
         return
 
     kind = project_kind_label(project.get("projectType"))
-    console.print(f"Project {project_id}: {project.get('name', '')} ({kind})", highlight=False)
+    console.print(
+        f"Project {project_id}: {project.get('name', '')} ({kind})", highlight=False
+    )
     console.print(
         f"  Status: {project.get('status')}, publishing: {project.get('publishStatus')}",
         highlight=False,
@@ -55,4 +57,6 @@ def main(project_id: int, output: str, publisher_url: str | None) -> None:
         )
     for job in stages:
         error = f" ({job.get('errorMessage')})" if job.get("errorMessage") else ""
-        console.print(f"  {job.get('stage')}: {job.get('status')}{error}", highlight=False)
+        console.print(
+            f"  {job.get('stage')}: {job.get('status')}{error}", highlight=False
+        )

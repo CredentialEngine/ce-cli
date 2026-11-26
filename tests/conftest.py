@@ -8,11 +8,6 @@ from unittest.mock import MagicMock
 
 import pytest
 from _cassette import remember_outcome
-from dotenv import load_dotenv
-
-if os.environ.get("VCR_RECORD_MODE", "none").lower() != "none":
-    from dotenv import load_dotenv
-    load_dotenv(Path(__file__).resolve().parents[1] / ".env.test")
 
 PUBLISHER_BASE = os.getenv("CE_PUBLISHER_BASE", "https://localhost:44330")
 ACCESS_TOKEN = os.getenv("CE_TEST_ACCESS_TOKEN", "")
@@ -24,13 +19,27 @@ ED25519_PRIVATE_MULTIBASE = os.getenv("CE_TEST_PRIVKEY_MULTIBASE", "")
 ED25519_DID_KEY = os.getenv("CE_TEST_DID_KEY", "")
 
 ED25519_KID = (
-    f"{ED25519_DID_KEY}#{ED25519_DID_KEY[len('did:key:'):]}"
+    f"{ED25519_DID_KEY}#{ED25519_DID_KEY[len('did:key:') :]}"
     if ED25519_DID_KEY.startswith("did:key:")
     else ""
 )
 
 
 def pytest_configure(config):
+    # Keep pytest-recording and the IIR fixtures in the same mode. An explicit
+    # --record-mode option wins over the legacy environment variable.
+    if hasattr(config.option, "record_mode"):
+        args = config.invocation_params.args
+        explicit = any(
+            arg == "--record-mode" or arg.startswith("--record-mode=") for arg in args
+        )
+        if not explicit and "VCR_RECORD_MODE" in os.environ:
+            mode = os.environ["VCR_RECORD_MODE"].lower()
+            if mode not in {"none", "once", "new_episodes", "all", "rewrite"}:
+                raise pytest.UsageError(f"Invalid VCR_RECORD_MODE: {mode}")
+            config.option.record_mode = mode
+        if config.option.record_mode is None:
+            config.option.record_mode = "none"
     config.addinivalue_line(
         "markers",
         "unit: mark test as a unit test",
@@ -65,10 +74,8 @@ def mock_env():
     return env
 
 
-
-
 @pytest.fixture(scope="session")
-def vcr_config():
+def vcr_config(request):
     return {
         "filter_headers": [
             ("authorization", "REDACTED"),
@@ -84,7 +91,7 @@ def vcr_config():
             ("client_secret", "REDACTED"),
         ],
         "match_on": ["method", "scheme", "host", "port", "path", "query"],
-        "record_mode": os.getenv("VCR_RECORD_MODE", "none"),
+        "record_mode": request.config.getoption("record_mode", default=None) or "none",
     }
 
 
