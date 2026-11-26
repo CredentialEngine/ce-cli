@@ -47,11 +47,11 @@ class LogLevelChoice(click.Choice):
         try:
             return super().convert(value, param, ctx)
         except click.BadParameter:
-            self.fail(
+            raise click.BadParameter(
                 f"Invalid log level {value!r}. Choose one of: "
                 f"{', '.join(VALID_LOG_LEVELS)}. "
                 "Level names are case-insensitive. "
                 "Example: ce logging set log-level DEBUG",
-                param,
-                ctx,
-            )
+                ctx=ctx,
+                param=param,
+            ) from None

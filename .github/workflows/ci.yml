@@ -19,15 +19,19 @@ jobs:
       - name: Semgrep security scan
         run: |
           set -euo pipefail
-          targets=(ce src tests)
-          if [[ -f Dockerfile ]]; then targets+=(Dockerfile); fi
           docker run --rm -v "$GITHUB_WORKSPACE:/src:ro" -w /src \
-            semgrep/semgrep semgrep scan --verbose --error \
-            --config p/secrets --config p/security-audit \
-            --config p/python --config p/dockerfile \
-            --exclude '**/generated-client/**' --exclude 'ce/iir/api/**' \
-            --exclude '**/node_modules/**' --exclude 'tests/cassettes/**' \
-            "${targets[@]}"
+            semgrep/semgrep semgrep scan \
+            --verbose --error --strict \
+            --no-git-ignore \
+            --disable-nosem \
+            --max-target-bytes 0 \
+            --max-log-list-entries 0 \
+            --scan-unknown-extensions \
+            --config p/secrets \
+            --config p/security-audit \
+            --config p/python \
+            --config p/dockerfile \
+            .
 
       - name: Set up Python 3.14
         uses: actions/setup-python@v5
@@ -86,4 +90,3 @@ jobs:
           name: ce-cli-drop
           path: dist/*
           if-no-files-found: error
-

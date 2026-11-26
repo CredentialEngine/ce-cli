@@ -67,7 +67,7 @@ def resolve_access_token(
         delete_tokens(env_name)
         return TokenResult(reason=SESSION_EXPIRED)
 
-    logging.getLogger(__name__).debug("Refreshing saved access token for %s", env_name)
+    logging.getLogger(__name__).debug("Renewing saved session for %s", env_name)
     client = KeycloakDeviceFlowClient(env)
     try:
         tr = client.refresh_access_token(tokens.refresh_token)

@@ -106,8 +106,5 @@ def api_client(timeout: float = 30.0) -> Generator[CEHTTPClient, None, None]:
     _, _env = require_environment()
     base_url = _env.publisher_base.rstrip("/")
     log.debug("Authenticated HTTP client ready")
-    client = CEHTTPClient(base_url, access_token, timeout=timeout)
-    try:
+    with CEHTTPClient(base_url, access_token, timeout=timeout) as client:
         yield client
-    finally:
-        client.close()
