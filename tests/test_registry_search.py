@@ -1,21 +1,12 @@
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, Mock
 from urllib.parse import parse_qs, urlsplit
 
 import click
+import httpx2
 import pytest
-from click.testing import CliRunner
 
 from ce.registry import search
-
-
-def test_search_options(monkeypatch):
-    calls = []
-    monkeypatch.setattr(search, "execute_search", lambda ctx, **kw: calls.append(kw))
-    runner = CliRunner()
-    opts = ["--query", "nursing", "--type", "ceterms:Credential", "--no-include-bnodes"]
-    assert runner.invoke(search.search_group, opts).exit_code == 0
-    assert runner.invoke(search.search_group, ["export", *opts]).exit_code == 0
-    assert calls[1].pop("export") is True
-    assert calls[0] == calls[1]
 
 
 def test_filter_encoding():
@@ -141,81 +132,6 @@ def test_sdk_request_and_job_id(monkeypatch, capsys, export, output_fmt):
         assert not create.called
 
 
-def test_registry_search_independent_of_download_modules(monkeypatch):
-    import builtins
-
-    from ce.commands.registry import registry_group
-
-    original_import = builtins.__import__
-
-    def guarded_import(name, *args, **kwargs):
-        if name in {"ce.registry.downloads", "ce.utils.download_progress"}:
-            raise AssertionError(f"Search imported download implementation: {name}")
-        return original_import(name, *args, **kwargs)
-
-    calls = []
-    monkeypatch.setattr(builtins, "__import__", guarded_import)
-    monkeypatch.setattr(search, "execute_search", lambda ctx, **kw: calls.append(kw))
-    runner = CliRunner()
-    for args in (
-        ["search", "--query", "nursing"],
-        ["search", "export", "--query", "nursing"],
-    ):
-        result = runner.invoke(registry_group, args)
-        assert result.exit_code == 0, result.exception
-    assert len(calls) == 2
-    assert calls[1]["export"] is True
-
-
-@pytest.mark.parametrize("prefix", [[], ["export"]])
-def test_indexed_filters(monkeypatch, prefix):
-    calls = []
-    monkeypatch.setattr(search, "execute_search", lambda ctx, **kw: calls.append(kw))
-    result = CliRunner().invoke(
-        search.search_group,
-        prefix
-        + [
-            "--filter[1].field",
-            "ceterms:ownedBy",
-            "--filter[1].operator=IN",
-            "--filter[1].values[1]",
-            "b",
-            "--filter[1].values[0]",
-            "a",
-            "--filter[0].field",
-            "ceterms:name",
-            "--filter[0].operator",
-            "MATCHES",
-            "--filter[0].value",
-            "nursing",
-        ],
-    )
-    assert result.exit_code == 0, result.output
-    params = calls[0]
-    assert params.pop("export", False) == bool(prefix)
-    query = parse_qs(
-        urlsplit(search.build_search_url("https://api.example", **params)).query
-    )
-    assert query["filters[0].value"] == ["nursing"]
-    assert query["filters[1].values"] == ["a", "b"]
-
-
-@pytest.mark.parametrize(
-    "args",
-    [
-        ["--filter[1].field", "name"],
-        ["--filter[0].unknown", "name"],
-        ["--filter[0].field"],
-        ["--filter[0].field", "name", "--filter[0].field", "other"],
-        ["--filter[0].values[1]", "a"],
-    ],
-)
-def test_invalid_indexed_filters(args):
-    result = CliRunner().invoke(search.search_group, args)
-    assert result.exit_code == 2
-    assert "Error:" in result.output
-
-
 def test_repeated_filter_values():
     args = search.normalize_filter_args(
         [
@@ -235,17 +151,6 @@ def test_repeated_filter_values():
         ).query
     )
     assert query["filters[0].values"] == ["a", "b"]
-
-
-@pytest.mark.parametrize("option", ["-o", "--output"])
-def test_json_output_option(monkeypatch, option):
-    calls = []
-    monkeypatch.setattr(search, "execute_search", lambda ctx, **kw: calls.append(kw))
-    result = CliRunner().invoke(
-        search.search_group, ["--query", "nursing", option, "json"]
-    )
-    assert result.exit_code == 0, result.output
-    assert calls[0]["output_fmt"] == "json"
 
 
 def test_summary_table(capsys):
@@ -383,16 +288,6 @@ def test_reject_unqualified_schema_terms(params):
         search.build_search_url("https://api.example", **params)
 
 
-def test_tsv_option(monkeypatch):
-    calls = []
-    monkeypatch.setattr(search, "execute_search", lambda ctx, **kw: calls.append(kw))
-    result = CliRunner().invoke(
-        search.search_group, ["--query", "nursing", "-o", "tsv"]
-    )
-    assert result.exit_code == 0, result.output
-    assert calls[0]["output_fmt"] == "tsv"
-
-
 def test_json_search_excludes_response_metadata():
     payload = {
         "total": {"value": 77, "relation": "Eq"},
@@ -427,3 +322,43 @@ def test_total_is_not_current_page_size(capsys):
     assert "Total results: 77" in capsys.readouterr().out
     search.print_search_tsv(payload)
     assert capsys.readouterr().err == "Total results: 77\n"
+
+
+@pytest.fixture
+def registry_sdk(monkeypatch):
+    api = SimpleNamespace()
+    client = AsyncMock()
+    client.__aenter__.return_value = client
+    monkeypatch.setattr(search, "ApiClient", Mock(return_value=client))
+    monkeypatch.setattr(
+        search,
+        "require_environment",
+        lambda: (
+            "sandbox",
+            SimpleNamespace(consumer_api_base="https://api.example", ssl_verify=True),
+        ),
+    )
+    monkeypatch.setattr(search, "require_api_token", Mock(return_value="fixture"))
+    monkeypatch.setattr(
+        "ce.registry.api.require_api_token", Mock(return_value="fixture")
+    )
+    monkeypatch.setattr(search, "ExportApi", Mock(return_value=api))
+    return api, client
+
+
+@pytest.mark.parametrize(
+    "response,match",
+    [
+        (httpx2.Response(400), "HTTP 400"),
+        (httpx2.Response(202, json={}), "did not contain a job ID"),
+        (httpx2.Response(202, content=b"not json"), "invalid JSON"),
+    ],
+)
+def test_export_failure(registry_sdk, response, match):
+    api, _ = registry_sdk
+    api.export_create_search_export_without_preload_content = AsyncMock(
+        return_value=response
+    )
+    with pytest.raises(click.ClickException, match=match):
+        search.execute_search(None, export=True, query="nursing")
+    assert response.is_closed

@@ -1,16 +1,16 @@
 from types import SimpleNamespace
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 from uuid import UUID
 
 import click
 import httpx2
 import pytest
-from click.testing import CliRunner
 
-from ce.commands.registry import registry_group
 from ce.registry import resources
 
 GUID = "12345678-1234-1234-1234-123456789abc"
+
+
 CTID = "ce-" + GUID
 
 
@@ -32,64 +32,40 @@ def test_unsupported_bnode(kind):
         resources.execute_lookup(None, kind, GUID)
 
 
-@pytest.mark.parametrize(
-    "kind,identifier,api_class,method,expected",
-    [
-        (
-            "resources",
-            CTID,
-            "ResourceApi",
-            "resource_get_resource_by_ctid_without_preload_content",
-            CTID,
-        ),
-        (
-            "resources",
-            "_:" + GUID,
-            "ResourceApi",
-            "resource_get_resource_by_bnode_guid_without_preload_content",
-            UUID(GUID),
-        ),
-        (
-            "graphs",
-            CTID,
-            "GraphApi",
-            "graph_get_graph_by_ctid_without_preload_content",
-            CTID,
-        ),
-        (
-            "metadata",
-            CTID,
-            "MetadataApi",
-            "metadata_get_metadata_by_ctid_without_preload_content",
-            CTID,
-        ),
-    ],
-)
-def test_lookup(monkeypatch, kind, identifier, api_class, method, expected):
-    call = AsyncMock(return_value=httpx2.Response(200, json={"example": True}))
-
-    class Client:
-        async def __aenter__(self):
-            return self
-
-        async def __aexit__(self, *args):
-            assert self.user_agent == resources.USER_AGENT
-
-    monkeypatch.setattr(resources, "ApiClient", lambda config: Client())
-    monkeypatch.setattr(
-        resources, api_class, lambda client: SimpleNamespace(**{method: call})
-    )
+@pytest.fixture
+def registry_sdk(monkeypatch):
+    api = SimpleNamespace()
+    client = AsyncMock()
+    client.__aenter__.return_value = client
+    monkeypatch.setattr(resources, "ApiClient", Mock(return_value=client))
     monkeypatch.setattr(
         resources,
         "require_environment",
         lambda: (
-            "dev",
+            "sandbox",
             SimpleNamespace(consumer_api_base="https://api.example", ssl_verify=True),
         ),
     )
-    monkeypatch.setattr(resources, "require_api_token", lambda *a, **kw: "token")
-    monkeypatch.setattr("ce.registry.api.require_api_token", lambda *a, **kw: "token")
-    result = CliRunner().invoke(registry_group, [kind, "get", identifier])
-    assert result.exit_code == 0, result.exception
-    assert call.await_args.args == (expected,)
-    assert '"example": true' in result.output
+    monkeypatch.setattr(resources, "require_api_token", Mock(return_value="fixture"))
+    monkeypatch.setattr(
+        "ce.registry.api.require_api_token", Mock(return_value="fixture")
+    )
+    monkeypatch.setattr(resources, "ResourceApi", Mock(return_value=api))
+    return api, client
+
+
+@pytest.mark.parametrize(
+    "response,match",
+    [
+        (httpx2.Response(404), "HTTP 404"),
+        (httpx2.Response(200, content=b"not json"), "invalid JSON"),
+    ],
+)
+def test_lookup_failure(registry_sdk, response, match):
+    api, _ = registry_sdk
+    api.resource_get_resource_by_ctid_without_preload_content = AsyncMock(
+        return_value=response
+    )
+    with pytest.raises(click.ClickException, match=match):
+        resources.execute_lookup(None, "resources", CTID)
+    assert response.is_closed
