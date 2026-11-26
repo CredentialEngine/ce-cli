@@ -279,9 +279,8 @@ class TestLoadSigningKey:
         from cryptography.hazmat.primitives.asymmetric import rsa
 
         # Intentionally insecure RSA key to test minimum key-size enforcement.
-        small = rsa.generate_private_key(
-            public_exponent=65537, key_size=1024
-        )  # nosemgrep: python.cryptography.security.insufficient-rsa-key-size.insufficient-rsa-key-size
+        # nosemgrep: python.cryptography.security.insufficient-rsa-key-size.insufficient-rsa-key-size
+        small = rsa.generate_private_key(public_exponent=65537, key_size=1024)
         path = tmp_path / "small.pem"
         path.write_bytes(_pem(small, serialization.PrivateFormat.PKCS8))
         with pytest.raises(click.ClickException, match="2048"):
@@ -684,8 +683,10 @@ class TestLoadPrivateKeyArgument:
             _pem(
                 # Intentionally insecure RSA key to test rejection.
                 rsa.generate_private_key(
-                    public_exponent=65537, key_size=1024
-                ),  # nosemgrep: python.cryptography.security.insufficient-rsa-key-size.insufficient-rsa-key-size
+                    public_exponent=65537,
+                    # nosemgrep: python.cryptography.security.insufficient-rsa-key-size.insufficient-rsa-key-size
+                    key_size=1024,
+                ),
                 serialization.PrivateFormat.PKCS8,
             )
         )
